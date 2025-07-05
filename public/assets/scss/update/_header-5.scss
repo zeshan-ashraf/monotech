@@ -1,0 +1,26 @@
+@use '../utilities' as *;
+
+.header-5 {
+
+    .bar-4 {
+        background-color: var(--bz-color-heading-primary);
+    }
+
+    .header-right-wrap{
+        .header-right{
+            .sidebar-icon{
+                margin-left: 10px;
+                background-color: rgba(14, 89, 242, 0.1);
+                .sidebar-trigger{
+                    gap: 3px;
+                    span{
+                        background-color: var(--bz-color-theme-primary);
+                        width: 14px;
+                        height: 2px;
+                    }
+                }
+            }
+        }
+    }
+    
+}

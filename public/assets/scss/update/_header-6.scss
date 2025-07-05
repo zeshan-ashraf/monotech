@@ -1,0 +1,161 @@
+@use '../utilities' as *;
+
+.header-6 {
+    background-color: transparent;
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    .top-bar {
+
+        &.top-bar-6 {
+            background-color: var(--bz-color-heading-primary);
+            
+            .top-bar-inner {
+                padding: 12px 0;
+            }
+            .top-bar-left {
+                span {
+                    color: var(--bz-color-common-white);
+                }
+            }
+
+            .top-bar-right {
+                gap: 13px;
+                display: flex;
+                align-items: center;
+
+                .social-list {
+                    gap: 20px;
+                    display: flex;
+                    list-style: none;
+                    align-items: center;
+                    
+                    li {
+                        color: var(--bz-color-common-white);
+                    }
+                }
+            }
+        }
+    }
+
+    .top-bar-inner {
+        border-bottom: none;
+    }
+    
+    .middle-header {
+        
+       &.middle-header-6 {
+            border-bottom: none;
+            background-color: #F4F5F5;
+    
+            .header-items-wrap{
+                .header-item{
+                    grid-gap: 12px;
+                    .icon{
+                        background-color: rgba(234, 240, 248, 1);
+                        color: var(--bz-color-theme-primary);
+                        height: 40px;
+                        width: 40px;
+                        border-radius: 500px;
+                        @include flex-center;
+                    }
+                    .content{
+                        span{
+                            font-size: 12px;
+                            font-weight: 500;
+                            font-family: var(--bz-ff-body);
+                        }
+                        .address,
+                        a{
+                            font-family: var(--bz-ff-body);
+                            color: var(--bz-color-heading-primary);
+                            font-size: 18px;
+                            font-weight: 700;
+                            line-height: 1;
+                            @include breakpoint(lg){
+                                font-size: 15px;
+                            }
+                            @include breakpoint(md){
+                                font-size: 17px;
+                            }
+                            &:hover{
+                                color: var(--bz-color-theme-primary);
+                            }
+                        }
+                        .address{
+                            &:hover{
+                                color: var(--bz-color-heading-primary);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    .primary-header{
+        width: 100%;
+
+        .primary-header-inner{
+            background-color: var(--bz-color-common-white);
+            border-radius: 0px 0px 15px 15px;
+            padding: 0 30px;
+            @include breakpoint(md) {
+                padding: 10px 30px;
+            }
+
+            .header-menu-wrap{
+                ul{
+                    li{
+                        a{
+                            padding: 19.5px 0;
+                        }
+
+                        ul {
+                            top: 65px;
+                            li  {
+                                a {
+                                    padding-left: 30px;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .header-right-wrap{
+                .header-right{
+                    .bz-primary-btn {
+                        @include breakpoint(sm) {
+                            display: none;
+                        }
+                        text-transform: capitalize;
+                        border-radius: 100px;
+                        padding: 14.5px 30px;
+                    }
+                    .sidebar-icon{
+                        margin-left: 10px;
+                        background-color: rgba(14, 89, 242, 0.1);
+                        .sidebar-trigger{
+                            gap: 3px;
+                            span{
+                                background-color: var(--bz-color-theme-primary);
+                                width: 14px;
+                                height: 2px;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        &.fixed {
+            background-color: transparent;
+            box-shadow: none;
+            .primary-header-inner {
+                box-shadow: 0px 1px 3px 0px rgba(17, 17, 17, 0.1);
+            }
+        }
+    }
+}

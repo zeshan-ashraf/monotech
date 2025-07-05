@@ -1,0 +1,258 @@
+@use '../utilities' as *;
+
+.services-6 {
+    background: #F9F9F9;
+    position: relative;
+    overflow: hidden;
+
+    .services-item {
+        position: relative;
+        overflow: hidden;
+
+        @include breakpoint(md) {
+            margin-bottom: 30px;
+        }
+
+        &::before {
+            content: "";
+            width: 100%;
+            height: 100%;
+            bottom: 0;
+            left: 0;
+            z-index: 3;
+            position: absolute;
+            border-radius: 10px;
+            transition: 0.3s ease-in-out;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.00) 24.52%, rgba(6, 9, 12, 0.85) 87.86%);
+        }
+
+        &::after {
+            left: 0;
+            bottom: 0;
+            opacity: 0;
+            content: "";
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            border-radius: 10px;
+            visibility: hidden;
+            background: #1E6EE6;
+            transition: 0.3s ease-in-out;
+            mix-blend-mode: soft-light;
+        }
+
+        &:hover {
+            &::before {
+                opacity: 1;
+            }
+
+            &::after {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .services-content {
+                bottom: 40px;
+
+                @include breakpoint(lg) {
+                    bottom: 30px;
+                }
+            }
+
+            .services-thumb {
+
+                &::before {
+                    opacity: 1;
+                }
+
+                &::after {
+                    opacity: 1;
+                    visibility: visible;
+                }
+            }
+
+            .services-dec {
+                opacity: 1;
+                visibility: visible;
+
+                @include breakpoint(sm) {
+                    display: none;
+                }
+                @include breakpoint(xs) {
+                    display: block;
+                }
+            }
+
+            .services-btn {
+                opacity: 1;
+                visibility: visible;
+
+                @include breakpoint(sm) {
+                    margin-top: 20px;
+                }
+                @include breakpoint(xs) {
+                    margin-top: 0px;
+                }
+            }
+        }
+    }
+
+    .services-thumb {
+        position: relative;
+
+        &::before {
+            content: "";
+            left: 0;
+            bottom: 0;
+            opacity: 1;
+            width: 100%;
+            opacity: 0;
+            height: 100%;
+            position: absolute;
+            border-radius: 10px;
+            visibility: visible;
+            mix-blend-mode: multiply;
+            transition: 0.3s ease-in-out;
+            background: rgba(30, 110, 230, 0.72);
+        }
+
+        &::after {
+            left: 0;
+            bottom: 0;
+            z-index: 3;
+            opacity: 0;
+            content: "";
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            border-radius: 10px;
+            transition: 0.3s ease-in-out;
+            background: linear-gradient(180deg, rgba(12, 47, 99, 0.12) 9.52%, rgba(30, 110, 230, 0.94) 87.86%);
+        }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+    }
+
+    .services-content {
+        position: absolute;
+        bottom: -90px;
+        left: 40px;
+        right: 10px;
+        z-index: 9;
+        transition: 0.3s ease-in-out;
+
+        @include breakpoint(lg) {
+            bottom: -100px;
+            left: 25px;
+            right: 0;
+        }
+
+        @include breakpoint(sm) {
+            bottom: -90px;
+            left: 20px;
+        }
+        @include breakpoint(xs) {
+            bottom: -90px;
+        }
+
+        .services-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--bz-color-common-white);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 30px;
+
+            @include breakpoint(lg) {
+                width: 70px;
+                height: 70px;
+                margin-bottom: 20px;
+            }
+
+            &::before {
+                content: "";
+                width: 75px;
+                height: 75px;
+                background: var(--bz-color-common-white);
+                mix-blend-mode: normal;
+                opacity: 0.32;
+                border-radius: 10px;
+                position: absolute;
+                top: 10px;
+                left: 10px;
+
+                @include breakpoint(lg) {
+                    width: 65px;
+                    height: 65px;
+                }
+            }
+        }
+
+        .services-title {
+            font-size: 24px;
+            color: var(--bz-color-common-white);
+            margin-bottom: 0;
+            font-weight: 600;
+
+            @include breakpoint(sm) {
+                font-size: 21px;
+            }
+
+            a {
+                &:hover {
+                    color: #F9F9F9;
+                }
+            }
+        }
+
+        .services-dec {
+            font-size: 16px;
+            line-height: 26px;
+            font-weight: 400;
+            color: var(--bz-color-common-white);
+            margin-bottom: 20px;
+            margin-top: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.3s ease-in-out;
+
+            @include breakpoint(sm) {
+                font-size: 15px;
+                line-height: 22px;
+            }
+        }
+
+        .services-btn {
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.3s ease-in-out;
+        }
+    }
+
+    .bz-primary-btn.bz-primary-btn-4 {
+        background: var(--bz-color-common-white);
+        font-size: 16px;
+        color: var(--bz-color-theme-primary);
+        text-transform: capitalize;
+        font-weight: 600;
+        border-radius: 100px;
+        padding: 14.5px 32.3px;
+
+        &::before {
+            background: rgb(30 110 231 / 15%);
+        }
+    }
+
+    .services-bg-shape {
+        position: absolute;
+        top: -110px;
+        left: -135px;
+    }
+}

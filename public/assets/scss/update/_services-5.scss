@@ -1,0 +1,143 @@
+@use '../utilities' as *;
+
+.services-5 {
+    background: rgb(249 249 249 / 55%);
+    position: relative;
+
+    .services-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+        background: rgb(249 249 249 / 55%);
+    }
+
+    .services-item {
+        background: #FFFFFF;
+        border: 1px solid #E7E7E7;
+        border-radius: 15px;
+        @include transition(all 0.3s ease-in-out);
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+
+        &::before {
+            content: "";
+            background-color: #1E6EE7;
+            width: 100%;
+            height: 0;
+            position: absolute;
+            bottom: 0;
+            @include transition(all 0.3s ease-in-out);
+            left: 0;
+
+        }
+
+        &:hover {
+
+            &::before {
+                height: 80%;
+                z-index: -1;
+            }
+
+            .services-content {
+                .services-icon {
+                    background-color: #1E6EE7;
+
+                    img {
+                        filter: brightness(0) invert(1);
+                    }
+                }
+            }
+        }
+
+        @include breakpoint(md) {
+            margin-bottom: 30px;
+        }
+
+        .services-thumb {
+            position: relative;
+            z-index: 2;
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 15px 15px 0 0;
+                @include transition(all 0.3s ease-in-out);
+            }
+        }
+
+        .services-content {
+            background: #FFFFFF;
+            border: 1px solid #E7E7E7;
+            box-shadow: 0px 9px 39px rgba(0, 0, 0, 0.07);
+            border-radius: 15px;
+            text-align: center;
+            margin: 0 30px 30px;
+            margin-top: -50px;
+            position: relative;
+            z-index: 3;
+
+            @include breakpoint(lg) {
+                margin: 0 20px 20px;
+                margin-top: -50px;
+            }
+
+            @include breakpoint(sm) {
+                margin: 0 18px 18px;
+                margin-top: -50px;
+            }
+
+            .services-icon {
+                width: 95px;
+                height: 95px;
+                background: #FFFFFF;
+                box-shadow: 0px 4px 44px rgba(0, 0, 0, 0.1);
+                border-radius: 500px;
+                margin: auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-top: -48px;
+                @include transition(all 0.3s ease-in-out);
+            }
+
+            .services-title {
+                font-size: 24px;
+                font-weight: 600;
+                color: #191F29;
+                margin-bottom: 10px;
+                margin-top: 22px;
+
+                @include breakpoint(sm) {
+                    font-size: 20px;
+                }
+            }
+
+            .services-dec {
+                line-height: 26px;
+                margin-bottom: 0;
+                padding: 0px 10px;
+            }
+
+            .services-btn {
+                border-top: 1px solid #E7E7E7;
+                padding: 13px 0;
+                margin-top: 24px;
+
+                a {
+                    font-size: 16px;
+                    color: #191F29;
+                    font-weight: 600;
+                    display: inline-block;
+
+                    &:hover {
+                        color: #1E6EE7;
+                    }
+                }
+            }
+        }
+
+
+    }
+}

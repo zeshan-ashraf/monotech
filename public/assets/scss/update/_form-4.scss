@@ -1,0 +1,146 @@
+@use '../utilities' as *;
+
+.appointment-form-4 {
+    background: #EBF3FF;
+    border-radius: 15px;
+    margin: 0 120px;
+    margin-bottom: 30px;
+    margin-top: 30px;
+    position: relative;
+    overflow: hidden;
+
+    @include breakpoint(xl) {
+        margin: 0 50px;
+        margin-bottom: 30px;
+    }
+
+    @include breakpoint(lg) {
+        margin: 0 0px;
+        margin-bottom: 30px;
+    }
+
+    .appointment-form-wrapper {
+        max-width: 530.26px;
+        background: #FFFFFF;
+        border-radius: 15px;
+        overflow: hidden;
+        margin: 80px 0;
+        margin-left: 50px;
+        position: relative;
+        z-index: 2;
+
+        @include breakpoint(lg) {
+            max-width: inherit;
+        }
+
+        @include breakpoint(md) {
+            margin: 70px 0;
+            margin-left: 0px;
+        }
+
+        .form-title {
+            font-size: 30px;
+            font-weight: 600;
+            color: #fff;
+            background: #1E6EE7;
+            padding: 22px 0;
+            margin: 0;
+            padding-left: 40px;
+
+            @include breakpoint(xs) {
+                font-size: 22px;
+                padding-left: 25px;
+            }
+        }
+
+        .appointment-form {
+            padding: 40px;
+
+            .bz-primary-btn {
+                padding: 16.5px 31.5px;
+            }
+
+            @include breakpoint(xs) {
+                padding: 25px;
+            }
+
+            form {
+                input {
+                    min-height: 50px;
+                    width: 100%;
+                    border: 1px solid #EAEAEA;
+                    border-radius: 10px;
+                    margin-bottom: 15px;
+                    padding: 0 25px;
+
+                    &::placeholder {
+                        color: #74787C;
+                        font-size: 16px;
+                        font-weight: 400;
+                        font-family: var(--bz-ff-body);
+                    }
+                }
+
+                textarea {
+                    min-height: 100px;
+                    width: 100%;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                    padding: 0 25px;
+                    padding-top: 12px;
+                    border: 1px solid #EAEAEA;
+
+                    &::placeholder {
+                        color: #74787C;
+                        font-size: 16px;
+                        font-weight: 400;
+                        font-family: var(--bz-ff-body);
+                    }
+
+                    &:focus-visible {
+                        outline: none;
+                    }
+                }
+            }
+        }
+    }
+
+    .appointment-form-thumb-wrapper {
+        position: relative;
+        height: 100%;
+    }
+
+    .appointment-form-thumb {
+        position: absolute;
+        bottom: 0;
+        left: 40px;
+
+        @include breakpoint(lg) {
+            left: 0;
+        }
+
+        @include breakpoint(sm) {
+            position: inherit;
+        }
+    }
+
+    .appointment-form-bg-shape {
+        position: absolute;
+
+        &.appointment-form-bg-shape-1 {
+            right: -190px;
+            bottom: -23px;
+        }
+
+        &.appointment-form-bg-shape-2 {
+            top: 197px;
+            left: 697px;
+        }
+
+        &.appointment-form-bg-shape-3 {
+            left: 0;
+            bottom: -60px;
+        }
+    }
+
+}

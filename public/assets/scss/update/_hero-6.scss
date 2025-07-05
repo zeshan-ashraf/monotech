@@ -1,0 +1,135 @@
+@use '../utilities' as *;
+
+.hero-section-6 {
+    z-index: 2;
+    overflow: hidden;
+    background-size: cover;
+    background-repeat: no-repeat;
+    position: relative;
+
+    @include breakpoint(sm) {
+       margin-top: 0;
+    }
+
+    &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(5, 10, 18, 0.55);
+    }
+
+    &::after {
+        content: "";
+        top: 280px;
+        width: 507px;
+        right: 589px;
+        height: 507px;
+        position: absolute;
+        border-radius: 500px;
+        background: #1E6EE7;
+        mix-blend-mode: multiply;
+
+        @include breakpoint(xl) {
+            right: 270px;
+            top: 310px;
+        }
+        @include breakpoint(lg) {
+            left: -130px;
+            top: 280px;
+        }
+        @include breakpoint(md) {
+            left: -130px;
+            top: 165px;
+        }
+        @include breakpoint(sm) {
+            left: -130px;
+            top: 70px;
+            height: 400px;
+            width: 400px;
+        }
+        @include breakpoint(sm) {
+            left: -130px;
+            top: 130px;
+            height: 400px;
+            width: 400px;
+        }
+    }
+    
+}
+
+.hero-content-6{
+    z-index: 9;
+    padding: 350px 0 200px;
+    position: relative;
+    margin-left: 675px;
+    max-width: 585px;
+    @include breakpoint(lg){
+        margin-left: 0;
+    }
+    @include breakpoint(md){
+        padding: 250px 0 100px;
+    }
+    @include breakpoint(sm){
+        padding: 130px 0 80px;
+    }
+
+    .section-heading {
+
+        .sub-heading {
+            color: var(--bz-color-theme-primary);
+
+            .left-shape {
+                background-color: var(--bz-color-theme-primary);
+
+                &::after {
+                    background-color: var(--bz-color-theme-primary);
+                }
+            }
+        }
+
+        .section-title {
+            font-size: 54px;
+            font-weight: 700;
+            line-height: 64px;
+            margin-bottom: 30px;
+
+            @include breakpoint(md){
+                font-size: 40px;
+                line-height: 50px;
+            }
+            @include breakpoint(sm){
+                font-size: 32px;
+                line-height: 40px;
+            }
+        }
+    }
+    .hero-btn-wrap{
+        gap: 15px;
+        display: flex;
+        flex-wrap: wrap;
+
+        .bz-primary-btn{
+            padding: 20px 31px;
+            border-radius: 7px;
+            text-transform: uppercase;
+            &:before{
+                background-color: var(--bz-color-heading-primary);
+            }
+            
+            &.hero-btn {
+                background-color: var(--bz-color-common-white);
+                color: var(--bz-color-heading-primary);
+                
+                &:before{
+                    background-color: var(--bz-color-theme-primary);
+                }
+                &:hover {
+                    color: var(--bz-color-common-white);
+                }
+            }
+        }
+    }
+}

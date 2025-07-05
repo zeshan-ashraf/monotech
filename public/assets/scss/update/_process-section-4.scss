@@ -1,0 +1,95 @@
+@use '../utilities' as *;
+
+.process-section-4-wrapper {
+    margin: 0px 120px;
+    background-color: var(--bz-color-heading-primary);
+    border-radius: 15px;
+
+    @include breakpoint(xl){
+        margin: 0px 50px;
+    }
+    @include breakpoint(lg){
+        margin: 0;
+    }
+
+    .mb-minus-30 {
+        margin-bottom: -50px;
+    }
+}
+.process-card-4{
+    position: relative;
+    margin-bottom: 50px;    
+
+    .arrow{
+        position: absolute;
+        top: 90px;
+        right: -20%;
+        @include breakpoint(lg){
+            right: -27%;
+        }
+        @include breakpoint(sm){
+            display: none;
+        }
+    }
+    .icon{
+        background-color: var(--bz-color-common-white);
+        position: relative;
+        height: 150px;
+        width: 150px;
+        border-radius: 50%;
+        @include flex-center;
+        margin: 0 auto;
+        .number{
+            background-color: var(--bz-color-theme-primary);
+            font-family: var(--bz-ff-heading);
+            color: var(--bz-color-common-white);
+            font-size: 16px;
+            font-weight: 700;
+            height: 40px;
+            width: 40px;
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+            right: 0;
+            @include flex-center;
+        }
+    }
+    .content{
+        margin-top: 30px;
+
+        @include breakpoint(xs){
+            margin-top: 20px;
+        }
+        .title{
+            color: var(--bz-color-common-white);
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        p{
+            max-width: 269px;
+            width: 100%;
+            margin: 0 auto;
+            margin-bottom: 15px;
+        }
+
+        a {
+            font-weight: 700;
+            color: var(--bz-color-common-white);
+
+            i {
+                margin-left: 3px;
+            }
+            &:hover {
+                color: var(--bz-color-theme-primary);
+            }
+        }
+    }
+    &.card-2{
+        .arrow{
+            @include breakpoint(md){
+                display: none;
+            }
+        }
+    }
+}

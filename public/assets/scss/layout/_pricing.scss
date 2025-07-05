@@ -1,0 +1,96 @@
+@use "../utilities" as *;
+
+/**----------------------------------------
+    START: Pricing CSS
+----------------------------------------*/
+
+.pricing-item{
+    background-color: var(--bz-color-grey-4);
+    padding: 40px;
+    border-radius: 15px;
+    overflow: hidden;
+    @include transition(all 0.3s ease-in-out);
+    @include breakpoint(sm){
+        padding: 30px 20px;
+    }
+    .icon{
+        background-color: var(--bz-color-common-white);
+        height: 70px;
+        width: 70px;
+        @include flex-center;
+        border-radius: 50%;
+        margin-bottom: 20px;
+        @include transition(all 0.3s ease-in-out);
+    }
+    .title{
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    p{
+        font-size: 15px;
+        margin-bottom: 0;
+        line-height: 1;
+        margin-bottom: 30px;
+    }
+    .price{
+        color: var(--bz-color-theme-primary);
+        margin-bottom: 0;
+        line-height: 1;
+        span{
+            font-family: var(--bz-ff-body);
+            color: var(--bz-color-text-body);
+            font-size: 15px;
+            font-weight: 400;
+        }
+    }
+    .pricing-list{
+        border-top: 1px solid var(--bz-color-border-1);
+        margin-top: 20px;
+        padding-top: 20px;
+        padding-left: 20px;
+        margin-bottom: 30px;
+        li{
+            font-family: var(--bz-ff-body);
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1;
+            &:not(:last-of-type){
+                margin-bottom: 15px;
+            }
+        }
+    }
+    .pricing-btn{
+        width: 100%;
+        justify-content: center;
+    }
+    &.active{
+        background-color: var(--bz-color-common-white);
+        box-shadow: 0px 11px 44px rgba(12, 21, 38, 0.09);
+        position: relative;
+        .icon{
+            background-color: var(--bz-color-grey-1);
+        }
+        .active-text{
+            background-color: var(--bz-color-theme-primary);
+            color: var(--bz-color-common-white);
+            text-transform: uppercase;
+            font-size: 14px;
+            font-weight: 700;
+            width: 100%;
+            display: block;
+            text-align: center;
+            padding: 7px 10px;
+            position: absolute;
+            top: 40px;
+            right: -145px;
+            transform: rotate(45deg);
+            @include breakpoint(sm){
+                right: -95px;
+            }
+        }
+    }
+}
+
+
+/* !END: Pricing CSS */

@@ -1,0 +1,190 @@
+@use '../utilities' as *;
+
+.about-6 {
+    .about-thumg-6 {
+        text-align: end;
+        margin-right: 50px;
+        position: relative;
+
+        @include breakpoint(md) {
+            margin-right: 0;
+            max-width: 593px;
+        }
+
+        img {
+            border-radius: 15px;
+
+            @include breakpoint(xs) {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+             }
+        }
+
+        .image-2 {
+            position: absolute;
+            bottom: 25px;
+            left: 0;
+            border: 7px solid #fff;
+
+            @include breakpoint(xs) {
+               position: inherit;
+               margin-top: 30px;
+               bottom: inherit;
+               width: 100%;
+               height: 100%;
+               object-fit: cover;
+            }
+        }
+    }
+
+    .about-content {
+        padding-left: 0;
+        margin-left: -15px;
+
+        @include breakpoint(md) {
+            margin-left: 0;
+        }
+
+        .section-heading {
+            .sub-heading {
+                margin-bottom: 15px;
+            }
+        }
+
+        p {
+            font-size: 16px;
+            font-weight: 400;
+            color: #74787C;
+            line-height: 26px;
+            margin-top: 30px;
+            margin-bottom: 30px;
+            padding-right: 26px;
+
+            @include breakpoint(lg) {
+                padding-right: 0px;
+            }
+        }
+
+        .about-info-author {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+
+            @include breakpoint(lg) {
+                gap: 20px;
+            }
+
+            @include breakpoint(xs) {
+                display: block;
+            }
+
+            .about-call {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                padding-right: 40px;
+                border-right: 1px solid #E2E4E8;
+
+                @include breakpoint(lg) {
+                    gap: 15px;
+                    padding-right: 20px;
+                }
+
+                @include breakpoint(xs) {
+                    border: none;
+                    padding-right: 0;
+                    margin-bottom: 15px;
+                }
+
+                .about-call-icon {
+                    width: 60px;
+                    height: 60px;
+                    background: #FFFFFF;
+                    border: 1px solid #E2E4E8;
+                    box-shadow: 0px 12px 29px rgba(21, 29, 40, 0.08);
+                    color: #1E6EE7;
+                    font-size: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 100px;
+                }
+
+                .about-call-info {
+                    span {
+                        font-size: 14px;
+                        color: #191F29;
+                        text-transform: uppercase;
+                        font-weight: 500;
+                        display: block;
+                        line-height: 1;
+                        margin-bottom: 10px;
+                        font-family: var(--bz-ff-heading);
+                    }
+
+                    a {
+                        font-size: 24px;
+                        color: #1E6EE7;
+                        font-weight: 600;
+                        line-height: 1;
+                        font-family: var(--bz-ff-heading);
+
+                        @include breakpoint(lg) {
+                            font-size: 22px;
+                        }
+                    }
+                }
+            }
+
+            .about-author-wrapper {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+
+                @include breakpoint(lg) {
+                    gap: 15px;
+                }
+
+                .about-thumb {
+                    img {
+                        border-radius: 100px;
+                    }
+                }
+
+                .position {
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #8B919C;
+                    line-height: 1;
+                    text-transform: uppercase;
+                    font-family: var(--bz-ff-heading);
+                }
+
+                .name {
+                    font-size: 24px;
+                    font-weight: 600;
+                    color: #191F29;
+                    line-height: 1;
+                    margin-bottom: 0;
+
+                    @include breakpoint(lg) {
+                        font-size: 22px;
+                    }
+                }
+            }
+        }
+
+        .about-btn-6 {
+            margin-top: 50px;
+
+            @include breakpoint(xs) {
+                margin-top: 35px;
+            }
+
+            .bz-primary-btn {
+                padding: 19.5px 33.4px;
+            }
+        }
+    }
+}

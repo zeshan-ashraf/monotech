@@ -1,0 +1,108 @@
+@use '../utilities' as *;
+
+.header-7 {
+    top: 30px;
+
+    @include breakpoint(sm){
+        top: 0;
+    }
+
+    .top-bar  {
+        &.top-bar-7 {
+            border-radius: 10px 10px 0px 0px;
+            background-color: var(--bz-color-common-white);
+            padding: 0px 30px;
+            border-bottom: 1px solid rgba(240, 233, 233, 1);
+            position: relative;
+
+            &::before {
+                content: "";
+                border-radius: 0px 0px 30px 30px;
+                background: var(--bz-color-theme-primary);
+                width: 930px;
+                height: 5px;
+                position: absolute;
+                top: 0;
+                left: 50%;
+                transform: translate(-50%, 0px);
+
+                @include breakpoint(md){
+                    width: 600px;
+                }
+            }
+
+            .top-bar-left {
+                span {
+                    font-weight: 500;
+                    color: var(--bz-color-heading-primary);
+                }
+            }
+
+            .top-bar-right {
+                span {
+                    font-weight: 500;
+                    color: var(--bz-color-heading-primary);
+                }
+                .social-list {
+                    
+                    li {
+                        color: var(--bz-color-heading-primary);
+                    }
+                }
+            }
+        }
+    }
+
+    .primary-header {
+        .primary-header-inner {
+            border-radius: 0px 0px 10px 10px;
+
+            .header-menu-wrap{
+                ul{
+                    li{
+                        a{
+                            padding: 42px 0;
+                        }
+
+                        ul {
+                            top: 110px;
+
+                            li  {
+                                a {
+                                    padding: 17px 0;
+                                    padding-left: 30px;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            .header-right-wrap{
+                .header-right{
+                    .bz-primary-btn {
+                        @include breakpoint(sm) {
+                            display: none;
+                        }
+                        border-radius: 100px;
+                        padding: 17px 31px;
+                    }
+                    .sidebar-icon{
+                        width: 50px;
+                        height: 50px;
+                        margin-left: 10px;
+                        background-color: rgba(14, 89, 242, 0.1);
+                        .sidebar-trigger{
+                            gap: 3px;
+                            span{
+                                background-color: var(--bz-color-theme-primary);
+                                width: 14px;
+                                height: 2px;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

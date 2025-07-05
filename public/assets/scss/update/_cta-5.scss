@@ -1,0 +1,71 @@
+@use '../utilities' as *;
+
+.cta-5 {
+    background: rgb(22 25 33 / 75%);
+    padding: 111px 0;
+
+    @include breakpoint(md) {
+        padding: 70px 0;
+    }
+    @include breakpoint(sm) {
+        padding: 60px 0;
+    }
+
+    .cta-content-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        @include breakpoint(md) {
+            display: block;
+        }
+
+        .section-heading-4 {
+            margin-bottom: 0;
+
+            @include breakpoint(md) {
+                margin-bottom: 20px;
+            }
+
+            .section-title {
+                @include breakpoint(lg) {
+                    br {
+                        display: none !important;
+                    }
+                }
+
+            }
+        }
+
+        .cta-btn-wrap {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+
+            .bz-primary-btn {
+                padding: 19.5px 38.7px;
+                border-radius: 100px;
+            }
+
+            .video-btn a {
+                background-color: transparent;
+                color: var(--bz-color-common-white);
+                height: 55px;
+                width: 55px;
+                border-radius: 100px;
+                border: 2px solid var(--bz-color-common-white);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                z-index: 2;
+
+                &:hover {
+                    color: rgb(22 25 33);
+                    background-color: var(--bz-color-common-white);
+                }
+            }
+        }
+    }
+
+}

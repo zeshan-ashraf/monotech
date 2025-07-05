@@ -1,0 +1,104 @@
+@use '../utilities' as *;
+
+.counter-6 {
+    background: #171717;
+    padding: 106px 0;
+    position: relative;
+
+    @include breakpoint(md) {
+        padding: 70px 0;
+    }
+    @include breakpoint(sm) {
+        padding: 60px 0;
+    }
+
+    .left-shape {
+        position: absolute;
+        left: 0;
+        top: 0;
+
+        @include breakpoint(lg) {
+           display: none;
+        }
+    }
+    .right-shape {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+    }
+
+    .counter-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        @include breakpoint(lg) {
+            display: block;
+            column-count: 2;
+        }
+
+        @include breakpoint(sm) {
+            column-count: 1;
+        }
+
+        .counter-item {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+
+            @include breakpoint(lg) {
+                max-width: 300px;
+                margin: 0 auto;
+                margin-bottom: 30px;
+            }
+
+            @include breakpoint(sm) {
+                margin: 0 auto;
+                margin-bottom: 30px;
+                max-width: 300px;
+            }
+
+            @include breakpoint(xs) {
+                gap: 18px;
+            }
+
+            .counter-icon {
+                width: 90px;
+                height: 90px;
+                background: #1E6EE7;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 100px;
+            }
+
+            .counter-count {
+                h2 {
+                    font-size: 48px;
+                    color: #fff;
+                    font-weight: 600;
+                    margin-bottom: 0;
+                    line-height: 1;
+                    font-family: var(--bz-ff-heading);
+
+                    @include breakpoint(xs) {
+                        font-size: 35px;
+                    }
+
+                    span {
+                        line-height: 1 !important;
+                        font-family: var(--bz-ff-heading) !important;
+                    }
+                }
+
+                >span {
+                    font-size: 16px;
+                    color: #fff;
+                    text-transform: uppercase;
+                    font-weight: 600;
+                    font-family: var(--bz-ff-heading);
+                }
+            }
+        }
+    }
+}

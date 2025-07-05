@@ -1,0 +1,141 @@
+@use '../utilities' as *;
+
+.project-5 {
+    overflow: hidden;
+    .view-more {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        
+        i {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: transparent;
+            border: 1px solid var(--bz-color-text-body);
+            border-radius: 500px;
+            @include transition(all 0.3s ease-in-out);
+            color:  var(--bz-color-text-body);
+        }
+        
+        &:hover {
+            
+            i {
+                color: var(--bz-color-common-white);
+                background-color: var(--bz-color-theme-primary);
+                border-color: transparent;
+            }
+        }
+    }
+
+    .project-5-wrapper {
+        overflow: hidden;
+        margin-left: auto;
+        margin-right: auto;
+        margin: 0px -350px;
+
+        @include breakpoint(lg) {
+            margin: 0 -150px;
+        }
+
+        .project-5__item {
+            width: 100%;
+            height: 100%;
+            .project-thumb {
+                height: 500px;
+                border-radius: 20px;
+                position: relative;
+                overflow: hidden;
+
+                @include breakpoint(xs) {
+                    height: 300px;
+                }
+
+                a {
+                    left: 0;
+                    right: 0;
+                    top: 0;
+                    bottom: 0;
+                    margin: auto;
+                    width: 130px;
+                    height: 130px;
+                    display: flex;
+                    font-size: 30px;
+                    position: absolute;
+                    align-items: center;
+                    opacity: 0;
+                    border-radius: 500px;
+                    transform: scaleX(1.7);
+                    justify-content: center;
+                    color: var(--bz-color-theme-primary);
+                    background: var(--bz-color-common-white);
+                    @include transition(all 0.3s ease-in-out);
+                }
+                
+                &::before {
+                    bottom: 0;
+                    left: 0;
+                    opacity: 0;
+                    content: "";
+                    width: 100%;
+                    height: 100%;
+                    position: absolute;
+                    mix-blend-mode: multiply;
+                    background-color:  var(--bz-color-theme-primary);
+                    transition:all 300ms linear;
+                }
+
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+            }
+        }
+        .swiper-slide {
+          display:flex;
+          align-items: center;
+          justify-content:center;
+          transition:all 300ms linear;
+          transform: scaleX(0.59);
+          
+          &.swiper-slide-active{
+            transform: scaleX(1.23);
+
+            
+            @include breakpoint(md) {
+                transform: scaleX(0.6);
+            }
+            @include breakpoint(sm) {
+                transform: scaleX(0.6);
+            }
+            @include breakpoint(xs) {
+                transform: scaleX(0.5);
+            }
+            
+            a {
+                transform: scaleX(0.8);
+                opacity: 1;
+                @include breakpoint(md) {
+                    transform: scaleX(1.6);
+                }
+
+                @include breakpoint(xs) {
+                    width: 100px;
+                    height: 100px;
+                    transform: scaleX(1.9);
+                }
+            }
+            
+            .project-thumb {
+                &::before {
+                    opacity: 1;
+                }
+            }
+
+          }
+        }
+    }
+}

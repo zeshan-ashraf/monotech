@@ -1,0 +1,369 @@
+@use "../utilities" as *;
+
+/**----------------------------------------
+    START: Page Header CSS
+----------------------------------------*/
+
+.project-section{
+    position: relative;
+    z-index: 1;
+    .bg-shape{
+        @include background;
+        background-size: contain;
+        background-position: top center;
+        max-width: 1680px;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: -1;
+        @include breakpoint(lg){
+            background-size: cover;
+            height: 50%;
+        }
+    }
+}
+
+.project-top{
+    .swiper-arrow{
+        @include flex-vertical-center;
+        column-gap: 15px;
+        .swiper-nav{
+            background-color: var(--bz-color-common-white);
+            color: var(--bz-color-heading-primary);
+            height: 55px;
+            width: 55px;
+            @include flex-center;
+            border-radius: 7px;
+            opacity: 1;
+            @include transition(all 0.3s ease-in-out);
+            &:hover{
+                background-color: var(--bz-color-theme-primary);
+                color: var(--bz-color-common-white);
+            }
+        }
+    }
+}
+
+.project-item{
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    .project-img{
+        height: 580px;
+        position: relative;
+        border-radius: 15px;
+        overflow: hidden;
+        @include breakpoint(md){
+            height: 450px;
+        }
+        .overlay{
+            background: linear-gradient(180deg, rgba(30, 110, 231, 0) 0%, rgba(2, 37, 89, 0.94) 49.31%);
+            mix-blend-mode: normal;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 30px;
+            left: 0;
+            z-index: 1;
+            border-radius: 15px;
+            visibility: hidden;
+            opacity: 0;
+            @include transition(all 0.3s ease-in-out);
+        }
+        .overlay-2{
+            background: #1E6EE7;
+            mix-blend-mode: multiply;
+            opacity: 0.67;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            border-radius: 15px;
+            visibility: hidden;
+            opacity: 0;
+            @include transition(all 0.3s ease-in-out);
+        }
+        img{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: saturate(1) contrast(1);
+            @include transition(all 0.3s ease-in-out);
+            border-radius: 15px;
+        }
+    }
+    .project-content{
+        position: absolute;
+        bottom: 30px;
+        left: 50px;
+        right: 60px;
+        z-index: 2;
+        @include transition(all 0.4s ease-in-out);
+        visibility: hidden;
+        opacity: 0;
+        @include breakpoint(md){
+            left: 30px;
+            right: 30px;
+        }
+        .title{
+            font-size: 30px;
+            color: var(--bz-color-common-white);
+            font-weight: 600;
+            @include breakpoint(sm){
+                font-size: 22px;
+            }
+            a{
+                &:hover{
+                    color: var(--bz-color-common-white);
+                }
+            }
+        }
+        span{
+            color: var(--bz-color-common-white);
+            font-size: 16px;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 30px;
+            @include breakpoint(sm){
+                margin-bottom: 20px;
+            }
+        }
+        p{
+            color: var(--bz-color-common-white);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+    }
+    &:hover{
+        .project-img{
+            img{
+                filter: saturate(0) contrast(110%);
+            }
+            .overlay{
+                visibility: visible;
+                opacity: 1;
+                top: 100px;
+            }
+            .overlay-2{
+                visibility: visible;
+                opacity: 0.7;
+            }
+        }
+        .project-content{
+            bottom: 50px;
+            visibility: visible;
+            opacity: 1;
+        }
+    }
+}
+
+// Project Inner
+
+.project-item-2{
+    position: relative;
+    z-index: 1;
+    border-radius: 15px;
+    overflow: hidden;
+    height: 435px;
+    .project-img{
+        height: 100%;
+        img{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+    .overlay{
+        background-color: var(--bz-color-theme-primary);
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        visibility: hidden;
+        opacity: 0;
+        @include transition(all 0.3s ease-in-out);
+    }
+    .shape{
+        position: absolute;
+        top: -20px;
+        right: -20px;
+        z-index: 1;
+        height: 100%;
+        visibility: hidden;
+        opacity: 0;
+        @include transition(all 0.4s ease-in-out);
+        img{
+            height: 100%;
+        }
+    }
+    .project-btn{
+        a{
+            background-color: var(--bz-color-common-white);
+            height: 55px;
+            width: 55px;
+            @include flex-center;
+            border-radius: 10px;
+            color: var(--bz-color-theme-primary);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            @include transition(all 0.3s ease-in-out);
+            z-index: 2;
+        }
+    }
+    .project-content{
+        position: absolute;
+        bottom: 20px;
+        left: 30px;
+        z-index: 1;
+        visibility: hidden;
+        opacity: 0;
+        @include transition(all 0.4s ease-in-out);
+        span{
+            font-family: var(--bz-ff-heading);
+            display: block;
+            color: var(--bz-color-common-white);
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        .title{
+            color: var(--bz-color-common-white);
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 0;
+            a{
+                &:hover{
+                    color: var(--bz-color-common-white);
+                }
+            }
+        }
+    }
+    &:hover{
+        .overlay{
+            visibility: visible;
+            opacity: 1;
+        }
+        .shape{
+            top: 0;
+            right: 0;
+            visibility: visible;
+            opacity: 1;
+        }
+        .project-btn{
+            a{
+                transform: translate(-50%, -50%) scale(1); 
+            }
+        }
+        .project-content{
+            bottom: 30px;
+            visibility: visible;
+            opacity: 1;
+        }
+    }
+}
+
+
+// Project Details
+
+.project-details-wrap{
+    .project-details-thumb{
+        position: relative;
+        margin-bottom: 40px;
+        @include breakpoint(sm){
+            margin-bottom: 200px;
+        }
+        img{
+            width: 100%;
+            height: 550px;
+            object-fit: cover;
+        }
+        .details-list-wrap{
+            background-color: #EFF1F5;
+            position: absolute;
+            right: 50px;
+            bottom: -180px;
+            padding: 40px;
+            border-radius: 15px;
+            @include breakpoint(md){
+                right: 25px;
+                bottom: -20px;
+            }
+            @include breakpoint(sm){
+                right: 0;
+                bottom: -180px;
+                padding: 30px 20px;
+            }
+            .list-title{
+                font-size: 24px;
+                font-weight: 600;
+                margin-bottom: 20px;
+            }
+            .details-list{
+                li{
+                    display: grid;
+                    align-items: center;
+                    grid-template-columns: 50px 1fr;
+                    grid-gap: 15px;
+                    &:not(:last-of-type){
+                        margin-bottom: 25px;
+                        padding-bottom: 25px;
+                        border-bottom: 1px solid #DADFEC;
+                    }
+                    .icon{
+                        background-color: var(--bz-color-common-white);
+                        color: var(--bz-color-theme-primary);
+                        height: 50px;
+                        width: 50px;
+                        @include flex-center;
+                        border-radius: 50%;
+                    }
+                    .content{
+                        span{
+                            font-family: var(--bz-ff-heading);
+                            font-size: 14px;
+                            font-weight: 400;
+                            display: block;
+                            margin-bottom: 5px;
+                        }
+                        .title{
+                            color: var(--bz-color-heading-primary);
+                            font-size: 18px;
+                            font-weight: 600;
+                            margin-bottom: 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    .details-title{
+        font-size: 30px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        @include breakpoint(sm){
+            font-size: 24px;
+        }
+    }
+    .desc{
+        max-width: 730px;
+        width: 100%;
+        @include breakpoint(lg){
+            max-width: 550px;
+        }
+    }
+    .project-details-img{
+        border-radius: 15px;
+    }
+}
+
+
+/* !END: Page Header CSS */

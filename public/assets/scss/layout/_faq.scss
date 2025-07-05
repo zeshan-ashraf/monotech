@@ -1,0 +1,152 @@
+@use "../utilities" as *;
+
+/**----------------------------------------
+    START: Faq CSS
+----------------------------------------*/
+.faq-content{
+    padding-right: 20px;
+    @include breakpoint(md){
+        padding-right: 0;
+    }
+}
+
+.faq-img{
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+    margin-left: 20px;
+    @include breakpoint(md){
+        padding-left: 0;
+        margin: 0 auto;
+        margin-top: 30px;
+    }
+    img{
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.faq-accordion{
+    .accordion-item{
+        background-color: var(--bz-color-grey-1);
+        border: none;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        .accordion-button{
+            color: var(--bz-color-heading-primary);
+            font-size: 20px;
+            font-weight: 500;
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+            &:after{
+                background-color: var(--bz-color-common-white);
+                color: var(--bz-color-theme-primary);
+                height: 30px;
+                width: 30px;
+                background-image: none;
+                font-family: "Font Awesome 6 Pro";
+                font-size: 14px;
+                font-weight: 700;
+                content: "\2b";
+                @include flex-center;
+            }
+            &:not(.collapsed){
+                background-color: transparent;
+                &:after{
+                    content: "\f068";
+                    transform: rotate(0);
+                }
+            }
+        }
+        .accordion-body{
+            padding-top: 0;
+            color: var(--bz-color-text-body);
+            font-weight: 400;
+        }
+    }
+}
+
+.faq-accordion .accordion-item .accordion-collapse{
+    @include transition(all 0.3s ease-in-out);
+    border-bottom: 4px solid transparent;
+}
+
+.faq-accordion .accordion-item .accordion-collapse.collapse.show{
+    border-bottom: 4px solid var(--bz-color-theme-primary);
+}
+
+.faq-widget{
+    background-color: var(--bz-color-grey-4);
+    padding: 40px;
+    border-radius: 10px;
+    @include breakpoint(sm){
+        padding: 30px 20px;
+    }
+    .search-box{
+        position: relative;
+        .form-control{
+            background-color: var(--bz-color-common-white);
+            padding: 14.5px 50px 14.5px 20px;
+            border-radius: 0;
+            box-shadow: none;
+            border: 1px solid #0A0D13;
+            color: var(--bz-color-heading-primary);
+            font-size: 16px;
+            font-weight: 400;
+            border: 1px solid var(--bz-color-border-1);
+            @include tp-placeholder{
+                color: var(--bz-color-heading-primary);
+                font-size: 16px;
+                font-weight: 400;
+            }
+        }
+        .search-btn{
+            background-color: var(--bz-color-theme-primary);
+            color: var(--bz-color-common-white);
+            font-size: 16px;
+            width: 55px;
+            height: 55px;
+            @include flex-center;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+    }
+}
+
+.faq-sponsor{
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    img{
+        filter: grayscale(1);
+    }
+    .sponsor-text{
+        color: var(--bz-color-common-white);
+        font-size: 18px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0;
+        position: absolute;
+        top: 30px;
+        left: 30px;
+    }
+    .sponsor-text-2{
+        background-color: var(--bz-color-theme-primary);
+        color: var(--bz-color-common-white);
+        font-size: 18px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0;
+        padding: 20px 30px;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        border-radius: 20px 0 0 0;
+    }
+}
+
+
+/* !END: Faq CSS */

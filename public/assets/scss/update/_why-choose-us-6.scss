@@ -1,0 +1,153 @@
+@use '../utilities' as *;
+
+.why-choose-us-6 {
+    background: #161921;
+    position: relative;
+    padding: 118px 0;
+
+    @include breakpoint(lg) {
+        padding: 100px 0;
+    }
+
+    @include breakpoint(md) {
+        padding: 70px 0;
+        padding-top: 0;
+    }
+
+    @include breakpoint(sm) {
+        padding: 60px 0;
+        padding-top: 0;
+    }
+
+    .why-choose-us-bg-thumb {
+        width: 45.8%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-position: center;
+            background-size: cover;
+        }
+
+        @include breakpoint(lg) {
+            width: 48%;
+        }
+
+        @include breakpoint(md) {
+            width: 100%;
+            position: inherit;
+            margin-bottom: 30px;
+        }
+    }
+
+    .why-choose-us-video {
+        position: absolute;
+        left: 376px;
+        top: 50%;
+        transform: translateY(-50%);
+
+        @include breakpoint(xl) {
+            left: 230px;
+        }
+
+        @include breakpoint(md) {
+            left: 50%;
+            top: 23%;
+            transform: translate(-50%);
+        }
+
+        @include breakpoint(sm) {
+            top: 15%;
+        }
+
+        @include breakpoint(xs) {
+            top: 8%;
+        }
+
+        .video-btn-6 {
+            width: 120px;
+            height: 120px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1E6EE7;
+            font-size: 24px;
+            border-radius: 100px;
+
+            @include breakpoint(xs) {
+                width: 70px;
+                height: 70px;
+            }
+        }
+    }
+
+    .why-choose-us-content-wrapper {
+        margin-left: 15px;
+
+        @include breakpoint(xl) {
+            margin-left: 0;
+        }
+
+        .why-choose-us-list {
+            display: flex;
+            align-items: start;
+            gap: 30px;
+            margin-bottom: 40px;
+
+            @include breakpoint(xs) {
+                display: block;
+            }
+
+            &:last-of-type {
+                margin-bottom: 0;
+            }
+
+            span {
+                min-width: 80px;
+                height: 80px;
+                background: #272A35;
+                font-size: 30px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #1E6EE7;
+                border-radius: 100px;
+                transition: 0.3s ease-in-out;
+
+                @include breakpoint(sm) {
+                    max-width: 80px;
+                    margin-bottom: 15px;
+                }
+
+                &:hover {
+                    background: #fff;
+                }
+            }
+
+            .why-choose-us-list-text {
+                p {
+                    font-size: 16px;
+                    font-weight: 400;
+                    color: #808695;
+                    line-height: 28px;
+                    margin-bottom: 0;
+                }
+
+                .title {
+                    font-size: 22px;
+                    color: #fff;
+                    margin-bottom: 15px;
+                    font-weight: 600;
+                }
+            }
+        }
+    }
+
+}

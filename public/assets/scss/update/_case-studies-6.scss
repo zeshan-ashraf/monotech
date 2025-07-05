@@ -1,0 +1,183 @@
+@use '../utilities' as *;
+
+.case-studies-6 {
+    .case-studies-top {
+        position: relative;
+        padding-top: 120px;
+
+        @include breakpoint(md) {
+            padding-top: 70px;
+        }
+
+        @include breakpoint(sm) {
+            padding-top: 60px;
+        }
+
+        .case-studies-bg-shape {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 574px;
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+
+        .case-studies-top-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            gap: 30px;
+
+            @include breakpoint(sm) {
+                display: block;
+                margin-bottom: 30px;
+            }
+
+            .section-heading {
+                @include breakpoint(sm) {
+                    margin-bottom: 20px;
+                }
+            }
+
+            .bz-primary-btn {
+                padding: 19.5px 41.3px;
+                border-radius: 100px;
+                text-transform: capitalize;
+            }
+        }
+    }
+
+
+}
+
+.case-studies-bottom-wrapper {
+    margin: 0 120px;
+
+    @include breakpoint(xl) {
+        margin: 0 50px;
+    }
+
+    @include breakpoint(lg) {
+        margin: 0 0px;
+    }
+}
+
+.case-studies-wrapper {
+    position: relative;
+
+    @include breakpoint(md) {
+        margin-bottom: 30px;
+    }
+
+    &:hover {
+        .case-studies-content {
+            opacity: 1;
+            visibility: visible;
+            bottom: 40px;
+
+            @include breakpoint(xl) {
+                bottom: 30px;
+            }
+
+            @include breakpoint(lg) {
+                bottom: 20px;
+            }
+        }
+
+        .case-studies-thumb a {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+}
+
+.case-studies-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #191F29;
+    margin-bottom: 0;
+
+    @include breakpoint(xl) {
+        font-size: 20px;
+    }
+
+    @include breakpoint(sm) {
+        font-size: 18px;
+    }
+}
+
+.case-studies-content {
+    position: absolute;
+    right: 40px;
+    left: 40px;
+    bottom: 0px;
+    background: #fff;
+    padding: 30px;
+    border-radius: 5px;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s ease-in-out;
+
+    @include breakpoint(xl) {
+        right: 30px;
+        left: 30px;
+        padding: 25px;
+    }
+
+    @include breakpoint(lg) {
+        right: 20px;
+        left: 20px;
+        padding: 20px;
+    }
+
+    @include breakpoint(sm) {
+        right: 15px;
+        left: 15px;
+        padding: 15px;
+    }
+
+    span {
+        font-size: 16px;
+        font-weight: 400;
+        color: #1E6EE7;
+        font-family: var(--bz-ff-heading);
+    }
+}
+
+.case-studies-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 20px;
+}
+
+.case-studies-thumb a {
+    width: 55px;
+    height: 55px;
+    background: #fff;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100px;
+    color: #1E6EE7;
+    font-size: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.4s ease-in-out;
+
+    @include breakpoint(sm) {
+        width: 45px;
+        height: 45px;
+    }
+}

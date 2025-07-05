@@ -1,0 +1,146 @@
+@use "../utilities" as *;
+
+/**----------------------------------------
+    START: Strength CSS
+----------------------------------------*/
+.strength-section{
+    position: relative;
+    z-index: 1;
+    .bg-img{
+        @include background;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+    .overlay{
+        background: linear-gradient(90deg, rgba(5, 7, 11, 0.92) 0%, #1E2127 100%);
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+    .shapes{
+        .shape{
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        .shape-2{
+            background-color: var(--bz-color-theme-red);
+            height: 95px;
+            width: 88px;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            z-index: -1;
+        }
+    }
+    .strength-mask-img{
+        background-color: var(--bz-color-common-black);
+        mask-image: url(../img/shapes/mask-img.png);
+        mask-repeat: no-repeat;
+        width: 585px;
+        height: 600px;
+        position: absolute;
+        top: 0;
+        right: 88px;
+        z-index: -1;
+        @include breakpoint(lg){
+            display: none;
+        }
+        img{
+            height: 100%;
+            filter: saturate(0) contrast(110%);
+        }
+        .mask-overlay{
+            background-color: var(--bz-color-theme-red);
+            mix-blend-mode: multiply;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    }
+}
+
+.strength-content{
+    p{
+        color: #C8C9CB;
+        max-width: 600px;
+        width: 100%;
+        margin-bottom: 40px;
+    }
+
+    .strength-items{
+        max-width: 560px;
+        width: 100%;
+        @include flex-vertical-center;
+        justify-content: space-between;
+        column-gap: 20px;
+        flex-wrap: wrap;
+        row-gap: 20px;
+        @include breakpoint(md){
+            max-width: 490px;
+        }
+        .strength-item{
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.17);
+            backdrop-filter: blur(6.5px);
+            border-radius: 5px;
+            padding: 25px 40px;
+            @include breakpoint(lg){
+                padding: 25px 30px;
+            }
+            .title{
+                color: var(--bz-color-common-white);
+                font-size: 40px;
+                font-weight: 600;
+                line-height: 1; 
+                margin-bottom: 0;
+                @include flex-vertical-center;
+                .odometer-auto-theme{
+                    font-family: inherit;
+                    line-height: 1;
+                    margin-top: 4px;
+                }
+            }
+            p{
+                font-family: var(--bz-ff-heading);
+                color: var(--bz-color-common-white);
+                text-transform: uppercase;
+                font-size: 14px;
+                margin-bottom: 0;
+            }
+        }
+    }
+}
+
+.strength-man{
+    max-width: 580px;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    @include breakpoint(md){
+        margin: 0 auto;
+    }
+    .men{
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        z-index: -1;
+        @include breakpoint(md){
+            position: inherit;
+            margin: 0 auto;
+        }
+    }
+}
+
+/* !END: Strength CSS */

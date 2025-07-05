@@ -1,0 +1,132 @@
+@use "../utilities" as *;
+
+/**----------------------------------------
+    START: Content CSS
+----------------------------------------*/
+
+.content-wrap{
+    @include background;
+    height: 100%;
+    max-width: 1680px;
+    width: 100%;
+    margin: 0 auto;
+    border-radius: 50px 0 50px 0;
+    padding-right: 120px;
+    padding-left: 120px;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    @include breakpoint(md){
+        padding-left: 60px;
+        padding-right: 60px;
+    }
+    @include breakpoint(sm){
+        padding: 60px 0;
+        border-radius: 0;
+    }
+    .shapes{
+        .shape-1{
+            background-color: var(--bz-color-theme-primary);
+            mix-blend-mode: multiply;
+            height: 1530px;
+            width: 732px;
+            position: absolute;
+            top: -90px;
+            right: -150px;
+            z-index: -1;
+            transform: rotate(40deg);
+        }
+        .shape-2{
+            background-color: var(--bz-color-theme-primary);
+            mix-blend-mode: multiply;
+            height: 1410px;
+            width: 533px;
+            position: absolute;
+            top: 60px;
+            right: -25px;
+            z-index: -1;
+            transform: rotate(40deg);
+        }
+    }
+}
+
+.content-box{
+    max-width: 795px;
+    background-color: var(--bz-color-common-white);
+    padding: 100px;
+    border-radius: 50px 0 50px 0;
+    margin-left: auto;
+    @include breakpoint(md){
+        padding: 60px;
+    }
+    @include breakpoint(sm){
+        padding: 60px 20px;
+        border-radius: 0;
+    }
+}
+
+.content-tab{
+    .nav-tabs{
+        border: none;
+        column-gap: 35px;
+        flex-wrap: wrap;
+        row-gap: 15px;
+        .nav-link{
+            font-family: var(--bz-ff-heading);
+            background-color: var(--bz-color-grey-2);
+            color: var(--bz-color-heading-primary);
+            border-radius: 5px;
+            border: none;
+            text-transform: uppercase;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 12px 30px;
+            &.active{
+                background-color: var(--bz-color-theme-primary);
+                color: var(--bz-color-common-white);
+            }
+        }
+    }
+    .tab-info{
+        margin-top: 30px;
+    }
+}
+
+.tab-progress{
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 30px;
+    &:not(:last-of-type){
+        margin-bottom: 40px;
+    }
+    .title{
+        font-family: var(--bz-ff-body);
+        color: var(--bz-color-heading-primary);
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 15px;
+        margin-bottom: 0;
+    }
+    .progress{
+        height: 8px;
+        overflow: visible;
+        border-radius: 5px;
+        .progress-bar{
+            position: relative;
+            background-color: var(--bz-color-theme-primary);
+            overflow: visible;
+            border-radius: 5px;
+            span{
+                color: var(--bz-color-theme-primary);
+                font-family: var(--bz-ff-body);
+                font-size: 16px;
+                font-weight: 600;
+                position: absolute;
+                bottom: -38px;
+                right: 0;
+            }
+        }
+    }
+}
+
+/* !END: Content CSS */

@@ -1,0 +1,117 @@
+@use '../utilities' as *;
+
+.team-strength{
+    .team-strength-content {
+        position: relative;
+
+        .section-heading {
+            .sub-heading {
+                margin-bottom: 14px;
+            }
+        }
+
+        .team-strength-counter {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+
+            @include breakpoint(xs) {
+                display: block;
+            }
+
+            .team-strength-item {
+                background: rgb(255 255 255 / 04%);
+                border: 1px solid rgb(255 255 255 / 17%);
+                border-radius: 5px;
+                padding: 31px 40px;
+                min-width: 270px;
+
+                @include breakpoint(sm) {
+                    min-width: 260px;
+                }
+
+                @include breakpoint(xs) {
+                    margin-bottom: 15px;
+                    padding: 20px;
+                }
+
+                h2 {
+                    font-size: 40px;
+                    font-weight: 700;
+                    line-height: 1;
+                    margin-bottom: 0;
+                    color: #fff;
+
+                    span {
+                        font-size: 40px;
+                        font-weight: 700;
+                        line-height: 1;
+                        font-family: var(--bz-ff-heading) !important;
+                        color: #fff;
+                    }
+                }
+
+                span {
+                    font-size: 14px;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    font-family: var(--bz-ff-heading);
+                    color: #fff;
+                }
+            }
+        }
+
+        .team-strength-dec {
+            font-size: 16px;
+            font-weight: 400;
+            color: #C8C9CB;
+            line-height: 26px;
+            margin-bottom: 34px;
+            margin-top: 32px;
+        }
+    }
+
+    .team-strength-thumb-wrapper {
+        width: 100%;
+        height: 100%;
+
+        .team-strength-thumb {
+            bottom: 0;
+            left: 0;
+
+            @include breakpoint(lg) {
+                right: -140px;
+                left: auto;
+            }
+
+            @include breakpoint(md) {
+                position: inherit;
+                right: 0;
+            }
+        }
+    }
+
+    .team-strength-bg-1 {
+        width: 88px;
+        height: 87px;
+        background: #1E6EE7;
+        transform: matrix(0, -1, -1, 0, 0, 0);
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+
+    .team-strength-shape-1 {
+        right: 88px;
+        bottom: 88px;
+
+        @include breakpoint(xl) {
+            right: 50px;
+        }
+    }
+
+    .team-strength-shape-2 {
+        left: -169px;
+        top: -210px;
+    }
+}

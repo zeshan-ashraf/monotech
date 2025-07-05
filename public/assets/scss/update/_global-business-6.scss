@@ -1,0 +1,147 @@
+@use '../utilities' as *;
+
+.global-business-6 {
+
+    .global-business-thumb {
+        position: relative;
+
+        @include breakpoint(md) {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        img {
+            border-radius: 20px;
+        }
+
+        .image-2 {
+            position: absolute;
+            right: 15px;
+            bottom: 80px;
+
+            @include breakpoint(xs) {
+                position: inherit;
+                right: 0;
+                bottom: -10px;
+            }
+        }
+
+        &::before {
+            content: "";
+            width: 219px;
+            height: 426px;
+            background: #FFFFFF;
+            border-radius: 20px;
+            display: inline-block;
+            position: absolute;
+            bottom: 70px;
+            right: 87px;
+
+            @include breakpoint(xs) {
+                display: none;
+            }
+        }
+    }
+
+    .global-business-content {
+        margin-left: 28px;
+
+        @include breakpoint(lg) {
+            margin-left: 0;
+        }
+
+        .section-heading {
+            margin-bottom: 46px;
+        }
+
+        .global-business-list-item {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            margin-bottom: 34px;
+
+            @include breakpoint(xs) {
+                display: block;
+                margin-bottom: 30px;
+            }
+
+            &:last-of-type {
+                margin-bottom: 45px;
+            }
+
+            .global-business-list-icon {
+                min-width: 80px;
+                height: 80px;
+                background: #FFFFFF;
+                border: 1px solid #DFE4EF;
+                box-shadow: 0px 7px 45px rgba(47, 59, 79, 0.25);
+                border-radius: 100px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                @include breakpoint(xs) {
+                    max-width: 80px;
+                    margin-bottom: 15px;
+                }
+            }
+
+            .global-business-list-title {
+                font-size: 20px;
+                font-weight: 600;
+                color: #191F29;
+                margin-bottom: 8px;
+            }
+
+            .global-business-list-dec {
+                font-size: 16px;
+                font-weight: 400;
+                line-height: 26px;
+                color: #74787C;
+                margin-bottom: 0;
+            }
+        }
+
+        .global-business-btn {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+
+            @include breakpoint(xs) {
+                display: block;
+            }
+
+            .bz-primary-btn {
+                padding: 19.5px 31px;
+                border-radius: 100px;
+            }
+
+            .play-btn {
+                font-size: 16px;
+                font-weight: 500;
+                color: #1E6EE7;
+                display: flex;
+                align-items: center;
+                gap: 35px;
+
+                @include breakpoint(xs) {
+                    margin: 30px 0 0 15px;
+                }
+
+                i {
+                    width: 55px;
+                    height: 55px;
+                    background: rgb(30 110 231 / 12%);
+                    color: #1E6EE7;
+                    font-size: 16px;
+                    text-align: center;
+                    line-height: 55px;
+                    border-radius: 100px;
+                    display: inline-block;
+                    outline-offset: 18px;
+                    outline: 1px solid rgba(30, 110, 231, 0.2);
+                }
+            }
+        }
+    }
+}

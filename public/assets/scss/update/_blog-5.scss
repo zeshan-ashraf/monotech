@@ -1,0 +1,189 @@
+@use '../utilities' as *;
+
+.blog-5 {
+    .post-card {
+        overflow: hidden;
+
+        @include breakpoint(md) {
+            margin-bottom: 30px;
+        }
+
+        .post-thumb {
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            border-radius: 15px;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: 0.3s ease-in-out;
+                transform: scale(1);
+                overflow: hidden;
+                @include transition(all 0.3s ease-in-out);
+            }
+
+            &:hover {
+                img {
+                    transform: scale(1.1);
+                }
+            }
+        }
+
+        .post-content-wrap {
+            background: none;
+            padding: 0;
+        }
+
+        .post-content {
+            margin-bottom: 0px;
+            padding-bottom: 0px;
+            border-bottom: none;
+
+            .title {
+                font-size: 24px;
+                font-weight: 600;
+                line-height: 1.4;
+                text-transform: capitalize;
+                margin-bottom: 0px;
+
+                @include breakpoint(lg) {
+                    font-size: 19px;
+                }
+
+                @include breakpoint(md) {
+                    font-size: 22px;
+                }
+
+                @include breakpoint(sm) {
+                    font-size: 16px;
+                }
+                @include breakpoint(xs) {
+                    font-size: 18px;
+                }
+
+                a {
+                    background: linear-gradient(var(--bz-color-theme-primary) 0%, var(--bz-color-theme-primary) 98%);
+                    background-size: 0 2px;
+                    background-repeat: no-repeat;
+                    background-position: left 100%;
+                    @include transition(all 0.3s ease-in-out);
+
+                    &:hover {
+                        color: var(--bz-color-theme-primary);
+                        background-size: 100% 2px;
+                    }
+                }
+            }
+
+            p {
+                font-size: 16px;
+                color: #74787C;
+                font-weight: 400;
+                line-height: 26px;
+                margin-top: 7px;
+                margin-bottom: 22px;
+
+                @include breakpoint(sm) {
+                    font-size: 14px;
+                    line-height: 24px;
+                }
+            }
+        }
+
+        .read-more {
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: capitalize;
+            color: var(--bz-color-theme-primary);
+            @include flex-vertical-center;
+
+            i {
+                font-size: 14px;
+                margin-left: 5px;
+                @include transition(all 0.3s ease-in-out);
+            }
+
+            &:hover {
+                i {
+                    margin-left: 8px;
+                }
+            }
+        }
+    }
+
+    .post-meta {
+        @include flex-vertical-center;
+        list-style: none;
+        flex-wrap: wrap;
+        row-gap: 10px;
+        padding-bottom: 15px;
+        margin-bottom: 16px;
+        margin-top: 13px;
+        border-bottom: 1px solid #EBEBEB;
+
+        li,
+        a {
+            font-family: var(--bz-ff-body);
+            color: var(--bz-color-text-body);
+            font-size: 16px;
+            font-weight: 400;
+            @include flex-vertical-center;
+            column-gap: 10px;
+
+            i {
+                font-size: 16px;
+                color: var(--bz-color-text-body);
+            }
+
+            &:not(:last-of-type) {
+                margin-right: 20px;
+            }
+
+            @include breakpoint(sm) {
+                font-size: 12px;
+            }
+        }
+
+        li {
+            a {
+                &:hover {
+                    color: var(--bz-color-theme-primary);
+                    i {
+                        color: var(--bz-color-theme-primary); 
+                    }
+                }
+            }
+        }
+    }
+}
+
+.Read-more-2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #191F29;
+    display: inline-block;
+    font-family: var(--bz-ff-body);
+
+    i {
+        font-size: 14px;
+        color: #191F29;
+        border: 1px solid rgb(25 31 41 / 30%);
+        width: 35px;
+        height: 35px;
+        border-radius: 500px;
+        text-align: center;
+        line-height: 35px;
+        margin-right: 5px;
+        @include transition(all 0.3s ease-in-out);
+    }
+
+    &:hover {
+        i {
+            background-color: #1E6EE7;
+            border-color: #1E6EE7;
+            color: #fff;
+        }
+    }
+}

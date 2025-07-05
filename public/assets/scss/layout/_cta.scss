@@ -1,0 +1,230 @@
+@use "../utilities" as *;
+
+/**----------------------------------------
+    START: Cta CSS
+----------------------------------------*/
+
+.cta-section{
+    @include background;
+    width: 100%;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    .overlay{
+        background: rgba(14, 17, 27, 0.75);
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+}
+
+.cta-wrap{
+    @include flex-vertical-center;
+    column-gap: 20px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    row-gap: 30px;
+    .cta-btn-wrap{
+        @include flex-vertical-center;
+        column-gap: 20px;
+        .video-btn{
+            a{
+                background-color: transparent;
+                color: var(--bz-color-common-white);
+                height: 56px;
+                width: 56px;
+                border-radius: 5px;
+                border: 1px solid var(--bz-color-common-white);
+                @include flex-center;
+                position: relative;
+                z-index: 2;
+                &:hover{
+                    background-color: var(--bz-color-common-white);
+                    color: var(--bz-color-heading-primary);
+                }
+            }
+        }
+    }
+}
+
+// Cta 2
+
+.cta-2{
+    position: relative;
+    z-index: 1;
+    .bg-img{
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+        img{
+            filter: saturate(0) contrast(110%);
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+        }
+    }
+    .overlay{
+        background: rgba(40, 50, 79, 0.57);
+    }
+    .overlay-2{
+        background: var(--bz-color-theme-red);
+        mix-blend-mode: multiply;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+}
+
+// cta 3
+
+.cta-section-3{
+    margin-bottom: -145px;
+}
+
+.cta-wrap-3{
+    background-color: var(--bz-color-heading-primary);
+    border-radius: 15px;
+    padding: 75px 80px;
+    position: relative;
+    z-index: 10;
+    overflow: hidden;
+    @include breakpoint(sm){
+        padding: 50px 20px;
+    }
+    .shapes{
+        .shape-1{
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        .shape-2{
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 2;
+            opacity: 0.2;
+            @include breakpoint(sm){
+                display: none;
+            }
+        }
+    }
+    .cta-mask-img{
+        background-color: var(--bz-color-common-black);
+        mask-image: url(../img/shapes/mask-img-2.png);
+        mask-repeat: no-repeat;
+        height: 100%;
+        width: 690px;
+        position: absolute;
+        top: 0;
+        right: -5px;
+        z-index: 1;
+        @include breakpoint(sm){
+            display: none;
+        }
+        img{
+            filter: saturate(0) contrast(110%);
+        }
+        .overlay{
+            background-color: var(--bz-color-theme-red);
+            mix-blend-mode: multiply;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    }
+    .title{
+        color: var(--bz-color-common-white);
+        font-size: 48px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        position: relative;
+        z-index: 10;
+        @include breakpoint(sm){
+            font-size: 32px;
+        }
+    }
+    p{
+        color: #C8C9CB;
+        margin-bottom: 0;
+        position: relative;
+        z-index: 10;
+    }
+}
+
+
+// About Cta
+
+.about-cta{
+    margin-top: -245px;
+}
+
+.about-cta-wrap{
+    position: relative;
+    z-index: 1;
+    border-radius: 30px;
+    overflow: hidden;
+    .bg-item{
+        .bg-img{
+            @include background;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            filter: saturate(0) contrast(110%);
+        }
+        .overlay{
+            background: var(--bz-color-theme-primary);
+            mix-blend-mode: multiply;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .overlay-2{
+            background: rgba(2, 6, 13, 0.64);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .shape{
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    }
+    .section-heading{
+        .section-title{
+            max-width: 780px;
+            width: 100%;
+            margin: 0 auto;
+            font-size: 48px;
+            @include breakpoint(sm){
+                font-size: 32px;
+            }
+        }
+    }
+}
+
+
+
+/* !END: Cta CSS */
