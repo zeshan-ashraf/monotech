@@ -18,6 +18,7 @@ class Kernel extends ConsoleKernel
     ];
     protected function schedule(Schedule $schedule): void
     {
+	\Log::info('Laravel scheduler (cron) is running.');
         $eptime=ScheduleSetting::where('txns_type','easypaisa')->where('value',1)->first();
         $jctime=ScheduleSetting::where('txns_type','jazzcash')->where('value',1)->first();
         if ($eptime) {
