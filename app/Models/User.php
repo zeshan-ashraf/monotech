@@ -29,6 +29,8 @@ class User extends Authenticatable
         'per_payout_fee',
         'role',
         'user_role',
+        'payout_jc_api',
+        'payout_ep_api',
     ];
 
     /**
