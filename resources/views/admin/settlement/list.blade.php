@@ -34,6 +34,9 @@
                                                             <th rowspan="2">Opening Bal</th>
                                                             <th colspan="3">Payin</th>
                                                             <th rowspan="2">Payin Fee</th>
+                                                            @if(auth()->user()->user_role == "Super Admin" || auth()->user()->id == 2)
+                                                            <th rowspan="2">Complaint Deduction</th>
+                                                            @endif
                                                             <th rowspan="2">Payin Bal</th>
                                                             <th colspan="3">Payout</th>
                                                             <th rowspan="2">Payout Fee</th>
@@ -62,6 +65,9 @@
                                                                 <td>{{ number_format(round($item->ep_payin,0)) }}</td>
                                                                 <td>{{ number_format(round($item->jc_payin+$item->ep_payin,0)) }}</td>
                                                                 <td>{{ number_format(round($item->jc_payin_fee + $item->ep_payin_fee,0)) }}</td>
+                                                                @if(auth()->user()->user_role == "Super Admin" || auth()->user()->id == 2)
+                                                                <td>{{ number_format(round($item->reverse_amount)) }}</td>
+                                                                @endif
                                                                 <td>{{ number_format(round($item->payin_bal,0)) }}</td>
                                                                 <td>{{ number_format(round($item->jc_payout,0)) }}</td>
                                                                 <td>{{ number_format(round($item->ep_payout,0)) }}</td>
