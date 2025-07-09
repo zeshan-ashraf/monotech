@@ -86,15 +86,15 @@ class DashboardController extends Controller
             $totals['assigned_payout'] += $item['assigned_amount']->payout_balance ?? 0;
         }
         
-        $jcTopPendingOrder = Transaction::where([
+        $jcOkPendingOrder = Transaction::where([
             ['status', 'pending'],
-            ['user_id', '10'],
+            ['user_id', '2'],
             ['txn_type', 'jazzcash']
         ])->count();
         
-        $epTopPendingOrder = Transaction::where([
+        $epOkPendingOrder = Transaction::where([
             ['status', 'pending'],
-            ['user_id', '10'],
+            ['user_id', '2'],
             ['txn_type', 'easypaisa']
         ])->count();
         

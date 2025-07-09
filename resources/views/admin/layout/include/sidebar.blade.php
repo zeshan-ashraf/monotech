@@ -78,10 +78,10 @@
                         <a class="d-flex align-items-center" href="#"><i
                                 data-feather='briefcase'></i>Settlement</a>
                         <ul class="menu-content">
-                            {{--<li class="@if (url()->current() == route('admin.settlement.ok')) active @endif nav-item"><a class="d-flex align-items-center"
+                            <li class="@if (url()->current() == route('admin.settlement.ok')) active @endif nav-item"><a class="d-flex align-items-center"
                                     href="{{ route('admin.settlement.ok') }}">
                                     <i data-feather="circle"></i>OK Pay</a>
-                            </li>--}}
+                            </li>
                             <li class="@if (url()->current() == route('admin.settlement.piq')) active @endif nav-item"><a class="d-flex align-items-center"
                                     href="{{ route('admin.settlement.piq') }}">
                                     <i data-feather="circle"></i>PIQ Pay</a>
@@ -90,7 +90,7 @@
                                     href="{{ route('admin.settlement.pkn') }}">
                                     <i data-feather="circle"></i>PK9 Pay</a>
                             </li>
-                            <li class="@if (url()->current() == route('admin.settlement.cspkr')) active @endif nav-item"><a class="d-flex align-items-center"
+                            {{--<li class="@if (url()->current() == route('admin.settlement.cspkr')) active @endif nav-item"><a class="d-flex align-items-center"
                                     href="{{ route('admin.settlement.cspkr') }}">
                                     <i data-feather="circle"></i>C7 PKR</a>
                             </li>
@@ -105,7 +105,7 @@
                             <li class="@if (url()->current() == route('admin.settlement.genxpay')) active @endif nav-item"><a class="d-flex align-items-center"
                                     href="{{ route('admin.settlement.genxpay') }}">
                                     <i data-feather="circle"></i>Genx Pay</a>
-                            </li>
+                            </li>--}}
                             <li class="@if (url()->current() == route('admin.settlement.moneypay')) active @endif nav-item"><a class="d-flex align-items-center"
                                     href="{{ route('admin.settlement.moneypay') }}">
                                     <i data-feather="circle"></i>Money Pay</a>
