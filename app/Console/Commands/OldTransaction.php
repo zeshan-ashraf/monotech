@@ -5,12 +5,12 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use DB;
 use Carbon\Carbon;
-use App\Models\Transaction;
+use App\Models\BackupTransaction;
 
-class ArchiveTransactions extends Command
+class OldTransaction extends Command
 {
-    protected $signature = 'transactions:archive';
-    protected $description = 'Move transactions older than 3 days to the archive table';
+    protected $signature = 'transactions:old';
+    protected $description = 'Move transactions older than last two month data to the old table';
 
     public function __construct()
     {
@@ -19,8 +19,7 @@ class ArchiveTransactions extends Command
 
     public function handle()
     {
-        Transaction::where('status', '!=', 'pending')
-            ->whereDate('created_at', '<', Carbon::today())
+        BackupTransaction::whereDate('created_at', '<', Carbon::today()->subMonths(2))
             ->chunkById(500, function ($transactions) {
                 $insertData = [];
     
@@ -45,15 +44,15 @@ class ArchiveTransactions extends Command
                 }
     
                 // Insert all transactions from this chunk in one query
-                DB::table('archeive_transactions')->insert($insertData);
+                DB::table('old_transactions')->insert($insertData);
     
-                // Delete all transactions from the transactions table in one query
-                DB::table('transactions')
+                // Delete all transactions from archive table in one query
+                DB::table('backup_transactions')
                     ->whereIn('id', collect($transactions)->pluck('id'))
                     ->delete();
             });
     
-        $this->info('Transactions older than 1 day have been archived.');
+        $this->info('Transactions older than two month have been archived.');
     }
 
 }

@@ -31,6 +31,7 @@ class JazzCashCheckTransactionStatus extends Command
         $now=Carbon::now();
         
         $list = Transaction::where('status', 'pending')->where('txn_type', 'jazzcash')->get();
+        // \Log::info('Response from notifyurl:', ['response' => $now]);
         
         set_time_limit(0);
 
@@ -49,28 +50,29 @@ class JazzCashCheckTransactionStatus extends Command
                     ]);
                     $data = [
                         'orderId' => $item->orderId,
+                        'TID' => $item->transactionId,
                         'amount' => $item->amount,
                         'status' => 'success',
                     ];
                     $user = User::find($item->user_id);
 
-                        if ($user && $user->per_payin_fee) {
-                            $percentage = $user->per_payin_fee;
-                            $amount = $item->amount * $percentage;
-                        
-                            $surplus = SurplusAmount::find(1);
-                            $setting = Setting::where('user_id', $item->user_id)->first();
-                        
-                            if ($setting && $surplus) {
-                                $setting->jazzcash += $amount;
-                                $setting->payout_balance += $amount;
-                                $setting->save();
-                        
-                                $surplus->jazzcash -= $amount;
-                                $surplus->save();
-                            }
+                    if ($user && $user->per_payin_fee) {
+                        $rate = $user->per_payin_fee;
+                        $amount = $item->amount * $rate;
+                    
+                        $surplus = SurplusAmount::find(1);
+                        $setting = Setting::where('user_id', $item->user_id)->first();
+                    
+                        if ($setting && $surplus) {
+                            $setting->jazzcash += $amount;
+                            $setting->payout_balance += $amount;
+                            $setting->save();
+                    
+                            $surplus->jazzcash -= $amount;
+                            $surplus->save();
                         }
-                    $response = Http::timeout(120)->post($url, $data);
+                    }
+                    $response = Http::timeout(60)->post($url, $data);
                 } elseif ($result['pp_PaymentResponseCode'] == '157'){
                     $item->update([
                         'status' => 'pending',
@@ -89,10 +91,11 @@ class JazzCashCheckTransactionStatus extends Command
             
                     $data = [
                         'orderId' => $item->orderId,
+                        'TID' => $item->transactionId,
                         'amount' => $item->amount,
                         'status' => 'failed',
                     ];
-                    $response = Http::timeout(120)->post($url, $data);
+                    $response = Http::timeout(60)->post($url, $data);
                 }
 
             }

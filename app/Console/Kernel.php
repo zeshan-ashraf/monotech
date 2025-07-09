@@ -8,17 +8,22 @@ use App\Models\ScheduleSetting;
 
 class Kernel extends ConsoleKernel
 {
+    /**
+     * Define the application's command schedule.
+     */
     protected $commands = [
         Commands\ArchiveTransactions::class,
+        Commands\OldTransaction::class,
         Commands\ArchivePayouts::class,
         Commands\TestingData::class,
         Commands\EasyPaisaCheckTransactionStatus::class,
         \App\Console\Commands\ReportGenerate::class,
         \App\Console\Commands\SurplusAddition::class,
+        \App\Console\Commands\RecountReportGenerate::class,
     ];
     protected function schedule(Schedule $schedule): void
     {
-	\Log::info('Laravel scheduler (cron) is running.');
+        //everyTenSeconds
         $eptime=ScheduleSetting::where('txns_type','easypaisa')->where('value',1)->first();
         $jctime=ScheduleSetting::where('txns_type','jazzcash')->where('value',1)->first();
         if ($eptime) {
@@ -70,11 +75,13 @@ class Kernel extends ConsoleKernel
             }
         }
         $schedule->command('transactions:jazzcash-recheck-status')->everyMinute();
-        $schedule->command('report:generate')->everyThirtySeconds();
-        // $schedule->command('suplus:addition')->everyFiveSeconds();
-        $schedule->command('transactions:archive')->daily('12:15');
-        $schedule->command('transactions:backup')->daily('12:30');
+        $schedule->command('report:generate')->everyMinute();
+        // $schedule->command('suplus:addition')->everyThirtySeconds();
+        $schedule->command('transactions:archive')->dailyAt('12:15');
+        $schedule->command('transactions:backup')->dailyAt('12:30');
         $schedule->command('payouts:archive')->daily('12:45');
+        // $schedule->command('transactions:old')->dailyAt('04:25');
+        $schedule->command('app:recount-report-generate')->dailyAt('01:00');
     }
 
     /**

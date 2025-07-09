@@ -7,43 +7,40 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\{Settlement,SurplusAmount,Setting,User};
 
-class ReportGenerate extends Command
+class RecountReportGenerate extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'report:generate';
+    protected $signature = 'app:recount-report-generate';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Generate daily report for users';
+    protected $description = 'Command description';
 
     /**
      * Execute the console command.
-     *
-     * @return void
      */
     public function handle()
     {
         $users=User::where('user_role','Client')->where('active',1)->get();
-        $today = Carbon::today();
         foreach ($users as $user) {
-            $sumamry= Settlement::where('user_id',$user->id)->whereDate('date', Carbon::today()->format('y-m-d'))->first();
+            $sumamry= Settlement::where('user_id',$user->id)->whereDate('date', Carbon::yesterday()->format('y-m-d'))->first();
             if($sumamry){
                 // Get yesterday's closing balance
                 $closingBal = DB::table('settlements')
                     ->where('user_id', $user->id)
-                    ->whereDate('date', Carbon::today()->subDay(1)->format('y-m-d'))
+                    ->whereDate('date', Carbon::today()->subDay(2)->format('y-m-d'))
                     ->value('closing_bal');
                 
                 $todayUsdt = DB::table('settlements')
                     ->where('user_id', $user->id)
-                    ->whereDate('date', Carbon::today()->format('y-m-d'))
+                    ->whereDate('date', Carbon::yesterday()->format('y-m-d'))
                     ->value('usdt');
                 
                 // Sum of successful transaction amounts
@@ -51,51 +48,44 @@ class ReportGenerate extends Command
                     ->where('user_id', $user->id)
                     ->whereIn('status', ['success', 'reverse'])
                     ->where('txn_type', 'jazzcash')
-                    ->whereDate('created_at', Carbon::today())
+                    ->whereDate('created_at', Carbon::yesterday())
                     ->sum('amount');
-
-                $transactionReverse = DB::table('transactions')
-                    ->where('user_id', $user->id)
-                    ->where('status', 'reverse')
-                    ->whereDate('updated_at', Carbon::today())
-                    ->sum('amount');
-
-                $archiveReverse = DB::table('archeive_transactions')
-                    ->where('user_id', $user->id)
-                    ->where('status', 'reverse')
-                    ->whereDate('updated_at', Carbon::today())
-                    ->sum('amount');
-
-                $backupReverse = DB::table('backup_transactions')
-                    ->where('user_id', $user->id)
-                    ->where('status', 'reverse')
-                    ->whereDate('updated_at', Carbon::today())
-                    ->sum('amount');
-
-                $totalReverseAmount = $transactionReverse + $archiveReverse + $backupReverse;
-                 
+                
+                $yesterday = \Carbon\Carbon::yesterday()->toDateString();
+                
+                $totalReverseAmount = DB::table(DB::raw("(
+                    SELECT amount FROM transactions 
+                    WHERE user_id = $user->id AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
+                    UNION ALL
+                    SELECT amount FROM archeive_transactions 
+                    WHERE user_id = $user->id AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
+                    UNION ALL
+                    SELECT amount FROM backup_transactions 
+                    WHERE user_id = $user->id AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
+                ) as combined"))
+                ->sum('amount');
                 
                 $transactionReverseHalf = $totalReverseAmount * 0.5;
                 $transactionSumEP = DB::table('transactions')
                     ->where('user_id', $user->id)
                     ->whereIn('status', ['success', 'reverse'])
                     ->where('txn_type', 'easypaisa')
-                    ->whereDate('created_at', Carbon::today())
+                    ->whereDate('created_at', Carbon::yesterday())
                     ->sum('amount');
                 
                 // Sum of successful payout amounts
-                $payoutSumJC = DB::table('payouts')
+                $payoutSumJC = DB::table('archeive_payouts')
                     ->where('user_id', $user->id)
                     ->where('status', 'success')
                     ->where('transaction_type', 'jazzcash')
-                    ->whereDate('created_at', Carbon::today())
+                    ->whereDate('created_at', Carbon::yesterday())
                     ->sum('amount');
                 
-                $payoutSumEP = DB::table('payouts')
+                $payoutSumEP = DB::table('archeive_payouts')
                     ->where('user_id', $user->id)
                     ->where('status', 'success')
                     ->where('transaction_type', 'easypaisa')
-                    ->whereDate('created_at', Carbon::today())
+                    ->whereDate('created_at', Carbon::yesterday())
                     ->sum('amount');
             
                 
@@ -110,7 +100,7 @@ class ReportGenerate extends Command
             
                 // Create a summary for the user
                 $sumamry->update([
-                    'date' => Carbon::today()->format('y-m-d'),
+                    'date' => Carbon::yesterday()->format('y-m-d'),
                     'user_id' => $user->id,
                     'opening_bal'  => $closingBal,
                     'jc_payin' => $transactionSumJC,
@@ -129,26 +119,6 @@ class ReportGenerate extends Command
                 ]);
                 
             }
-            else{
-                Settlement::create([
-                    'date' => Carbon::today()->format('y-m-d'),
-                    'user_id' => $user->id,
-                    'opening_bal' => '0',
-                    'jc_payin' => '0',
-                    'ep_payin' => '0',
-                    'jc_payin_fee' => '0',
-                    'ep_payin_fee' => '0',
-                    'payin_bal' => '0',
-                    'jc_payout' => '0',
-                    'ep_payout' => '0',
-                    'jc_payout_fee' => '0',
-                    'ep_payout_fee' => '0',
-                    'usdt' => '0',
-                    'settled' => '0',
-                    'closing_bal' => '0',
-                ]);
-            }
         }
-        $this->info('Daily report generated successfully.');
     }
 }

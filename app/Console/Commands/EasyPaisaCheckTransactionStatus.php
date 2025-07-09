@@ -47,18 +47,20 @@ class EasyPaisaCheckTransactionStatus extends Command
                     if ($result['transactionStatus'] == 'PAID') {
                         $item->update([
                             'status' => 'success',
-                            'transactionId'=>$result['msisdn']  ?? null
+                            'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null
                         ]);
                         $data = [
                             'orderId' => $item->orderId,
+                            'TID' => $item->transactionId,
                             'amount' => $item->amount,
                             'status' => 'success',
                         ];
+                        
                         $user = User::find($item->user_id);
 
                         if ($user && $user->per_payin_fee) {
-                            $percentage = $user->per_payin_fee;
-                            $amount = $item->amount * $percentage;
+                            $rate = $user->per_payin_fee;
+                            $amount = $item->amount * $rate;
                         
                             $surplus = SurplusAmount::find(1);
                             $setting = Setting::where('user_id', $item->user_id)->first();
@@ -76,12 +78,13 @@ class EasyPaisaCheckTransactionStatus extends Command
                     } elseif ($result['transactionStatus'] == 'FAILED') {
                         $item->update([
                             'status' => 'failed',
-                            'transactionId'=>$result['msisdn']  ?? null,
+                            'transactionId'=>$result['transactionId'] ?? $result['msisdn'] ?? null,
                             'pp_code' => $result['errorCode'] ?? null,
                             'pp_message' => $result['errorReason'] ?? null
                         ]);
                         $data = [
                             'orderId' => $item->orderId,
+                            'TID' => $item->transactionId,
                             'amount' => $item->amount,
                             'status' => 'failed',
                         ];
@@ -96,6 +99,7 @@ class EasyPaisaCheckTransactionStatus extends Command
                     ]);
                     $data = [
                         'orderId' => $item->orderId,
+                        'TID' => $item->transactionId,
                         'amount' => $item->amount,
                         'status' => 'failed',
                     ];
