@@ -105,6 +105,7 @@ class PayinController extends Controller
                                     $url = $transaction->url;
                                     $data = [
                                         'orderId' => $transaction->orderId,
+                                        'tid' => $transaction->transactionId,
                                         'amount' => $transaction->amount,
                                         'status' => $transaction->status,
                                     ];
@@ -231,6 +232,7 @@ class PayinController extends Controller
                             $url = $transaction->url;
                             $data = [
                                 'orderId' => $transaction->orderId,
+                                'tid' => $transaction->transactionId,
                                 'amount' => $transaction->amount,
                                 'status' => $transaction->status,
                             ];

@@ -50,7 +50,7 @@ class JazzCashCheckTransactionStatus extends Command
                     ]);
                     $data = [
                         'orderId' => $item->orderId,
-                        'TID' => $item->transactionId,
+                        'tid' => $item->transactionId,
                         'amount' => $item->amount,
                         'status' => 'success',
                     ];
@@ -91,7 +91,7 @@ class JazzCashCheckTransactionStatus extends Command
             
                     $data = [
                         'orderId' => $item->orderId,
-                        'TID' => $item->transactionId,
+                        'tid' => $item->transactionId,
                         'amount' => $item->amount,
                         'status' => 'failed',
                     ];
