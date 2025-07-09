@@ -54,6 +54,12 @@ class PayoutController extends Controller
         }
         // dd($request->all());
         $user= User::where('email',$request->client_email)->first();
+        if(($request->payout_method == "jazzcash" && $user->payout_jc_api == 0) || ($request->payout_method == "easypaisa" && $user->payout_ep_api == 0)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Payout Api suspended by administrator.',
+            ], 400);
+        }
         $orderId=Payout::where('orderId',$request->orderId)->first();
         if($orderId){
             $this->logger->warning('Duplicate order ID detected', [
