@@ -54,7 +54,7 @@ Route::as('payout.')->prefix('payout')->group(function () {
 */
 Route::post('/payin-status-check', [GeneralController::class , 'checkStatus']);
 Route::post('/payout-status-check', [GeneralController::class , 'checkPayoutStatus']);
-//Route::get('/get-dashboard-data', [GeneralController::class , 'dashboardData']);
+Route::get('/get-dashboard-data', [GeneralController::class , 'dashboardData']);
 
 
 /*
