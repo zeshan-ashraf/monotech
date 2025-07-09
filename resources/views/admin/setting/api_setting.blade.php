@@ -2,6 +2,11 @@
 @section('title','Api Setting')
 @push('css')
 <link rel="stylesheet" href="{{ asset('admin/assets/dashboard/css/dataTables.bootstrap4.min.css') }}" />
+<style>
+    .toggle-switch{
+        margin-left: 10px;
+    }
+</style>
 @endpush
 @section('content')
 <div class="app-content content ">
@@ -24,8 +29,10 @@
                                             <tr>
                                                 <th>#</th>
                                                 <th>Client Name</th>
-                                                <th>Jazzcash</th>
-                                                <th>Easypaisa</th>
+                                                <th>Payin Jazzcash</th>
+                                                <th>Payin Easypaisa</th>
+                                                <th>Payout Jazzcash</th>
+                                                <th>Payout Easypaisa</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -61,6 +68,38 @@
                                                         <label class="form-check-label">
                                                             <span class="status-label">
                                                                 {{ $item->ep_api == 1 ? 'ON' : 'OFF' }}
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="form-check form-switch">
+                                                        <input 
+                                                            class="form-check-input toggle-switch" 
+                                                            type="checkbox" 
+                                                            data-id="{{ $item->id }}"
+                                                            data-type="payout_jc_api"
+                                                            @if($item->payout_jc_api == 1) checked @endif
+                                                        >
+                                                        <label class="form-check-label">
+                                                            <span class="status-label">
+                                                                {{ $item->payout_jc_api == 1 ? 'ON' : 'OFF' }}
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="form-check form-switch">
+                                                        <input 
+                                                            class="form-check-input toggle-switch" 
+                                                            type="checkbox" 
+                                                            data-id="{{ $item->id }}" 
+                                                            data-type="payout_ep_api"
+                                                            @if($item->payout_ep_api == 1) checked @endif
+                                                        >
+                                                        <label class="form-check-label">
+                                                            <span class="status-label">
+                                                                {{ $item->payout_ep_api == 1 ? 'ON' : 'OFF' }}
                                                             </span>
                                                         </label>
                                                     </div>
