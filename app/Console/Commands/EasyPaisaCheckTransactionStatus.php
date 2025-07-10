@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use App\Models\{Transaction,SurplusAmount,Setting,User};
 use App\Service\StatusService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class EasyPaisaCheckTransactionStatus extends Command
@@ -28,85 +30,115 @@ class EasyPaisaCheckTransactionStatus extends Command
     // Execute the console command.
     public function handle()
     {
-        $now=Carbon::now();
+        $now = Carbon::now();
         
-        $list = Transaction::where('status', 'pending')->where('txn_type', 'easypaisa')->get();
-        // \Log::info('Response from notifyurl:', ['response' => $now]);
+        // Acquire global lock to prevent multiple instances
+        $lock = Cache::lock('easypaisa-check-status-lock', 300); // 5 minutes timeout
         
-        set_time_limit(0);
+        if (!$lock->get()) {
+            Log::info('EasyPaisaCheckTransactionStatus: Another instance is already running');
+            $this->error('Another instance of this command is already running.');
+            return 1;
+        }
 
-        if ($list->isNotEmpty()) {
-            foreach ($list as $item) {
-                $url=$item->url;
+        try {
+            $list = Transaction::where('status', 'pending')
+                ->where('txn_type', 'easypaisa')
+                ->limit(50) // Limit to 50 transactions
+                ->get();
+            
+            // \Log::info('Response from notifyurl:', ['response' => $now]);
+            
+            set_time_limit(0);
 
-                $result = $this->statusService->process($item);
-              
-                // Check if the response code is successful
-                if ($result['responseCode'] == '0000') {
-                    // Check transactionStatus in response
-                    if ($result['transactionStatus'] == 'PAID') {
-                        $item->update([
-                            'status' => 'success',
-                            'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null
-                        ]);
-                        $data = [
-                            'orderId' => $item->orderId,
-                            'tid' => $item->transactionId,
-                            'amount' => $item->amount,
-                            'status' => 'success',
-                        ];
-                        
-                        $user = User::find($item->user_id);
-
-                        if ($user && $user->per_payin_fee) {
-                            $rate = $user->per_payin_fee;
-                            $amount = $item->amount * $rate;
-                        
-                            $surplus = SurplusAmount::find(1);
-                            $setting = Setting::where('user_id', $item->user_id)->first();
-                        
-                            if ($setting && $surplus) {
-                                $setting->easypaisa += $amount;
-                                $setting->payout_balance += $amount;
-                                $setting->save();
-                        
-                                $surplus->easypaisa -= $amount;
-                                $surplus->save();
-                            }
-                        }
-                        $response = Http::timeout(60)->post($url, $data);
-                    } elseif ($result['transactionStatus'] == 'FAILED') {
-                        $item->update([
-                            'status' => 'failed',
-                            'transactionId'=>$result['transactionId'] ?? $result['msisdn'] ?? null,
-                            'pp_code' => $result['errorCode'] ?? null,
-                            'pp_message' => $result['errorReason'] ?? null
-                        ]);
-                        $data = [
-                            'orderId' => $item->orderId,
-                            'tid' => $item->transactionId,
-                            'amount' => $item->amount,
-                            'status' => 'failed',
-                        ];
-                        $response = Http::timeout(60)->post($url, $data);
+            if ($list->isNotEmpty()) {
+                foreach ($list as $item) {
+                    // Acquire per-transaction lock
+                    $transactionLock = Cache::lock("transaction:{$item->id}", 60); // 1 minute timeout
+                    
+                    if (!$transactionLock->get()) {
+                        Log::info("EasyPaisaCheckTransactionStatus: Transaction {$item->id} is being processed by another instance");
+                        continue; // Skip this transaction and move to next
                     }
-                } elseif ($result['responseCode'] == '0003') {
-                    // Transaction failed, update and notify
-                    $item->update([
-                        'status' => 'failed',
-                        'pp_code' => $result['responseCode'],
-                        'pp_message' => $result['responseDesc']
-                    ]);
-                    $data = [
-                        'orderId' => $item->orderId,
-                        'tid' => $item->transactionId,
-                        'amount' => $item->amount,
-                        'status' => 'failed',
-                    ];
-                    $response = Http::timeout(60)->post($url, $data);
-                }
 
+                    try {
+                        $url = $item->url;
+
+                        $result = $this->statusService->process($item);
+                      
+                        // Check if the response code is successful
+                        if ($result['responseCode'] == '0000') {
+                            // Check transactionStatus in response
+                            if ($result['transactionStatus'] == 'PAID') {
+                                $item->update([
+                                    'status' => 'success',
+                                    'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null
+                                ]);
+                                $data = [
+                                    'orderId' => $item->orderId,
+                                    'tid' => $item->transactionId,
+                                    'amount' => $item->amount,
+                                    'status' => 'success',
+                                ];
+                                
+                                $user = User::find($item->user_id);
+
+                                if ($user && $user->per_payin_fee) {
+                                    $rate = $user->per_payin_fee;
+                                    $amount = $item->amount * $rate;
+                                
+                                    $surplus = SurplusAmount::find(1);
+                                    $setting = Setting::where('user_id', $item->user_id)->first();
+                                
+                                    if ($setting && $surplus) {
+                                        $setting->easypaisa += $amount;
+                                        $setting->payout_balance += $amount;
+                                        $setting->save();
+                                
+                                        $surplus->easypaisa -= $amount;
+                                        $surplus->save();
+                                    }
+                                }
+                                $response = Http::timeout(60)->post($url, $data);
+                            } elseif ($result['transactionStatus'] == 'FAILED') {
+                                $item->update([
+                                    'status' => 'failed',
+                                    'transactionId'=>$result['transactionId'] ?? $result['msisdn'] ?? null,
+                                    'pp_code' => $result['errorCode'] ?? null,
+                                    'pp_message' => $result['errorReason'] ?? null
+                                ]);
+                                $data = [
+                                    'orderId' => $item->orderId,
+                                    'tid' => $item->transactionId,
+                                    'amount' => $item->amount,
+                                    'status' => 'failed',
+                                ];
+                                $response = Http::timeout(60)->post($url, $data);
+                            }
+                        } elseif ($result['responseCode'] == '0003') {
+                            // Transaction failed, update and notify
+                            $item->update([
+                                'status' => 'failed',
+                                'pp_code' => $result['responseCode'],
+                                'pp_message' => $result['responseDesc']
+                            ]);
+                            $data = [
+                                'orderId' => $item->orderId,
+                                'tid' => $item->transactionId,
+                                'amount' => $item->amount,
+                                'status' => 'failed',
+                            ];
+                            $response = Http::timeout(60)->post($url, $data);
+                        }
+                    } finally {
+                        // Always release the transaction lock
+                        $transactionLock->release();
+                    }
+                }
             }
+        } finally {
+            // Always release the global lock
+            $lock->release();
         }
 
         $this->info('Pending transactions checked and updated.');
