@@ -45,15 +45,9 @@ class StatusService
 
         $data['pp_SecureHash'] = $pp_SecureHash;
 
-		$response = Http::timeout(120)
-        ->retry(3, 1000) // Retry 3 times, 2 seconds delay
-        ->withHeaders([
-            'Content-Type' => 'application/json',
-        ])
-        // ->withOptions([
-        //     'verify' => public_path('jazz_public_key/new-cert.crt'), // SSL cert
-        // ])
-        ->post(env('JAZZCASH_STATUS_INQUIRY'), $data);
+		$response = Http::timeout(60)->withHeaders([
+            'Content-Type'=> 'application/json'
+        ])->post(env('JAZZCASH_STATUS_INQUIRY'),$data);
         $result = $response->json();
         return $result;
     }
@@ -81,7 +75,7 @@ class StatusService
 		];
         $credentials=$this->getCredentials();
         
-		$response = Http::timeout(120)->retry(3, 1000)->withHeaders([
+		$response = Http::timeout(60)->retry(3, 1000)->withHeaders([
             'credentials'=>$credentials,
             'Content-Type'=> 'application/json'
         ])->post(env('EASYPAISA_STATUS_INQUIRY'),$data);
