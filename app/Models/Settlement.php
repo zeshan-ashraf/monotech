@@ -19,6 +19,7 @@ class Settlement extends Model
         'ep_payin',
         'jc_payin_fee',
         'ep_payin_fee',
+        'reverse_amount',
         'payin_bal',
         'jc_payout',
         'ep_payout',

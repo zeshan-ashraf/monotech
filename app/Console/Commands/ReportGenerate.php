@@ -31,6 +31,7 @@ class ReportGenerate extends Command
     public function handle()
     {
         $users=User::where('user_role','Client')->where('active',1)->get();
+        $transactionReverseHalf = 0;
         $today = Carbon::today();
         foreach ($users as $user) {
             $sumamry= Settlement::where('user_id',$user->id)->whereDate('date', Carbon::today()->format('y-m-d'))->first();
@@ -73,7 +74,8 @@ class ReportGenerate extends Command
                     ->sum('amount');
 
                 $totalReverseAmount = $transactionReverse + $archiveReverse + $backupReverse;
-                if($user->id == "2"){
+                
+                if($user->id == 2){
                     $transactionReverseHalf = $totalReverseAmount * 0.5;
                 }
                 else{
@@ -141,6 +143,7 @@ class ReportGenerate extends Command
                     'ep_payin' => '0',
                     'jc_payin_fee' => '0',
                     'ep_payin_fee' => '0',
+                    'reverse_amount' => '0',
                     'payin_bal' => '0',
                     'jc_payout' => '0',
                     'ep_payout' => '0',
