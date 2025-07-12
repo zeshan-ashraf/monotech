@@ -23,6 +23,21 @@ class SettingController extends Controller
         ->get();
         return view("admin.setting.list",get_defined_vars());
     }
+    public function okList()
+    {
+        $list = DB::table(DB::raw("(
+            SELECT * FROM transactions WHERE user_id = 19 AND status = 'reverse'
+            UNION ALL
+            SELECT * FROM archeive_transactions WHERE user_id = 19 AND status = 'reverse'
+            UNION ALL
+            SELECT * FROM backup_transactions 
+                WHERE user_id = 19 AND status = 'reverse' AND created_at >= '2025-05-01 00:00:00'
+        ) as all_transactions"))
+        ->orderBy('updated_at', 'desc')
+        ->get();
+        
+        return view("admin.setting.list", get_defined_vars());
+    }
     public function modal(Request $request)
     {
         $id = $request->id;

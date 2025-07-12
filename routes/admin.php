@@ -68,6 +68,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     });
     Route::as('setting.')->prefix('setting')->group(function () {
         Route::get('/reverse/list', [SettingController::class,'addSetting'])->name('list');
+        Route::any('/reverse/ok_list', [SettingController::class,'okList'])->name('ok_list');
         Route::get('/modal/{id?}', [SettingController::class,'modal'])->name('modal');
         Route::get('/third_modal/{id?}', [SettingController::class,'modalThird'])->name('third_modal');
         Route::get('/surplus-modal', [SettingController::class,'modalSec'])->name('modal_sec');
