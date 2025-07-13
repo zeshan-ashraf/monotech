@@ -163,19 +163,32 @@ class DashboardController extends Controller
     {
         $yesterday = \Carbon\Carbon::yesterday()->toDateString();
 
-        $totalReverseAmount = DB::table(DB::raw("(
-            SELECT amount FROM transactions 
-            WHERE user_id = '2' AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
-            UNION ALL
-            SELECT amount FROM archeive_transactions 
-            WHERE user_id = '2' AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
-            UNION ALL
-            SELECT amount FROM backup_transactions 
-            WHERE user_id = '2' AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
-        ) as combined"))
-        ->sum('amount');
+        $transactionReverse = DB::table('transactions')
+            ->where('user_id', '2')
+            ->where('status', 'reverse')
+            ->whereDate('updated_at', Carbon::today())
+            ->sum('amount');
+
+        $archiveReverse = DB::table('archeive_transactions')
+            ->where('user_id', '2')
+            ->where('status', 'reverse')
+            ->whereDate('updated_at', Carbon::today())
+            ->sum('amount');
+
+        $backupReverse = DB::table('backup_transactions')
+            ->where('user_id', '2')
+            ->where('status', 'reverse')
+            ->whereDate('updated_at', Carbon::today())
+            ->sum('amount');
+
+        $totalReverseAmount = $transactionReverse + $archiveReverse + $backupReverse;
         
-        $transactionReverseHalf = $totalReverseAmount;
+        // if($user->id == 2){
+        //     $transactionReverseHalf = $totalReverseAmount * 0.5;
+        // }
+        // else{
+            $transactionReverseHalf = $totalReverseAmount;
+        // }
         dd($transactionReverseHalf);
     }
 }
