@@ -68,14 +68,14 @@
                                 <div class="col-md-4">
                                     <div class="card bg-success">
                                         <div class="card-body pb-50">
-                                            <h5 class="text-white">Total Reverse Amount: <span class="fw-bolder"  style="font-size:20px">{{number_format(round($summary->total_reverse_amount,2))}} PKR</span></h5>
+                                            <h5 class="text-white">Total Reverse Amount: <span class="fw-bolder"  style="font-size:20px">{{number_format(round($total_reverse_amount,2))}} PKR</span></h5>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="card bg-success">
                                         <div class="card-body pb-50">
-                                            <h5 class="text-white">Number Of Orders: <span class="fw-bolder"  style="font-size:20px">{{number_format(round($summary->reverse_count,2))}} PKR</span></h5>
+                                            <h5 class="text-white">Number Of Orders: <span class="fw-bolder"  style="font-size:20px">{{number_format(round($reverse_count,2))}} PKR</span></h5>
                                         </div>
                                     </div>
                                 </div>
