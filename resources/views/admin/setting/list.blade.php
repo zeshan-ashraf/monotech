@@ -25,11 +25,11 @@
                                                     <div class="input-group">
                                                         <input name="start_date" type="date"
                                                             class="form-control border-primary"
-                                                            value="{{ $start_date }}">
+                                                            value="{{ request()->start_date }}">
                                                         <span class="btn btn-outline-primary">to</span>
                                                         <input name="end_date" type="date"
                                                             class="form-control border-primary"
-                                                            value="{{ $end_date }}">
+                                                            value="{{ request()->end_date }}">
                                                     </div>
                                                 </fieldset>
                                             </div>
