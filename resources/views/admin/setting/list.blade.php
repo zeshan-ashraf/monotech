@@ -46,7 +46,7 @@
                                                 <td>{{$item->amount}}</td>
                                                 <td>{{$item->txn_type}}</td>
                                                 <th><span class="badge bg-secondary text-capitalize">Reverse</span></th>
-                                                <td>{{$item->created_at}}</td>
+                                                <td>{{$item->update_at}}</td>
                                                 
                                             </tr>
                                             @endforeach
