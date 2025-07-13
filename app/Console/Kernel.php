@@ -82,7 +82,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('transactions:backup')->dailyAt('12:30');
         $schedule->command('payouts:archive')->daily('12:45');
         // $schedule->command('transactions:old')->dailyAt('04:25');
-        $schedule->command('app:recount-report-generate')->dailyAt('01:00');
+        $schedule->command('app:recount-report-generate')->dailyAt('15:05');
         $schedule->command('transactions:auto-fail')->everyFiveMinutes();
     }
 
