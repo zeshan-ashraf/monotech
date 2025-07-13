@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/testing', [DashboardController::class, 'testing'])->name('testing');
     Route::get('/profile/form', [DashboardController::class, 'profile'])->name('profile');
     Route::post('/profile', [DashboardController::class, 'profileSave'])->name('profile.save');
     Route::get('/account/settings', [DashboardController::class, 'accountSetting'])->name('account.settings');

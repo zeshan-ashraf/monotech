@@ -159,4 +159,21 @@ class DashboardController extends Controller
 
         return redirect()->route('admin.account.settings')->with('message','Updated Successfully!');
     }
+    public function testing()
+    {
+        $totalReverseAmount = DB::table(DB::raw("(
+            SELECT amount FROM transactions 
+            WHERE user_id = '2' AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
+            UNION ALL
+            SELECT amount FROM archeive_transactions 
+            WHERE user_id = '2' AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
+            UNION ALL
+            SELECT amount FROM backup_transactions 
+            WHERE user_id = '2' AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
+        ) as combined"))
+        ->sum('amount');
+        
+        $transactionReverseHalf = $totalReverseAmount * 0.5;
+        dd($transactionReverseHalf);
+    }
 }
