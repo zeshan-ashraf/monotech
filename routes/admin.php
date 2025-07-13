@@ -68,7 +68,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/callback/{id?}', [SearchingController::class,'callback'])->name('callback.send');
     });
     Route::as('setting.')->prefix('setting')->group(function () {
-        Route::get('/reverse/list', [SettingController::class,'addSetting'])->name('list');
+        Route::get('/reverse/list', [SettingController::class,'list'])->name('list');
         Route::any('/reverse/ok_list', [SettingController::class,'okList'])->name('ok_list');
         Route::get('/modal/{id?}', [SettingController::class,'modal'])->name('modal');
         Route::get('/third_modal/{id?}', [SettingController::class,'modalThird'])->name('third_modal');

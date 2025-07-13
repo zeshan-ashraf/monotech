@@ -9,18 +9,47 @@ use DB;
 
 class SettingController extends Controller
 {
-    public function addSetting()
+    public function list()
     {
-        $list = DB::table('transactions')
-        ->select('*')->where('status', 'reverse') // Select all columns
-        ->union(
-            DB::table('archeive_transactions')->select('*')->where('status', 'reverse')
-        )
-        ->union(
-            DB::table('backup_transactions')->select('*')->where('status', 'reverse')
-        )
-        ->orderBy('created_at', 'desc')
-        ->get();
+        $start = request()->start;
+        $end = request()->end;
+        $txn_type = request()->txn_type;
+
+        $baseQuery = DB::table('transactions')
+            ->select('*')
+            ->where('status', 'reverse')
+            ->when($txn_type && $txn_type !== 'all', function ($q) use ($txn_type) {
+                $q->where('txn_type', $txn_type);
+            })
+            ->when($start && $end, function ($q) use ($start, $end) {
+                $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]);
+            });
+
+        $unionQuery1 = DB::table('archeive_transactions')
+            ->select('*')
+            ->where('status', 'reverse')
+            ->when($txn_type && $txn_type !== 'all', function ($q) use ($txn_type) {
+                $q->where('txn_type', $txn_type);
+            })
+            ->when($start && $end, function ($q) use ($start, $end) {
+                $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]);
+            });
+
+        $unionQuery2 = DB::table('backup_transactions')
+            ->select('*')
+            ->where('status', 'reverse')
+            ->when($txn_type && $txn_type !== 'all', function ($q) use ($txn_type) {
+                $q->where('txn_type', $txn_type);
+            })
+            ->when($start && $end, function ($q) use ($start, $end) {
+                $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]);
+            });
+
+        $list = $baseQuery
+            ->union($unionQuery1)
+            ->union($unionQuery2)
+            ->orderBy('updated_at', 'desc') // ⚠️ Only applies to the first query
+            ->get();
         return view("admin.setting.list",get_defined_vars());
     }
     public function okList()

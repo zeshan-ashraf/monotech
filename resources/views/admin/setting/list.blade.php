@@ -7,6 +7,7 @@
 @section('content')
 <div class="app-content content ">
     <div class="content-overlay"></div>
+    <div class="header-navbar-shadow"></div>
     <div class="content-wrapper container-xxl pt-0 px-0 pb-sm-0 pb-5">
         <div class="content-header row">
         </div>
@@ -14,6 +15,47 @@
             <section id="row-grouping-datatable">
                 <div class="row">
                     <div class="col-12">
+                        <div class="card w-100">
+                            <div class="card-body">
+                                <div>
+                                    <div class="toolbar w-100">
+                                        <form action="{{ route('admin.setting.list') }}" method="GET"
+                                            class="d-flex justify-content-between">
+                                            <div class="col-md-4">
+                                                <fieldset>
+                                                    <div class="input-group">
+                                                        <input name="start_date" type="date"
+                                                            class="form-control border-primary"
+                                                            value="{{ $start }}">
+                                                        <span class="btn btn-outline-primary">to</span>
+                                                        <input name="end_date" type="date"
+                                                            class="form-control border-primary"
+                                                            value="{{ $end }}">
+                                                    </div>
+                                                </fieldset>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <select name="txn_type" class="form-select border-primary">
+                                                    <option selected disabled>Filter Type</option>
+                                                    <option value="easypaisa"
+                                                        {{ request()->txn_type == 'easypaisa' ? 'selected' : '' }}>Easypaisa
+                                                    </option>
+                                                    <option value="jazzcash"
+                                                        {{ request()->txn_type == 'jazzcash' ? 'selected' : '' }}>Jazzcash
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <button class="btn btn-outline-primary waves-effect me-3"
+                                                    type="submit">Apply</button>
+                                                <a href="{{ route('admin.setting.list') }}"
+                                                    class="btn btn-outline-danger waves-effect" type="submit">Reset</a>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="card">
                             <div class="card-header">
                                 <h4>Reversed Payin</h4>
