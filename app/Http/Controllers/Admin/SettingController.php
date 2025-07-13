@@ -11,47 +11,53 @@ class SettingController extends Controller
 {
     public function list()
     {
-        $start = request()->start;
-        $end = request()->end;
+        $start = request()->start_date;
+        $end = request()->end_date;
         $txn_type = request()->txn_type;
 
-        $baseQuery = DB::table('transactions')
+        $query1 = DB::table('transactions')
             ->select('*')
             ->where('status', 'reverse')
-            ->when($txn_type && $txn_type !== 'all', function ($q) use ($txn_type) {
-                $q->where('txn_type', $txn_type);
-            })
-            ->when($start && $end, function ($q) use ($start, $end) {
-                $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]);
-            });
+            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
+            ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
 
-        $unionQuery1 = DB::table('archeive_transactions')
+        $query2 = DB::table('archeive_transactions')
             ->select('*')
             ->where('status', 'reverse')
-            ->when($txn_type && $txn_type !== 'all', function ($q) use ($txn_type) {
-                $q->where('txn_type', $txn_type);
-            })
-            ->when($start && $end, function ($q) use ($start, $end) {
-                $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]);
-            });
+            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
+            ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
 
-        $unionQuery2 = DB::table('backup_transactions')
+        $query3 = DB::table('backup_transactions')
             ->select('*')
             ->where('status', 'reverse')
-            ->when($txn_type && $txn_type !== 'all', function ($q) use ($txn_type) {
-                $q->where('txn_type', $txn_type);
-            })
-            ->when($start && $end, function ($q) use ($start, $end) {
-                $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]);
-            });
+            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
+            ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
 
-        $list = $baseQuery
-            ->union($unionQuery1)
-            ->union($unionQuery2)
-            ->orderBy('updated_at', 'desc') // ⚠️ Only applies to the first query
+        // Combine queries using union
+        $unioned = $query1->unionAll($query2)->unionAll($query3);
+
+        // Use fromSub to treat the union as a subquery
+        $finalQuery = DB::query()
+            ->fromSub($unioned, 'combined_transactions');
+
+        // Get the full list
+        $list = $finalQuery
+            ->orderByDesc('updated_at')
             ->get();
-        return view("admin.setting.list",get_defined_vars());
+
+        // Get reverse count and total amount
+        $summary = DB::query()
+            ->fromSub($unioned, 'combined_transactions')
+            ->selectRaw('COUNT(*) as reverse_count, SUM(amount) as total_reverse_amount')
+            ->first();
+
+        return view("admin.setting.list", [
+            'list' => $list,
+            'reverse_count' => $summary->reverse_count,
+            'total_reverse_amount' => $summary->total_reverse_amount,
+        ]);
     }
+
     public function okList()
     {
         $list = DB::table(DB::raw("(
