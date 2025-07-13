@@ -161,6 +161,8 @@ class DashboardController extends Controller
     }
     public function testing()
     {
+        $yesterday = \Carbon\Carbon::yesterday()->toDateString();
+
         $totalReverseAmount = DB::table(DB::raw("(
             SELECT amount FROM transactions 
             WHERE user_id = '2' AND status = 'reverse' AND DATE(updated_at) = '$yesterday'
@@ -173,7 +175,7 @@ class DashboardController extends Controller
         ) as combined"))
         ->sum('amount');
         
-        $transactionReverseHalf = $totalReverseAmount * 0.5;
+        $transactionReverseHalf = $totalReverseAmount;
         dd($transactionReverseHalf);
     }
 }
