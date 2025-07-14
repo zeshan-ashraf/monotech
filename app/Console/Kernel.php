@@ -77,11 +77,9 @@ class Kernel extends ConsoleKernel
         }
         $schedule->command('transactions:jazzcash-recheck-status')->everyMinute();
         $schedule->command('report:generate')->everyMinute();
-        // $schedule->command('suplus:addition')->everyThirtySeconds();
-        $schedule->command('transactions:archive')->dailyAt('12:15');
-        $schedule->command('transactions:backup')->dailyAt('12:30');
-        $schedule->command('payouts:archive')->daily('12:45');
-        // $schedule->command('transactions:old')->dailyAt('04:25');
+        $schedule->command('transactions:archive')->dailyAt('00:15');
+        $schedule->command('transactions:backup')->dailyAt('00:30');
+        $schedule->command('payouts:archive')->daily('00:45');
         $schedule->command('app:recount-report-generate')->dailyAt('01:00');
         $schedule->command('transactions:auto-fail')->everyFiveMinutes();
     }
