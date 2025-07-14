@@ -37,7 +37,7 @@ class ArchiveTransactions extends Command
                         'pp_code' => $transaction->pp_code ?? null,
                         'pp_message' => $transaction->pp_message ?? null,
                         'status' => $transaction->status ?? null,
-                        'src' => $transaction->src ?? null,
+                        // 'src' => $transaction->src ?? null,
                         'url' => $transaction->url ?? null,
                         'created_at' => $transaction->created_at,
                         'updated_at' => $transaction->updated_at,
