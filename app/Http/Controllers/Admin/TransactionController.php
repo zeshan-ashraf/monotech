@@ -212,14 +212,14 @@ class TransactionController extends Controller
         if (!$transaction) {
             return response()->json(['error' => 'Transaction not found'], 404);
         }
-        $settlement=Settlement::where('user_id', $transaction->user_id)
-            ->where('date', Carbon::yesterday()->format('Y-m-d'))
-            ->first();
+        // $settlement=Settlement::where('user_id', $transaction->user_id)
+        //     ->where('date', Carbon::yesterday()->format('Y-m-d'))
+        //     ->first();
         // Update the status
         $transaction->status = $request->status;
         $transaction->save();
-        $settlement->closing_bal -=$transaction->amount;
-        $settlement->save();
+        // $settlement->closing_bal -=$transaction->amount;
+        // $settlement->save();
     
         return response()->json(['message' => 'Status changed successfully!']);
     }

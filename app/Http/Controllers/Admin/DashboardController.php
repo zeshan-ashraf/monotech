@@ -159,4 +159,36 @@ class DashboardController extends Controller
 
         return redirect()->route('admin.account.settings')->with('message','Updated Successfully!');
     }
+    public function testing()
+    {
+        $yesterday = \Carbon\Carbon::yesterday()->toDateString();
+
+        $transactionReverse = DB::table('transactions')
+            ->where('user_id', '2')
+            ->where('status', 'reverse')
+            ->whereDate('updated_at', Carbon::today())
+            ->sum('amount');
+
+        $archiveReverse = DB::table('archeive_transactions')
+            ->where('user_id', '2')
+            ->where('status', 'reverse')
+            ->whereDate('updated_at', Carbon::today())
+            ->sum('amount');
+
+        $backupReverse = DB::table('backup_transactions')
+            ->where('user_id', '2')
+            ->where('status', 'reverse')
+            ->whereDate('updated_at', Carbon::today())
+            ->sum('amount');
+
+        $totalReverseAmount = $transactionReverse + $archiveReverse + $backupReverse;
+        
+        // if($user->id == 2){
+        //     $transactionReverseHalf = $totalReverseAmount * 0.5;
+        // }
+        // else{
+            $transactionReverseHalf = $totalReverseAmount;
+        // }
+        dd($transactionReverseHalf);
+    }
 }

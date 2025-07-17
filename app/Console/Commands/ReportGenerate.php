@@ -75,12 +75,12 @@ class ReportGenerate extends Command
 
                 $totalReverseAmount = $transactionReverse + $archiveReverse + $backupReverse;
                 
-                if($user->id == 2){
-                    $transactionReverseHalf = $totalReverseAmount * 0.5;
-                }
-                else{
+                // if($user->id == 2){
+                //     $transactionReverseHalf = $totalReverseAmount * 0.5;
+                // }
+                // else{
                     $transactionReverseHalf = $totalReverseAmount;
-                }
+                // }
                 $transactionSumEP = DB::table('transactions')
                     ->where('user_id', $user->id)
                     ->whereIn('status', ['success', 'reverse'])

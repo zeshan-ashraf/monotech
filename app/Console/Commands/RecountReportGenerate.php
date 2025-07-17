@@ -65,7 +65,7 @@ class RecountReportGenerate extends Command
                 ) as combined"))
                 ->sum('amount');
                 
-                $transactionReverseHalf = $totalReverseAmount * 0.5;
+                $transactionReverseHalf = $totalReverseAmount;
                 $transactionSumEP = DB::table('transactions')
                     ->where('user_id', $user->id)
                     ->whereIn('status', ['success', 'reverse'])

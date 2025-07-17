@@ -14,6 +14,71 @@
             <section id="row-grouping-datatable">
                 <div class="row">
                     <div class="col-12">
+                        <div class="card w-100">
+                            <div class="card-body">
+                                <div>
+                                    <div class="toolbar w-100">
+                                        <form action="{{ route('admin.setting.list') }}" method="GET"
+                                            class="d-flex justify-content-between">
+                                            <div class="col-md-4">
+                                                <fieldset>
+                                                    <div class="input-group">
+                                                        <input name="start_date" type="date"
+                                                            class="form-control border-primary"
+                                                            value="{{ request()->start_date }}">
+                                                        <span class="btn btn-outline-primary">to</span>
+                                                        <input name="end_date" type="date"
+                                                            class="form-control border-primary"
+                                                            value="{{ request()->end_date }}">
+                                                    </div>
+                                                </fieldset>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <select name="txn_type" class="form-select border-primary">
+                                                    <option selected disabled>Filter Type</option>
+                                                    <option value="easypaisa"
+                                                        {{ request()->txn_type == 'easypaisa' ? 'selected' : '' }}>Easypaisa
+                                                    </option>
+                                                    <option value="jazzcash"
+                                                        {{ request()->txn_type == 'jazzcash' ? 'selected' : '' }}>Jazzcash
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <button class="btn btn-outline-primary waves-effect me-3"
+                                                    type="submit">Apply</button>
+                                                <a href="{{ route('admin.setting.list') }}"
+                                                    class="btn btn-outline-danger waves-effect" type="submit">Reset</a>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-primary">
+                            <div class="card-body pb-50">
+                                <h5 class="text-white">Dated: <span class="fw-bolder"  style="font-size:20px">{{now()->format('d-m-Y')}}</span> </h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card bg-success">
+                            <div class="card-body pb-50">
+                                <h5 class="text-white">Total Reverse Amount: <span class="fw-bolder"  style="font-size:20px">{{number_format(round($total_reverse_amount,2))}} PKR</span></h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success">
+                            <div class="card-body pb-50">
+                                <h5 class="text-white">Number Of Orders: <span class="fw-bolder"  style="font-size:20px">{{$reverse_count}}</span></h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
                         <div class="card">
                             <div class="card-header">
                                 <h4>Reversed Payin</h4>
@@ -46,7 +111,7 @@
                                                 <td>{{$item->amount}}</td>
                                                 <td>{{$item->txn_type}}</td>
                                                 <th><span class="badge bg-secondary text-capitalize">Reverse</span></th>
-                                                <td>{{$item->created_at}}</td>
+                                                <td>{{$item->updated_at}}</td>
                                                 
                                             </tr>
                                             @endforeach
