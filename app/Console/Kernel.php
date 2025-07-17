@@ -114,7 +114,7 @@ class Kernel extends ConsoleKernel
                     throw new \Exception("Invalid schedule type: {$jctime->type}");
             }
         }
-
+        /*
         $schedule->command('transactions:jazzcash-recheck-status')->everyMinute();
         $schedule->command('report:generate')->everyMinute();
         $schedule->command('transactions:archive')->dailyAt('02:00');
@@ -122,6 +122,23 @@ class Kernel extends ConsoleKernel
         $schedule->command('payouts:archive')->daily('03:00');
         $schedule->command('app:recount-report-generate')->dailyAt('01:00');
         $schedule->command('transactions:auto-fail')->everyFiveMinutes();
+        */
+        $event = $schedule->command('transactions:jazzcash-recheck-status')->everyMinute();
+        $wrapSchedule($event, 'transactions:jazzcash-recheck-status');
+        $event = $schedule->command('report:generate')->everyMinute();
+        $wrapSchedule($event, 'report:generate');
+        // $schedule->command('suplus:addition')->everyThirtySeconds();
+        $event = $schedule->command('transactions:archive')->dailyAt('02:00');
+        $wrapSchedule($event, 'transactions:archive');
+        $event = $schedule->command('transactions:backup')->dailyAt('02:30');
+        $wrapSchedule($event, 'transactions:backup');
+        $event = $schedule->command('payouts:archive')->daily('03:00');
+        $wrapSchedule($event, 'payouts:archive');
+        // $schedule->command('transactions:old')->dailyAt('04:25');
+        $event = $schedule->command('app:recount-report-generate')->dailyAt('01:00');
+        $wrapSchedule($event, 'app:recount-report-generate');
+        $event = $schedule->command('transactions:auto-fail')->everyFiveMinutes();
+        $wrapSchedule($event, 'transactions:auto-fail');
 
     }
 
