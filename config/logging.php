@@ -152,6 +152,13 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => 14,
         ],
+        'rejected_requests' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/schedule_debug.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+        ],
+        
     ],
 
 ];
