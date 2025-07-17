@@ -50,7 +50,7 @@ class Kernel extends ConsoleKernel
             $event->after(function () use (&$start, &$runId, $command, $logScheduleEnd) {
                 $logScheduleEnd($command, $start, $runId);
             });
-            $event->appendOutputTo(storage_path('logs/schedule_' . str_replace(':', '_', $command) . '.log'));
+            //$event->appendOutputTo(storage_path('logs/schedule_' . str_replace(':', '_', $command) . '.log'));
         };
         $eptime=ScheduleSetting::where('txns_type','easypaisa')->where('value',1)->first();
         $jctime=ScheduleSetting::where('txns_type','jazzcash')->where('value',1)->first();
