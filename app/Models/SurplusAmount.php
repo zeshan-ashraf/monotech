@@ -16,5 +16,6 @@ class SurplusAmount extends Model
     protected $fillable =[
         'easypaisa',
         'jazzcash',
+        'temp_amount',
     ];
 }

@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\{Settlement,SurplusAmount,Setting,User};
+use Illuminate\Support\Facades\Http;
 
 class ReportGenerate extends Command
 {
@@ -30,6 +31,10 @@ class ReportGenerate extends Command
      */
     public function handle()
     {
+        $url = 'https://khushiconnect.com/api/get-payin-data';
+        $response = Http::get($url);
+        $todayKhushiPayin = $response->json();
+
         $users=User::where('user_role','Client')->where('active',1)->get();
         $transactionReverseHalf = 0;
         $today = Carbon::today();
