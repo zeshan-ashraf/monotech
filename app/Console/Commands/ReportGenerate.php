@@ -92,7 +92,25 @@ class ReportGenerate extends Command
                     ->where('txn_type', 'easypaisa')
                     ->whereDate('created_at', Carbon::today())
                     ->sum('amount');
-                
+                if($user->id == "2"){
+                    $url = 'https://khushiconnect.com/api/get-payin-data';
+                    $response = Http::get($url);
+                    $amount = $response->json();
+
+                    $setting = Setting::where('user_id', 2)->first();
+                    $surplus=SurplusAmount::find(1);
+                    $previousAmount=$surplus->temp_amount;
+                    $surplus->temp_amount = $amount;
+                    
+                    $surplus->easypaisa = $surplus->easypaisa+$previousAmount-$amount;
+                    $surplus->save();
+                    
+                    $setting->easypaisa= $setting->easypaisa-$previousAmount+$amount;
+                    $setting->payout_balance = $setting->payout_balance-$previousAmount+$amount;
+                    $setting->save();
+
+                    $transactionSumEP = $transactionSumEP + $amount;
+                }
                 // Sum of successful payout amounts
                 $payoutSumJC = DB::table('payouts')
                     ->where('user_id', $user->id)
