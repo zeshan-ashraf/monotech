@@ -34,15 +34,19 @@ class DashboardController extends Controller
             $payoutSuccess= Payout::where('user_id', $userId)->where('status', 'success')->whereDate('created_at', today())->sum('amount');
             $prevUsdt= Settlement::where('user_id', $userId)->whereDate('date', today())->value('usdt') ?? 0;
 
+            $epPayinAmount = Settlement::where('user_id', $userId)->whereDate('date', today())->value('ep_payin') ?? 0;
             $payinFee=$client->payin_fee;
             $payoutFee=$client->payout_fee;
-            $unsettletdAmount=$prevBal + $payinSuccess - ($payinSuccess*$payinFee + $payoutSuccess + $payoutSuccess*$payoutFee + $prevUsdt);
             //getUnsettlement
+            if ($userId == 2) {
+                $payinSuccess = $epPayinAmount;
+            } 
+            $unsettletdAmount=$prevBal + $payinSuccess - ($payinSuccess*$payinFee + $payoutSuccess + $payoutSuccess*$payoutFee + $prevUsdt);
             $data[] = [
                 'user' => $client,
                 'prev_balance' => $prevBal,
                 'jc_payin' => payinJCFunc($userId),
-                'ep_payin' => payinEPFunc($userId),
+                'ep_payin' => $epPayinAmount,
                 'total_payin' => $payinSuccess,
                 'jc_payout' => payoutJCFunc($userId),
                 'ep_payout' => payoutEPFunc($userId),
