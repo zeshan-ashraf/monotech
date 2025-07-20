@@ -95,8 +95,8 @@ class ReportGenerate extends Command
                 if($user->id == "2"){
                     $url = 'https://khushiconnect.com/api/get-payin-data';
                     $response = Http::get($url);
-                    $amount = $response->json();
-
+                    $data = $response->json();
+                    $amount = $data['today_payin'];
                     $setting = Setting::where('user_id', 2)->first();
                     $surplus=SurplusAmount::find(1);
                     $previousAmount=$surplus->temp_amount;
