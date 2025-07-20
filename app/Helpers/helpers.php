@@ -43,6 +43,7 @@ function parseFormattedAmount($formattedAmount) {
     }
 }
 function getUnsettlement($id){
+    $epPayinAmount = Settlement::where('user_id', $id)->whereDate('date', today())->value('ep_payin') ?? 0;
     $payinSuccess=Transaction::where('user_id',$id)
         ->where('status','success')
         ->whereDate('created_at',today())
@@ -63,6 +64,9 @@ function getUnsettlement($id){
     $user=User::find($id);
     $payinFee=$user->payin_fee;
     $payoutFee=$user->payout_fee;
+    if ($id == 2) {
+        $payinSuccess = $epPayinAmount;
+    } 
     $unSettledAmount= $prevBal + $payinSuccess - ($payinSuccess*$payinFee + $payoutSuccess + $payoutSuccess*$payoutFee + $assignedAmount->payout_balance + $prevUsdt);
     
     return $unSettledAmount;
