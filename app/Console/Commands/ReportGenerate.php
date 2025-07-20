@@ -110,6 +110,7 @@ class ReportGenerate extends Command
                     $setting->save();
 
                     $transactionSumEP = $transactionSumEP + $amount;
+                    $transactionReverseHalf = $transactionReverseHalf + $data['today_reverse'];
                 }
                 // Sum of successful payout amounts
                 $payoutSumJC = DB::table('payouts')
