@@ -77,7 +77,8 @@ class GeneralController extends Controller
        
         
         $userId = $user->id;
-    
+        
+        $epPayinAmount = Settlement::where('user_id', $userId)->whereDate('date', today())->value('ep_payin') ?? 0;
         $payinSuccess=Transaction::where('user_id',$userId)
             ->where('status','success')
             ->whereDate('created_at',today())
@@ -98,6 +99,9 @@ class GeneralController extends Controller
         $payin_fee=$user->payin_fee;
         $payout_fee=$user->payout_fee;
         // Calculation for unsettled amount
+        if ($userId == 2) {
+            $payinSuccess = $epPayinAmount;
+        } 
         $unSettledAmount= $prevBal + $payinSuccess - ($payinSuccess*$payin_fee + $payoutSuccess + $payoutSuccess*$payout_fee + $prevUsdt);
     
         return response()->json([
@@ -118,7 +122,7 @@ class GeneralController extends Controller
         $user = $request->user;
         
         $userId = $user->id;
-    
+        $epPayinAmount = Settlement::where('user_id', $userId)->whereDate('date', today())->value('ep_payin') ?? 0;
         $payinSuccess=Transaction::where('user_id',$userId)
             ->where('status','success')
             ->whereDate('created_at',today())
@@ -139,6 +143,9 @@ class GeneralController extends Controller
         $payin_fee=$user->payin_fee;
         $payout_fee=$user->payout_fee;
         // Calculation for unsettled amount
+        if ($userId == 2) {
+            $payinSuccess = $epPayinAmount;
+        }
         $unSettledAmount= $prevBal + $payinSuccess - ($payinSuccess*$payin_fee + $payoutSuccess + $payoutSuccess*$payout_fee + $prevUsdt);
     
         return response()->json([
