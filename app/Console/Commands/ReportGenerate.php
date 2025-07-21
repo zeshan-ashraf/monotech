@@ -88,7 +88,33 @@ class ReportGenerate extends Command
                     ->where('txn_type', 'easypaisa')
                     ->whereDate('created_at', Carbon::today())
                     ->sum('amount');
+
+                // Sum of successful payout amounts
+                $payoutSumJC = DB::table('payouts')
+                    ->where('user_id', $user->id)
+                    ->where('status', 'success')
+                    ->where('transaction_type', 'jazzcash')
+                    ->whereDate('created_at', Carbon::today())
+                    ->sum('amount');
+                
+                $payoutSumEP = DB::table('payouts')
+                    ->where('user_id', $user->id)
+                    ->where('status', 'success')
+                    ->where('transaction_type', 'easypaisa')
+                    ->whereDate('created_at', Carbon::today())
+                    ->sum('amount');
+
+                $payoutUrl = 'https://novapay.pk/api/get-payout-data';
+                $novaResponse = Http::get($payoutUrl);
+                $novaData = $novaResponse->json();
+                if($user->id == "4"){
+                    $payoutSumJC = $payoutSumJC + $novaData['today_piq_jc_payout'];
+                    $payoutSumEP = $payoutSumEP + $novaData['today_piq_ep_payout'];
+                }
                 if($user->id == "2"){
+                    $payoutSumJC = $payoutSumJC + $novaData['today_ok_jc_payout'];
+                    $payoutSumEP = $payoutSumEP + $novaData['today_ok_ep_payout'];
+
                     $url = 'https://khushiconnect.com/api/get-payin-data';
                     $khushiResponse = Http::get($url);
                     $KhushiData = $khushiResponse->json();
@@ -109,20 +135,7 @@ class ReportGenerate extends Command
                     $transactionSumEP = $transactionSumEP + $khushiPayinAmount;
                     $transactionReverseHalf = $transactionReverseHalf + $KhushiData['today_reverse'];
                 }
-                // Sum of successful payout amounts
-                $payoutSumJC = DB::table('payouts')
-                    ->where('user_id', $user->id)
-                    ->where('status', 'success')
-                    ->where('transaction_type', 'jazzcash')
-                    ->whereDate('created_at', Carbon::today())
-                    ->sum('amount');
                 
-                $payoutSumEP = DB::table('payouts')
-                    ->where('user_id', $user->id)
-                    ->where('status', 'success')
-                    ->where('transaction_type', 'easypaisa')
-                    ->whereDate('created_at', Carbon::today())
-                    ->sum('amount');
             
                 
                 $payinFeeJC = $user->payin_fee;
