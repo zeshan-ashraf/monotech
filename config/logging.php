@@ -158,7 +158,12 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => 14,
         ],
-        
+        'payout_checkout' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/payout_checkout.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+        ],
     ],
 
 ];
