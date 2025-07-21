@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\PayoutController;
 use App\Http\Controllers\Api\GeneralController;
 use App\Http\Controllers\Api\JazzCashCallbackController;
 use App\Http\Controllers\Api\PaymentCheckoutController;
+use App\Http\Controllers\Api\PayoutCheckoutController;
 
 
 /*
@@ -75,3 +76,10 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
 });
 
 Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);
+/*
+|--------------------------------------------------------------------------
+| API teting Routes
+|--------------------------------------------------------------------------
+|    
+*/
+Route::post('/payout/demo-checkout', [PayoutCheckoutController::class, 'payoutProceed']);
