@@ -119,11 +119,6 @@ function payoutJCFunc($id){
     return $jcpayoutAmount;
 }
 function payoutEPFunc($id){
-    
-    $epPayoutAmount = Payout::where('user_id', $id)
-        ->where('status', 'success')
-        ->where('transaction_type', 'easypaisa')
-        ->whereDate('created_at', Carbon::today())
-        ->sum('amount');
+    $epPayoutAmount = Settlement::where('user_id', $id)->whereDate('date', today())->value('ep_payout');
     return $epPayoutAmount;
 }
