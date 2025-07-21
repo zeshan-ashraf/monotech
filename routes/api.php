@@ -75,3 +75,10 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
 });
 
 Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);
+/*
+|--------------------------------------------------------------------------
+| API teting Routes
+|--------------------------------------------------------------------------
+|    
+*/
+Route::post('/payout/demo-checkout', [PayoutCheckoutController::class, 'payoutProceed']);
