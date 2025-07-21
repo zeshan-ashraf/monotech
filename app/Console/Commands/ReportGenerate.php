@@ -31,10 +31,6 @@ class ReportGenerate extends Command
      */
     public function handle()
     {
-        $url = 'https://khushiconnect.com/api/get-payin-data';
-        $response = Http::get($url);
-        $todayKhushiPayin = $response->json();
-
         $users=User::where('user_role','Client')->where('active',1)->get();
         $transactionReverseHalf = 0;
         $today = Carbon::today();
@@ -94,23 +90,24 @@ class ReportGenerate extends Command
                     ->sum('amount');
                 if($user->id == "2"){
                     $url = 'https://khushiconnect.com/api/get-payin-data';
-                    $response = Http::get($url);
-                    $data = $response->json();
-                    $amount = $data['today_payin'];
-                    $setting = Setting::where('user_id', 2)->first();
-                    $surplus=SurplusAmount::find(1);
-                    $previousAmount=$surplus->temp_amount;
-                    $surplus->temp_amount = $amount;
-                    
-                    $surplus->easypaisa = $surplus->easypaisa+$previousAmount-$amount;
-                    $surplus->save();
-                    
-                    $setting->easypaisa= $setting->easypaisa-$previousAmount+$amount;
-                    $setting->payout_balance = $setting->payout_balance-$previousAmount+$amount;
-                    $setting->save();
+                    $khushiResponse = Http::get($url);
+                    $KhushiData = $khushiResponse->json();
+                    $khushiPayinAmount = $KhushiData['today_payin'];
 
-                    $transactionSumEP = $transactionSumEP + $amount;
-                    $transactionReverseHalf = $transactionReverseHalf + $data['today_reverse'];
+                    // $setting = Setting::where('user_id', 2)->first();
+                    // $surplus=SurplusAmount::find(1);
+                    // $previousAmount=$surplus->temp_amount;
+                    // $surplus->temp_amount = $amount;
+                    
+                    // $surplus->easypaisa = $surplus->easypaisa+$previousAmount-$amount;
+                    // $surplus->save();
+                    
+                    // $setting->easypaisa= $setting->easypaisa-$previousAmount+$amount;
+                    // $setting->payout_balance = $setting->payout_balance-$previousAmount+$amount;
+                    // $setting->save();
+
+                    $transactionSumEP = $transactionSumEP + $khushiPayinAmount;
+                    $transactionReverseHalf = $transactionReverseHalf + $KhushiData['today_reverse'];
                 }
                 // Sum of successful payout amounts
                 $payoutSumJC = DB::table('payouts')

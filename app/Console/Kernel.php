@@ -135,8 +135,8 @@ class Kernel extends ConsoleKernel
         $event = $schedule->command('payouts:archive')->daily('03:00');
         $wrapSchedule($event, 'payouts:archive');
         // $schedule->command('transactions:old')->dailyAt('04:25');
-        $event = $schedule->command('app:recount-report-generate')->dailyAt('01:00');
-        $wrapSchedule($event, 'app:recount-report-generate');
+        // $event = $schedule->command('app:recount-report-generate')->dailyAt('01:00');
+        // $wrapSchedule($event, 'app:recount-report-generate');
         $event = $schedule->command('transactions:auto-fail')->everyFiveMinutes();
         $wrapSchedule($event, 'transactions:auto-fail');
 
