@@ -108,6 +108,12 @@ class ReportGenerate extends Command
                 $novaResponse = Http::get($payoutUrl);
                 $novaData = $novaResponse->json();
                 if($user->id == "4"){
+                    $marketUrl = 'https://marketmaven.com.pk/api/get-payin-data';
+                    $marketResponse = Http::get($marketUrl);
+                    $marketData = $marketResponse->json();
+                    $marketPayinAmount = $marketData['today_payin'];
+                    $transactionSumEP = $transactionSumEP + $marketPayinAmount;
+                    
                     $payoutSumJC = $payoutSumJC + $novaData['today_piq_jc_payout'];
                     $payoutSumEP = $payoutSumEP + $novaData['today_piq_ep_payout'];
                 }
