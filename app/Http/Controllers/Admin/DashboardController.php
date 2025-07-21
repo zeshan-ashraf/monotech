@@ -30,26 +30,30 @@ class DashboardController extends Controller
             $userId = $client->id;
             
             $prevBal=Settlement::where('user_id', $userId)->whereDate('date', today()->subDay())->value('closing_bal') ?? 0;
-            $payinSuccess= Transaction::where('user_id', $userId)->where('status', 'success')->whereDate('created_at', today())->sum('amount');
-            $payoutSuccess= Payout::where('user_id', $userId)->where('status', 'success')->whereDate('created_at', today())->sum('amount');
-            $prevUsdt= Settlement::where('user_id', $userId)->whereDate('date', today())->value('usdt') ?? 0;
-
-            $epPayinAmount = Settlement::where('user_id', $userId)->whereDate('date', today())->value('ep_payin') ?? 0;
+            $settlement=Settlement::where('user_id', $userId)->whereDate('date', today())->first();
+            
+            $epPayinAmount = $settlement->ep_payin;
+            $jcPayinAmount = $settlement->jc_payin;
+            $epPayoutAmount = $settlement->ep_payout;
+            $jcPayoutAmount = $settlement->jc_payout;
+            $payinSuccess= $epPayinAmount + $jcPayinAmount;
+            $payoutSuccess= $epPayoutAmount + $jcPayoutAmount;
+            $prevUsdt= $settlement->usdt;
             $payinFee=$client->payin_fee;
             $payoutFee=$client->payout_fee;
             //getUnsettlement
-            if ($userId == 2) {
-                $payinSuccess = $epPayinAmount;
-            } 
+            // if ($userId == 2) {
+            //     $payinSuccess = $epPayinAmount;
+            // } 
             $unsettletdAmount=$prevBal + $payinSuccess - ($payinSuccess*$payinFee + $payoutSuccess + $payoutSuccess*$payoutFee + $prevUsdt);
             $data[] = [
                 'user' => $client,
                 'prev_balance' => $prevBal,
-                'jc_payin' => payinJCFunc($userId),
+                'jc_payin' => $jcPayinAmount,
                 'ep_payin' => $epPayinAmount,
                 'total_payin' => $payinSuccess,
-                'jc_payout' => payoutJCFunc($userId),
-                'ep_payout' => payoutEPFunc($userId),
+                'jc_payout' => $jcPayoutAmount,
+                'ep_payout' => $epPayoutAmount,
                 'total_payout' => $payoutSuccess,
                 'prev_usdt' => $prevUsdt,
                 'unsettled_amount' => $unsettletdAmount,
