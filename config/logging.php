@@ -164,6 +164,12 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => 14,
         ],
+        'throttle_phone' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/throttle_phone.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+        ],
     ],
 
 ];
