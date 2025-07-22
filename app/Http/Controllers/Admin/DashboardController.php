@@ -46,6 +46,9 @@ class DashboardController extends Controller
             //     $payinSuccess = $epPayinAmount;
             // } 
             $unsettletdAmount=$prevBal + $payinSuccess - ($payinSuccess*$payinFee + $payoutSuccess + $payoutSuccess*$payoutFee + $prevUsdt);
+            $assignedAmount=Setting::where('user_id',$userId)->select('jazzcash','easypaisa','payout_balance')->first();
+            $balance= $unsettletdAmount - $assignedAmount->payout_balance ;
+    
             $data[] = [
                 'user' => $client,
                 'prev_balance' => $prevBal,
@@ -57,7 +60,7 @@ class DashboardController extends Controller
                 'total_payout' => $payoutSuccess,
                 'prev_usdt' => $prevUsdt,
                 'unsettled_amount' => $unsettletdAmount,
-                'unsettled_amount_balance' => getUnsettlement($userId),
+                'unsettled_amount_balance' => $balance,
                 'assigned_amount' => Setting::where('user_id', $userId)->first(),
                 'setting' => Setting::where('user_id', $userId)->first(),
             ];
