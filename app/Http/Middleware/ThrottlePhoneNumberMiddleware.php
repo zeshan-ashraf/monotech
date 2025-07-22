@@ -36,8 +36,10 @@ class ThrottlePhoneNumberMiddleware
             //    'status' => 'error',
             //    'message' => 'You must wait ' . $wait . ' seconds before trying again with this phone number.'
             //], 429);
+            
+            $logger->info('You must wait ' . $wait . ' seconds before trying again with this phone number=' . $phone);
+            abort(429); // or abort(403);
 
-            $logger->info('You must wait ' . $wait . ' seconds before trying again with this phone number='.$phone);
         }
 
         // Store the phone in cache for 3 minutes (180 seconds)

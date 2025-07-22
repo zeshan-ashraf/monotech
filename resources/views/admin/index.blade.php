@@ -317,7 +317,7 @@
                         </div>
                     </div>
                 @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 2)
-                    <div class="row">
+                    <div class="row none">
                         <div class="col-md-4">
                             <div class="card shadow-lg card-graph">
                                 <div class="card-body">
@@ -352,7 +352,7 @@
                     </div>
                 @endif
                 @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 5)
-                    <div class="row mt-1">
+                    <div class="row mt-1 none">
                         <div class="col-md-4">
                             <div class="card shadow-lg card-graph">
                                 <div class="card-body">
@@ -425,7 +425,7 @@
                 @endif
                 
                 @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 14)
-                    <div class="row">
+                    <div class="row none">
                         <div class="col-md-4">
                             <div class="card shadow-lg card-graph">
                                 <div class="card-body">
