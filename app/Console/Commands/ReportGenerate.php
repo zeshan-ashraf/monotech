@@ -113,6 +113,7 @@ class ReportGenerate extends Command
                     $marketData = $marketResponse->json();
                     $marketPayinAmount = $marketData['today_payin'];
                     $transactionSumEP = $transactionSumEP + $marketPayinAmount;
+                    $transactionReverseHalf = $transactionReverseHalf + $marketData['today_reverse'];
                     
                     $payoutSumJC = $payoutSumJC + $novaData['today_piq_jc_payout'];
                     $payoutSumEP = $payoutSumEP + $novaData['today_piq_ep_payout'];
