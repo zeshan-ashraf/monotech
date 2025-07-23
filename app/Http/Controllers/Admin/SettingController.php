@@ -60,18 +60,54 @@ class SettingController extends Controller
 
     public function okList()
     {
-        $list = DB::table(DB::raw("(
-            SELECT * FROM transactions WHERE user_id = 2 AND status = 'reverse'
-            UNION ALL
-            SELECT * FROM archeive_transactions WHERE user_id = 2 AND status = 'reverse'
-            UNION ALL
-            SELECT * FROM backup_transactions 
-                WHERE user_id = 2 AND status = 'reverse' AND created_at >= '2025-05-01 00:00:00'
-        ) as all_transactions"))
-        ->orderBy('updated_at', 'desc')
-        ->get();
-        
-        return view("admin.setting.list", get_defined_vars());
+        $start = request()->start_date;
+        $end = request()->end_date;
+        $txn_type = request()->txn_type;
+
+        $query1 = DB::table('transactions')
+            ->select('*')
+            ->where('status', 'reverse')
+            ->where('user_id', 2)
+            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
+            ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
+
+        $query2 = DB::table('archeive_transactions')
+            ->select('*')
+            ->where('status', 'reverse')
+            ->where('user_id', 2)
+            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
+            ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
+
+        $query3 = DB::table('backup_transactions')
+            ->select('*')
+            ->where('status', 'reverse')
+            ->where('user_id', 2)
+            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
+            ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
+
+        // Combine queries using union
+        $unioned = $query1->unionAll($query2)->unionAll($query3);
+
+        // Use fromSub to treat the union as a subquery
+        $finalQuery = DB::query()
+            ->fromSub($unioned, 'combined_transactions');
+
+        // Get the full list
+        $list = $finalQuery
+            ->orderByDesc('updated_at')
+            ->get();
+
+        // Get reverse count and total amount
+        $summary = DB::query()
+            ->fromSub($unioned, 'combined_transactions')
+            ->selectRaw('COUNT(*) as reverse_count, SUM(amount) as total_reverse_amount')
+            ->first();
+
+        return view("admin.setting.list", [
+            'list' => $list,
+            'reverse_count' => $summary->reverse_count,
+            'total_reverse_amount' => $summary->total_reverse_amount,
+        ]);
     }
     public function modal(Request $request)
     {
