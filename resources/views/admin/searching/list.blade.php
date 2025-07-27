@@ -45,7 +45,7 @@
                                                         <label>Phone</label>
                                                         <input type="text" name="phone" id="fp-range"
                                                             class="form-control flatpickr-range  flatpickr-input"
-                                                            value="{{request()->phone}}">
+                                                            value="{{request()->phone}}" autocomplete="off">
                                                     </div>
                                                 </div>
                                                 <div class="col-md-3">
@@ -53,7 +53,7 @@
                                                         <label>Transaction Id</label>
                                                         <input type="text" name="transaction_Id" id="fp-range"
                                                             class="form-control flatpickr-range  flatpickr-input"
-                                                            value="{{request()->transaction_Id}}">
+                                                            value="{{request()->transaction_Id}}" autocomplete="off">
                                                     </div>
                                                 </div>
                                                 {{--<div class="col-md-2">
@@ -61,7 +61,7 @@
                                                         <label>Transaction Ref No</label>
                                                         <input type="text" name="transaction_ref_no" id="fp-range"
                                                             class="form-control flatpickr-range  flatpickr-input"
-                                                            value="{{request()->transaction_ref_no}}">
+                                                            value="{{request()->transaction_ref_no}}" autocomplete="off">
                                                     </div>
                                                 </div>--}}
                                                 <div class="col-md-3">
@@ -69,7 +69,7 @@
                                                         <label>Order Id</label>
                                                         <input type="text" name="order_id" id="fp-range"
                                                             class="form-control flatpickr-range  flatpickr-input"
-                                                            value="{{request()->order_id}}">
+                                                            value="{{request()->order_id}}" autocomplete="off">
                                                     </div>
                                                 </div>
                                                 <div class="col-md-3 mt-2">
