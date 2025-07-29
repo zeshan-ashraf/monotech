@@ -530,71 +530,84 @@ class PayoutController extends Controller
     }
     public function logRequestDetails(Request $request, $requestId, $startTime)
     {
-        $this->logger->info('********************************************************************************');
-       
-        $this->logger->info('Starting payout checkout process', [
-            'request_id' => $requestId,
-            'timestamp' => now()->toDateTimeString(),
-            'execution_start' => microtime(true),
+        try {
+           
             
-            // Request sender information
-            'client_ip' => $request->ip(),
-            'client_real_ip' => $request->header('X-Real-IP'),
-            'client_forwarded_ip' => $request->header('X-Forwarded-For'),
-            'client_user_agent' => $request->header('User-Agent'),
-            'client_referer' => $request->header('Referer'),
-            'client_origin' => $request->header('Origin'),
-            'client_accept' => $request->header('Accept'),
-            'client_accept_language' => $request->header('Accept-Language'),
-            'client_accept_encoding' => $request->header('Accept-Encoding'),
-            'client_connection' => $request->header('Connection'),
-            'client_host' => $request->header('Host'),
+            $this->logger->info('********************************************************************************');
             
-            // Request details
-            'request_method' => $request->method(),
-            'request_url' => $request->fullUrl(),
-            'request_path' => $request->path(),
-            'request_query_string' => $request->getQueryString(),
-            'request_content_type' => $request->header('Content-Type'),
-            'request_content_length' => $request->header('Content-Length'),
+            $this->logger->info('Starting payout checkout process', [
+                'request_id' => $requestId,
+                'timestamp' => now()->toDateTimeString(),
+                'execution_start' => microtime(true),
+                
+                // Request sender information
+                'client_ip' => $request->ip(),
+                'client_real_ip' => $request->header('X-Real-IP'),
+                'client_forwarded_ip' => $request->header('X-Forwarded-For'),
+                'client_user_agent' => $request->header('User-Agent'),
+                'client_referer' => $request->header('Referer'),
+                'client_origin' => $request->header('Origin'),
+                'client_accept' => $request->header('Accept'),
+                'client_accept_language' => $request->header('Accept-Language'),
+                'client_accept_encoding' => $request->header('Accept-Encoding'),
+                'client_connection' => $request->header('Connection'),
+                'client_host' => $request->header('Host'),
+                
+                // Request details
+                'request_method' => $request->method(),
+                'request_url' => $request->fullUrl(),
+                'request_path' => $request->path(),
+                'request_query_string' => $request->getQueryString(),
+                'request_content_type' => $request->header('Content-Type'),
+                'request_content_length' => $request->header('Content-Length'),
+                
+                // Request data (sanitized for sensitive info)
+                'request_data' => [
+                    'phone' => $request->phone,
+                    'client_email' => $request->client_email,
+                    'payout_method' => $request->payout_method,
+                    'amount' => $request->amount,
+                    'orderId' => $request->orderId,
+                    'callback_url' => $request->callback_url,
+                    'transaction_reference' => $request->transaction_reference ?? null,
+                ],
+                
+                // Additional request metadata
+                'request_headers' => $request->headers->all(),
+                'request_server' => [
+                    'SERVER_NAME' => $_SERVER['SERVER_NAME'] ?? null,
+                    'SERVER_ADDR' => $_SERVER['SERVER_ADDR'] ?? null,
+                    'SERVER_PORT' => $_SERVER['SERVER_PORT'] ?? null,
+                    'REMOTE_ADDR' => $_SERVER['REMOTE_ADDR'] ?? null,
+                    'REMOTE_PORT' => $_SERVER['REMOTE_PORT'] ?? null,
+                    'HTTP_HOST' => $_SERVER['HTTP_HOST'] ?? null,
+                    'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? null,
+                    'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? null,
+                    'QUERY_STRING' => $_SERVER['QUERY_STRING'] ?? null,
+                ],
+                
+                // Session and authentication info
+                'session_id' => $request->hasSession() ? $request->session()->getId() : null,
+                'has_session' => $request->hasSession(),
+                'is_ajax' => $request->ajax(),
+                'is_json' => $request->isJson(),
+                'wants_json' => $request->wantsJson(),
+                
+                // Performance metrics
+                'memory_usage_start' => memory_get_usage(true),
+                'memory_peak_start' => memory_get_peak_usage(true),
+            ]);
             
-            // Request data (sanitized for sensitive info)
-            'request_data' => [
-                'phone' => $request->phone,
-                'client_email' => $request->client_email,
-                'payout_method' => $request->payout_method,
-                'amount' => $request->amount,
-                'orderId' => $request->orderId,
-                'callback_url' => $request->callback_url,
-                'transaction_reference' => $request->transaction_reference ?? null,
-            ],
+            $this->logger->info('********************************************************************************');
             
-            // Additional request metadata
-            'request_headers' => $request->headers->all(),
-            'request_server' => [
-                'SERVER_NAME' => $_SERVER['SERVER_NAME'] ?? null,
-                'SERVER_ADDR' => $_SERVER['SERVER_ADDR'] ?? null,
-                'SERVER_PORT' => $_SERVER['SERVER_PORT'] ?? null,
-                'REMOTE_ADDR' => $_SERVER['REMOTE_ADDR'] ?? null,
-                'REMOTE_PORT' => $_SERVER['REMOTE_PORT'] ?? null,
-                'HTTP_HOST' => $_SERVER['HTTP_HOST'] ?? null,
-                'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? null,
-                'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? null,
-                'QUERY_STRING' => $_SERVER['QUERY_STRING'] ?? null,
-            ],
-            
-            // Session and authentication info
-            'session_id' => $request->session()->getId(),
-            'has_session' => $request->hasSession(),
-            'is_ajax' => $request->ajax(),
-            'is_json' => $request->isJson(),
-            'wants_json' => $request->wantsJson(),
-            
-            // Performance metrics
-            'memory_usage_start' => memory_get_usage(true),
-            'memory_peak_start' => memory_get_peak_usage(true),
-        ]);
-        $this->logger->info('********************************************************************************');
+        } catch (\Exception $e) {
+            // Log the error but don't break the main flow
+            $this->logger->error('Error in logRequestDetails', [
+                'request_id' => $requestId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
     }
     public function getTimeStamp($clientId,$clientSecret,$channel)
     {
