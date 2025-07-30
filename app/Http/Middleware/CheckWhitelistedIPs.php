@@ -97,7 +97,8 @@ class CheckWhitelistedIPs
 
         // Only check testing key if request is from Postman
         if ($isPostman) {
-            $testingKey = $request->input('testing_key') ?? $request->header('X-Testing-Key');
+            // $testingKey = $request->input('testing_key') ?? $request->header('X-Testing-Key');
+            $testingKey = $request->header('X-Testing-Key');
             $envTestingKey = env('TESTING_SECRET_KEY');
 
             if ($testingKey && $envTestingKey && $testingKey === $envTestingKey) {
