@@ -101,6 +101,7 @@ class PayoutController extends Controller
                     $assigned_amount = $setting->jazzcash;
                 }
                 if($request->amount > $assigned_amount){
+                    $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
                     $values = [
                         'user_id' => $user->id,
                         'code' => "Nova-Failed",
@@ -113,6 +114,7 @@ class PayoutController extends Controller
                         'transaction_type' => $request->payout_method,
                         'status' => 'failed',
                         'url' => $request->callback_url,
+                        'request_detail' => json_encode($requestDetail),
                     ];
                     Payout::create($values);
                     $url = $callback_url;
@@ -137,6 +139,7 @@ class PayoutController extends Controller
                     $assigned_amount = $setting->jazzcash;
                 }
                 if($request->amount > $assigned_amount){
+                    $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
                     $values = [
                         'user_id' => $user->id,
                         'code' => "Nova-Failed",
@@ -149,6 +152,7 @@ class PayoutController extends Controller
                         'transaction_type' => $request->payout_method,
                         'status' => 'failed',
                         'url' => $request->callback_url,
+                        'request_detail' => json_encode($requestDetail),
                     ];
                     Payout::create($values);
                     return response()->json([
@@ -258,6 +262,7 @@ class PayoutController extends Controller
                     'user_id' => $user->id,
                 ]);
 
+                $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
                 $values=[
                     'user_id' => $user->id,
                     'code' => $data['ResponseCode'],
@@ -270,6 +275,7 @@ class PayoutController extends Controller
                     'transaction_type' => $request->payout_method,
                     'status' => $data['ResponseCode'] === '0' && $data['ResponseMessage'] === 'Success' ? 'success' : 'failed',
                     'url' => $request->callback_url,
+                    'request_detail' => json_encode($requestDetail),
                 ];
                 $transaction=Payout::create($values);
                 if($data['ResponseCode'] === '0' && $data['TransactionStatus'] === 'success'){
@@ -428,6 +434,8 @@ class PayoutController extends Controller
                     'client_email' => $request->client_email,
                     'user_id' => $user->id,
                 ]);
+                
+                $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
                 $values=[
                     'user_id' => $user->id,
                     'code' => $data['responseCode'],
@@ -441,6 +449,7 @@ class PayoutController extends Controller
                     'transaction_id' => $data['transactionID'] ?? "",
                     'status' => $data['responseCode'] === 'G2P-T-0' ? 'success' : 'failed',
                     'url' => $request->callback_url,
+                    'request_detail' => json_encode($requestDetail),
                 ];
                 $transaction=Payout::create($values);
                 if($data['responseCode'] === 'G2P-T-0'){
@@ -738,5 +747,71 @@ class PayoutController extends Controller
         $decryptedData = openssl_decrypt($binaryData, 'AES-128-CBC', $decryptionKey, OPENSSL_RAW_DATA, $iv);
         
         return $decryptedData;
+    }
+
+    private function getRequestDetailForStorage(Request $request, $requestId, $startTime)
+    {
+        return [
+            'request_id' => $requestId,
+            'timestamp' => now()->toDateTimeString(),
+            'execution_start' => microtime(true),
+            
+            // Request sender information
+            'client_ip' => $request->ip(),
+            'client_real_ip' => $request->header('X-Real-IP'),
+            'client_forwarded_ip' => $request->header('X-Forwarded-For'),
+            'client_user_agent' => $request->header('User-Agent'),
+            'client_referer' => $request->header('Referer'),
+            'client_origin' => $request->header('Origin'),
+            'client_accept' => $request->header('Accept'),
+            'client_accept_language' => $request->header('Accept-Language'),
+            'client_accept_encoding' => $request->header('Accept-Encoding'),
+            'client_connection' => $request->header('Connection'),
+            'client_host' => $request->header('Host'),
+            
+            // Request details
+            'request_method' => $request->method(),
+            'request_url' => $request->fullUrl(),
+            'request_path' => $request->path(),
+            'request_query_string' => $request->getQueryString(),
+            'request_content_type' => $request->header('Content-Type'),
+            'request_content_length' => $request->header('Content-Length'),
+            
+            // Request data (sanitized for sensitive info)
+            'request_data' => [
+                'phone' => $request->phone,
+                'client_email' => $request->client_email,
+                'payout_method' => $request->payout_method,
+                'amount' => $request->amount,
+                'orderId' => $request->orderId,
+                'callback_url' => $request->callback_url,
+                'transaction_reference' => $request->transaction_reference ?? null,
+            ],
+            
+            // Additional request metadata
+            'request_headers' => $request->headers->all(),
+            'request_server' => [
+                'SERVER_NAME' => $_SERVER['SERVER_NAME'] ?? null,
+                'SERVER_ADDR' => $_SERVER['SERVER_ADDR'] ?? null,
+                'SERVER_PORT' => $_SERVER['SERVER_PORT'] ?? null,
+                'REMOTE_ADDR' => $_SERVER['REMOTE_ADDR'] ?? null,
+                'REMOTE_PORT' => $_SERVER['REMOTE_PORT'] ?? null,
+                'HTTP_HOST' => $_SERVER['HTTP_HOST'] ?? null,
+                'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? null,
+                'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? null,
+                'QUERY_STRING' => $_SERVER['QUERY_STRING'] ?? null,
+            ],
+            
+            // Session and authentication info
+            'session_id' => $request->hasSession() ? $request->session()->getId() : null,
+            'has_session' => $request->hasSession(),
+            'is_ajax' => $request->ajax(),
+            'is_json' => $request->isJson(),
+            'wants_json' => $request->wantsJson(),
+            
+            // Performance metrics
+            'memory_usage_start' => memory_get_usage(true),
+            'memory_peak_start' => memory_get_peak_usage(true),
+        ];
     }
 }
