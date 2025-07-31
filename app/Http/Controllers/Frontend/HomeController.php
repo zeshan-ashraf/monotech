@@ -9,6 +9,7 @@ use App\Service\PaymentService;
 use DB;
 use Illuminate\Support\Facades\Log;
 use Zfhassaan\Easypaisa\Easypaisa;
+use Illuminate\Database\QueryException;
 
 class HomeController extends Controller
 {
@@ -130,7 +131,13 @@ class HomeController extends Controller
                         'pp_message' => $result->pp_ResponseMessage,
                         'transactionId' => $request->phone,
                     ];
-                    $transaction = Transaction::create($values);
+                    try {
+                        $transaction = Transaction::create($values);
+                    } catch (QueryException $e) {
+                        // Handle duplicate orderId error
+                        Log::warning('Duplicate orderId detected: ' . $values['orderId']);
+                        return redirect()->route('home')->with('error', 'Transaction already processed. Please try again.');
+                    }
                 
                     return redirect()->route('home')->with('success', 'Trannsaction succesfully completed! Thanks for Choosing Jazzcash.');
                 }

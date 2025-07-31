@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('phone', 191)->nullable();
-            $table->string('orderId', 191)->nullable();
+            $table->string('orderId', 50)->unique();
             $table->double('amount', 8, 2);
             $table->string('txn_ref_no', 191);
             $table->string('transactionId', 191)->nullable();

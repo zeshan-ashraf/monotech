@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Zfhassaan\Easypaisa\Easypaisa;
+use Illuminate\Database\QueryException;
 
 class PaymentServiceV1
 {
@@ -338,12 +339,13 @@ class PaymentServiceV1
     }
 
     /**
-     * Create new transaction
+     * Create a new transaction
      *
      * @param int $userId
      * @param string $txnRefNo
      * @param Request $request
      * @return Transaction
+     * @throws \Exception
      */
     private function createTransaction(int $userId, string $txnRefNo, Request $request): Transaction
     {
@@ -358,7 +360,25 @@ class PaymentServiceV1
             'url' => $request->callback_url
         ];
           
-        return Transaction::create($values);
+        try {
+            return Transaction::create($values);
+        } catch (QueryException $e) {
+            // Handle duplicate key exceptions
+            if ($e->errorInfo[1] == 1062) { // MySQL error code for duplicate key
+                $requestId = $request->request_id ?? uniqid();
+                Log::channel('error')->warning('[TestPaymentService] Duplicate transaction attempt detected', [
+                    'request_id' => $requestId,
+                    'error' => $e->getMessage(),
+                    'transaction_ref' => $txnRefNo,
+                    'user_id' => $userId,
+                    'orderId' => $request->orderId,
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                throw new \Exception('Order ID already exists. Please use a different order ID.', 409);
+            }
+            throw $e; // Re-throw other exceptions
+        }
     }
 
     /**
@@ -805,6 +825,7 @@ class PaymentServiceV1
      * @param Request $request
      * @param string $paymentMethod
      * @return Transaction
+     * @throws \Exception
      */
     public function createBlockedTransaction(Request $request, string $paymentMethod): Transaction
     {
@@ -812,17 +833,34 @@ class PaymentServiceV1
         $pp_TxnDateTime = $DateTime->format('YmdHis');
         $pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
 
-        return Transaction::create([
-            'user_id' => $request->user_model->id,
-            'txn_ref_no' => $pp_TxnRefNo,
-            'amount' => $request->amount,
-            'orderId' => $request->orderId,
-            'status' => 'blocked',
-            'txn_type' => $paymentMethod,
-            'phone' => $request->phone,
-            'url' => $request->callback_url,
-            'pp_code' => 'BLOCKED',
-            'pp_message' => 'Number is blocked'
-        ]);
+        try {
+            return Transaction::create([
+                'user_id' => $request->user_model->id,
+                'txn_ref_no' => $pp_TxnRefNo,
+                'amount' => $request->amount,
+                'orderId' => $request->orderId,
+                'status' => 'blocked',
+                'txn_type' => $paymentMethod,
+                'phone' => $request->phone,
+                'url' => $request->callback_url,
+                'pp_code' => 'BLOCKED',
+                'pp_message' => 'Number is blocked'
+            ]);
+        } catch (QueryException $e) {
+            // Handle duplicate key exceptions
+            if ($e->errorInfo[1] == 1062) { // MySQL error code for duplicate key
+                $requestId = $request->request_id ?? uniqid();
+                Log::channel('error')->warning('[TestPaymentService] Duplicate blocked transaction attempt detected', [
+                    'request_id' => $requestId,
+                    'error' => $e->getMessage(),
+                    'orderId' => $request->orderId,
+                    'user_id' => $request->user_model->id,
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                throw new \Exception('Order ID already exists. Please use a different order ID.', 409);
+            }
+            throw $e; // Re-throw other exceptions
+        }
     }
 } 
