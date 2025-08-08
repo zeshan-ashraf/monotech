@@ -31,11 +31,8 @@ class PayoutController extends Controller
         $requestId = uniqid('req_');
         $startTime = microtime(true);
         
-        $this->logger->info('Starting payout checkout process', [
-            'request_id' => $requestId,
-            'request_data' => $request->all(),
-            'timestamp' => now()->toDateTimeString()
-        ]);
+        // Enhanced comprehensive logging for request tracking
+        $this->logRequestDetails($request, $requestId, $startTime);
 
         $validator = Validator::make($request->all(), [
             'phone' => 'required',
@@ -60,7 +57,8 @@ class PayoutController extends Controller
                 'message' => 'Payout Api suspended by administrator.',
             ], 400);
         }
-        $orderId=Payout::where('orderId',$request->orderId)->first();
+        
+        $orderId = Payout::where('orderId', $request->orderId)->first();
         if($orderId){
             $this->logger->warning('Duplicate order ID detected', [
                 'request_id' => $requestId,
@@ -68,7 +66,7 @@ class PayoutController extends Controller
                 'execution_time' => microtime(true) - $startTime
             ]);
 
-            $url =$request->callback_url;
+            $url = $request->callback_url;
             $call_data = [
                 'orderId' => $request->orderId,
                 'message' => 'Your payout cannot be processed due to Order Id already exist, please try again.',
@@ -77,7 +75,9 @@ class PayoutController extends Controller
             $this->logger->info('Sending callback for duplicate order', [
                 'request_id' => $requestId,
                 'callback_url' => $url,
-                'callback_data' => $call_data
+                'callback_data' => $call_data,
+                'client_ip' => $request->ip(),
+                'client_email' => $request->client_email,
             ]);
             $response = Http::timeout(60)->post($url, $call_data);
             $this->logger->info('Callback response for duplicate order', [
@@ -93,15 +93,16 @@ class PayoutController extends Controller
         else{
             $callback_url = $request->callback_url;
             if($user->email == "okpaysev@gmail.com"){
-                $setting=Setting::where('user_id',$user->id)->first();
-                $assigned_amount=0;
+                $setting = Setting::where('user_id', $user->id)->first();
+                $assigned_amount = 0;
                 if($request->payout_method == "easypaisa"){
-                    $assigned_amount=$setting->easypaisa;
+                    $assigned_amount = $setting->easypaisa;
                 }else {
-                    $assigned_amount=$setting->jazzcash;
+                    $assigned_amount = $setting->jazzcash;
                 }
                 if($request->amount > $assigned_amount){
-                    $values=[
+                    $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
+                    $values = [
                         'user_id' => $user->id,
                         'code' => "Nova-Failed",
                         'message' => "Merchant assigned limit breached",
@@ -113,9 +114,10 @@ class PayoutController extends Controller
                         'transaction_type' => $request->payout_method,
                         'status' => 'failed',
                         'url' => $request->callback_url,
+                        'request_detail' => json_encode($requestDetail),
                     ];
                     Payout::create($values);
-                    $url =$callback_url;
+                    $url = $callback_url;
                     $call_data = [
                         'orderId' => $request->orderId,
                         'message' => 'Your payout cannot be processed due to not enough balance , please try again.',
@@ -129,15 +131,16 @@ class PayoutController extends Controller
                 }
             }
             else{
-                $setting=Setting::where('user_id',$user->id)->first();
-                $assigned_amount=0;
+                $setting = Setting::where('user_id', $user->id)->first();
+                $assigned_amount = 0;
                 if($request->payout_method == "easypaisa"){
-                    $assigned_amount=$setting->easypaisa;
+                    $assigned_amount = $setting->easypaisa;
                 }else {
-                    $assigned_amount=$setting->jazzcash;
+                    $assigned_amount = $setting->jazzcash;
                 }
                 if($request->amount > $assigned_amount){
-                    $values=[
+                    $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
+                    $values = [
                         'user_id' => $user->id,
                         'code' => "Nova-Failed",
                         'message' => "Merchant assigned limit breached",
@@ -149,6 +152,7 @@ class PayoutController extends Controller
                         'transaction_type' => $request->payout_method,
                         'status' => 'failed',
                         'url' => $request->callback_url,
+                        'request_detail' => json_encode($requestDetail),
                     ];
                     Payout::create($values);
                     return response()->json([
@@ -169,11 +173,24 @@ class PayoutController extends Controller
                 $clientSecret = env('EASYPAY_CLIENT_SECRET');
                 $channel = env('EASYPAY_CHANNEL');
                 
-                $timeStamp=$this->getTimeStamp($clientId,$clientSecret,$channel);
-                $xHashValue=$this->getXHashValue($timeStamp);
+                $timeStamp = $this->getTimeStamp($clientId, $clientSecret, $channel);
+                $xHashValue = $this->getXHashValue($timeStamp);
         
-                $msisdn=env('EASYPAY_MSISDN');
-                $transfer_url=env('EASYPAY_MATOMA_TRANSFER_URL');
+                $msisdn = env('EASYPAY_MSISDN');
+                $transfer_url = env('EASYPAY_MATOMA_TRANSFER_URL');
+                
+                $this->logger->info('Easypaisa API call initiated', [
+                    'request_id' => $requestId,
+                    'api_url' => $transfer_url,
+                    'client_id' => $clientId,
+                    'channel' => $channel,
+                    'msisdn' => $msisdn,
+                    'timestamp' => $timeStamp,
+                    'hash_value' => substr($xHashValue, 0, 20) . '...', // Log partial hash for security
+                    'client_ip' => $request->ip(),
+                    'client_email' => $request->client_email,
+                    'user_id' => $user->id,
+                ]);
                 
                 $curl = curl_init();
                 $payload = [
@@ -181,6 +198,15 @@ class PayoutController extends Controller
                     "MSISDN" => $msisdn,
                     "ReceiverMSISDN" => $request->phone,
                 ];
+                
+                $this->logger->info('Easypaisa API payload', [
+                    'request_id' => $requestId,
+                    'payload' => $payload,
+                    'client_ip' => $request->ip(),
+                    'client_email' => $request->client_email,
+                    'user_id' => $user->id,
+                ]);
+                
                 curl_setopt_array($curl, [
                     CURLOPT_URL => $transfer_url,
                     CURLOPT_RETURNTRANSFER => true,
@@ -200,22 +226,43 @@ class PayoutController extends Controller
                     ],
                 ]);
             
+                $apiStartTime = microtime(true);
                 $response = curl_exec($curl);
+                $apiExecutionTime = microtime(true) - $apiStartTime;
                 
                 if ($response === false) {
                     $error = curl_error($curl);
+                    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
                     curl_close($curl);
+                    
+                    $this->logger->error('Easypaisa API call failed', [
+                        'request_id' => $requestId,
+                        'error' => $error,
+                        'http_code' => $httpCode,
+                        'api_execution_time' => $apiExecutionTime,
+                        'client_ip' => $request->ip(),
+                        'client_email' => $request->client_email,
+                        'user_id' => $user->id,
+                    ]);
+                    
                     return response()->json(['error' => $error], 500);
                 }
         
+                $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
                 curl_close($curl);
                 $data = json_decode($response, true);
 
-                $this->logger->info('Easypaisa API response', [
+                $this->logger->info('Easypaisa API response received', [
                     'request_id' => $requestId,
-                    'response' => $data
+                    'http_code' => $httpCode,
+                    'api_execution_time' => $apiExecutionTime,
+                    'response' => $data,
+                    'client_ip' => $request->ip(),
+                    'client_email' => $request->client_email,
+                    'user_id' => $user->id,
                 ]);
 
+                $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
                 $values=[
                     'user_id' => $user->id,
                     'code' => $data['ResponseCode'],
@@ -228,6 +275,7 @@ class PayoutController extends Controller
                     'transaction_type' => $request->payout_method,
                     'status' => $data['ResponseCode'] === '0' && $data['ResponseMessage'] === 'Success' ? 'success' : 'failed',
                     'url' => $request->callback_url,
+                    'request_detail' => json_encode($requestDetail),
                 ];
                 $transaction=Payout::create($values);
                 if($data['ResponseCode'] === '0' && $data['TransactionStatus'] === 'success'){
@@ -304,11 +352,31 @@ class PayoutController extends Controller
                 }
             }
             else{
-                $data=$request->all();
-                $token=$this->getToken();
-                $encryptionData=$this->encryptionFunc($request->all());
-                $transactionUrl=env('JAZZCASH_MATOMA_URL');
-                // dd($transactionUrl);
+                //$this->logger->info('Processing JazzCash payout', [
+                //    'request_id' => $requestId,
+                //    'amount' => $request->amount,
+                //    'phone' => $request->phone,
+                //    'client_ip' => $request->ip(),
+                //    'client_email' => $request->client_email,
+                //    'user_id' => $user->id,
+                //    'execution_time' => microtime(true) - $startTime,
+                //]);
+                
+                $data = $request->all();
+                $token = $this->getToken();
+                $encryptionData = $this->encryptionFunc($request->all());
+                $transactionUrl = env('JAZZCASH_MATOMA_URL');
+                
+                $this->logger->info('JazzCash API call initiated', [
+                    'request_id' => $requestId,
+                    'api_url' => $transactionUrl,
+                    'token' => substr($token, 0, 20) . '...', // Log partial token for security
+                    'encrypted_data_length' => strlen($encryptionData),
+                    'client_ip' => $request->ip(),
+                    'client_email' => $request->client_email,
+                    'user_id' => $user->id,
+                ]);
+                
                 $curl = curl_init();
                 curl_setopt_array($curl, [
                     CURLOPT_URL => $transactionUrl,
@@ -329,12 +397,45 @@ class PayoutController extends Controller
                     ],
                 ]);
                 
+                $apiStartTime = microtime(true);
                 $response = curl_exec($curl);
+                $apiExecutionTime = microtime(true) - $apiStartTime;
                 
+                if ($response === false) {
+                    $error = curl_error($curl);
+                    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                    curl_close($curl);
+                    
+                    $this->logger->error('JazzCash API call failed', [
+                        'request_id' => $requestId,
+                        'error' => $error,
+                        'http_code' => $httpCode,
+                        'api_execution_time' => $apiExecutionTime,
+                        'client_ip' => $request->ip(),
+                        'client_email' => $request->client_email,
+                        'user_id' => $user->id,
+                    ]);
+                    
+                    return response()->json(['error' => $error], 500);
+                }
+                
+                $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
                 curl_close($curl);
-                $decodeData=json_decode($response, true);
-                $decrptionData=$this->decrytionFunc($decodeData['data']);
-                $data=json_decode($decrptionData, true);
+                $decodeData = json_decode($response, true);
+                $decrptionData = $this->decrytionFunc($decodeData['data']);
+                $data = json_decode($decrptionData, true);
+                
+                $this->logger->info('JazzCash API response received', [
+                    'request_id' => $requestId,
+                    'http_code' => $httpCode,
+                    'api_execution_time' => $apiExecutionTime,
+                    'response' => $data,
+                    'client_ip' => $request->ip(),
+                    'client_email' => $request->client_email,
+                    'user_id' => $user->id,
+                ]);
+                
+                $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
                 $values=[
                     'user_id' => $user->id,
                     'code' => $data['responseCode'],
@@ -348,6 +449,7 @@ class PayoutController extends Controller
                     'transaction_id' => $data['transactionID'] ?? "",
                     'status' => $data['responseCode'] === 'G2P-T-0' ? 'success' : 'failed',
                     'url' => $request->callback_url,
+                    'request_detail' => json_encode($requestDetail),
                 ];
                 $transaction=Payout::create($values);
                 if($data['responseCode'] === 'G2P-T-0'){
@@ -433,6 +535,87 @@ class PayoutController extends Controller
                     ], 400);
                 }
             }
+        }
+    }
+    public function logRequestDetails(Request $request, $requestId, $startTime)
+    {
+        try {
+           
+            
+            $this->logger->info('********************************************************************************');
+            
+            $this->logger->info('Starting payout checkout process', [
+                'request_id' => $requestId,
+                'timestamp' => now()->toDateTimeString(),
+                'execution_start' => microtime(true),
+                
+                // Request sender information
+                'client_ip' => $request->ip(),
+                'client_real_ip' => $request->header('X-Real-IP'),
+                'client_forwarded_ip' => $request->header('X-Forwarded-For'),
+                'client_user_agent' => $request->header('User-Agent'),
+                'client_referer' => $request->header('Referer'),
+                'client_origin' => $request->header('Origin'),
+                'client_accept' => $request->header('Accept'),
+                'client_accept_language' => $request->header('Accept-Language'),
+                'client_accept_encoding' => $request->header('Accept-Encoding'),
+                'client_connection' => $request->header('Connection'),
+                'client_host' => $request->header('Host'),
+                
+                // Request details
+                'request_method' => $request->method(),
+                'request_url' => $request->fullUrl(),
+                'request_path' => $request->path(),
+                'request_query_string' => $request->getQueryString(),
+                'request_content_type' => $request->header('Content-Type'),
+                'request_content_length' => $request->header('Content-Length'),
+                
+                // Request data (sanitized for sensitive info)
+                'request_data' => [
+                    'phone' => $request->phone,
+                    'client_email' => $request->client_email,
+                    'payout_method' => $request->payout_method,
+                    'amount' => $request->amount,
+                    'orderId' => $request->orderId,
+                    'callback_url' => $request->callback_url,
+                    'transaction_reference' => $request->transaction_reference ?? null,
+                ],
+                
+                // Additional request metadata
+                'request_headers' => $request->headers->all(),
+                'request_server' => [
+                    'SERVER_NAME' => $_SERVER['SERVER_NAME'] ?? null,
+                    'SERVER_ADDR' => $_SERVER['SERVER_ADDR'] ?? null,
+                    'SERVER_PORT' => $_SERVER['SERVER_PORT'] ?? null,
+                    'REMOTE_ADDR' => $_SERVER['REMOTE_ADDR'] ?? null,
+                    'REMOTE_PORT' => $_SERVER['REMOTE_PORT'] ?? null,
+                    'HTTP_HOST' => $_SERVER['HTTP_HOST'] ?? null,
+                    'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? null,
+                    'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? null,
+                    'QUERY_STRING' => $_SERVER['QUERY_STRING'] ?? null,
+                ],
+                
+                // Session and authentication info
+                'session_id' => $request->hasSession() ? $request->session()->getId() : null,
+                'has_session' => $request->hasSession(),
+                'is_ajax' => $request->ajax(),
+                'is_json' => $request->isJson(),
+                'wants_json' => $request->wantsJson(),
+                
+                // Performance metrics
+                'memory_usage_start' => memory_get_usage(true),
+                'memory_peak_start' => memory_get_peak_usage(true),
+            ]);
+            
+            $this->logger->info('********************************************************************************');
+            
+        } catch (\Exception $e) {
+            // Log the error but don't break the main flow
+            $this->logger->error('Error in logRequestDetails', [
+                'request_id' => $requestId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
     public function getTimeStamp($clientId,$clientSecret,$channel)
@@ -564,5 +747,71 @@ class PayoutController extends Controller
         $decryptedData = openssl_decrypt($binaryData, 'AES-128-CBC', $decryptionKey, OPENSSL_RAW_DATA, $iv);
         
         return $decryptedData;
+    }
+
+    private function getRequestDetailForStorage(Request $request, $requestId, $startTime)
+    {
+        return [
+            'request_id' => $requestId,
+            'timestamp' => now()->toDateTimeString(),
+            'execution_start' => microtime(true),
+            
+            // Request sender information
+            'client_ip' => $request->ip(),
+            'client_real_ip' => $request->header('X-Real-IP'),
+            'client_forwarded_ip' => $request->header('X-Forwarded-For'),
+            'client_user_agent' => $request->header('User-Agent'),
+            'client_referer' => $request->header('Referer'),
+            'client_origin' => $request->header('Origin'),
+            'client_accept' => $request->header('Accept'),
+            'client_accept_language' => $request->header('Accept-Language'),
+            'client_accept_encoding' => $request->header('Accept-Encoding'),
+            'client_connection' => $request->header('Connection'),
+            'client_host' => $request->header('Host'),
+            
+            // Request details
+            'request_method' => $request->method(),
+            'request_url' => $request->fullUrl(),
+            'request_path' => $request->path(),
+            'request_query_string' => $request->getQueryString(),
+            'request_content_type' => $request->header('Content-Type'),
+            'request_content_length' => $request->header('Content-Length'),
+            
+            // Request data (sanitized for sensitive info)
+            'request_data' => [
+                'phone' => $request->phone,
+                'client_email' => $request->client_email,
+                'payout_method' => $request->payout_method,
+                'amount' => $request->amount,
+                'orderId' => $request->orderId,
+                'callback_url' => $request->callback_url,
+                'transaction_reference' => $request->transaction_reference ?? null,
+            ],
+            
+            // Additional request metadata
+            'request_headers' => $request->headers->all(),
+            'request_server' => [
+                'SERVER_NAME' => $_SERVER['SERVER_NAME'] ?? null,
+                'SERVER_ADDR' => $_SERVER['SERVER_ADDR'] ?? null,
+                'SERVER_PORT' => $_SERVER['SERVER_PORT'] ?? null,
+                'REMOTE_ADDR' => $_SERVER['REMOTE_ADDR'] ?? null,
+                'REMOTE_PORT' => $_SERVER['REMOTE_PORT'] ?? null,
+                'HTTP_HOST' => $_SERVER['HTTP_HOST'] ?? null,
+                'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? null,
+                'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? null,
+                'QUERY_STRING' => $_SERVER['QUERY_STRING'] ?? null,
+            ],
+            
+            // Session and authentication info
+            'session_id' => $request->hasSession() ? $request->session()->getId() : null,
+            'has_session' => $request->hasSession(),
+            'is_ajax' => $request->ajax(),
+            'is_json' => $request->isJson(),
+            'wants_json' => $request->wantsJson(),
+            
+            // Performance metrics
+            'memory_usage_start' => memory_get_usage(true),
+            'memory_peak_start' => memory_get_peak_usage(true),
+        ];
     }
 }

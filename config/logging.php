@@ -131,14 +131,14 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/payin.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
+            'days' => 60,
         ],
 
         'payout' => [
             'driver' => 'daily',
             'path' => storage_path('logs/payout.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
+            'days' => 60,
         ],
         'jazzcash_payin_callback' => [
             'driver' => 'daily',
@@ -162,7 +162,7 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/payout_checkout.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
+            'days' => 60,
         ],
         'throttle_phone' => [
             'driver' => 'daily',

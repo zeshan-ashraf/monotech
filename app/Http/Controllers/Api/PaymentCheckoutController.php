@@ -441,6 +441,24 @@ class PaymentCheckoutController extends Controller
      */
     private function handleProcessingError(\Exception $e, string $requestId, Request $request): JsonResponse
     {
+        // Handle duplicate orderId specifically
+        if ($e->getMessage() === 'Order ID already exists. Please use a different order ID.') {
+            Log::channel('error')->error('Duplicate orderId detected', [
+                'request_id' => $requestId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'client_email' => $request->client_email,
+                'payment_method' => $request->payment_method,
+                'request_params' => $request->all()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 409);
+        }
+        
+        // Handle other errors
         Log::channel('error')->error('Payment checkout general error', [
             'request_id' => $requestId,
             'error' => $e->getMessage(),

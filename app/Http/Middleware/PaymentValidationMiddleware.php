@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
-use App\Models\User;
+use App\Models\{User, Transaction};
+use Illuminate\Validation\Rule;
 
 class PaymentValidationMiddleware
 {
@@ -26,7 +27,8 @@ class PaymentValidationMiddleware
 			'phone.regex' => 'Invalid phone number, must be 11 digit.',
 			'callback_url.starts_with' => 'Callback URL must start with https:// for security.',
 			'amount.max' => 'Amount exceeds the maximum allowed value.',
-			'amount.min' => 'Amount is less then allowed value.'
+			'amount.min' => 'Amount is less then allowed value.',
+			'orderId.unique' => 'This order ID has already been used.'
 		];
 		
 		
@@ -39,7 +41,12 @@ class PaymentValidationMiddleware
 				'regex:/^03[0-9]{9}$/'
 			],
 			'callback_url' => 'required|url|starts_with:https://',
-			'orderId' => 'required|string|max:50'
+			'orderId' => [
+				'required',
+				'string',
+				'max:50',
+				Rule::unique('transactions')
+			]
 		];
 
 		// Set amount max based on payment_method

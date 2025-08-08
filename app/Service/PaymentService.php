@@ -11,6 +11,7 @@ use DateTimeZone;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\QueryException;
 
 class PaymentService
 {
@@ -199,14 +200,37 @@ class PaymentService
 			'url' => $request->callback_url
 		);
           
-		$transaction = Transaction::create($values);
+		try {
+			$transaction = Transaction::create($values);
+			
+			$this->logger->info('PaymentService: Order initial process completed', [
+				'transaction_id' => $transaction->id,
+				'execution_time' => microtime(true) - $startTime
+			]);
 
-        $this->logger->info('PaymentService: Order initial process completed', [
-            'transaction_id' => $transaction->id,
-            'execution_time' => microtime(true) - $startTime
-        ]);
-
-        return true;
+			return true;
+		} catch (QueryException $e) {
+			// Handle duplicate key error (MySQL error code 1062)
+			if ($e->getCode() == 1062) {
+				$this->logger->warning('PaymentService: Duplicate orderId detected', [
+					'orderId' => $request->orderId,
+					'error_code' => $e->getCode(),
+					'error_message' => $e->getMessage(),
+					'execution_time' => microtime(true) - $startTime
+				]);
+				
+				throw new \Exception('Order ID already exists. Please use a different order ID.', 409);
+			}
+			
+			// Re-throw other database exceptions
+			$this->logger->error('PaymentService: Database error during duplicate orderId transaction creation', [
+				'error_code' => $e->getCode(),
+				'error_message' => $e->getMessage(),
+				'execution_time' => microtime(true) - $startTime
+			]);
+			
+			throw $e;
+		}
     }
 
     public function orderFinalProcess($request, $RefNum, $type)

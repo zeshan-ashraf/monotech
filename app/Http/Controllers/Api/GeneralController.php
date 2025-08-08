@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\{Transaction,ArcheiveTransaction,BackupTransaction,Payout,ArcheivePayout,Summary,Setting,Settlement,User};
+use Illuminate\Database\QueryException;
 
 class GeneralController extends Controller
 {
@@ -18,19 +19,28 @@ class GeneralController extends Controller
         $response = Http::get($url);
         $data = $response->json();
         foreach($data['data'] as $item){
-            $transaction = Transaction::create([
-                'orderId' => $item['orderId'],
-                'amount' => $item['amount'],
-                'txn_ref_no' => $item['txn_ref_no'],
-                'transactionId' => $item['transactionId'],
-                'txn_type' => $item['txn_type'],
-                'status' => $item['status'],
-                'pp_code' => $item['pp_code'],
-                'pp_message' => $item['pp_message'],
-                'created_at' => $item['created_at'],
-                'updated_at' => $item['updated_at'],
-            ]);
-        
+            try {
+                $transaction = Transaction::create([
+                    'orderId' => $item['orderId'],
+                    'amount' => $item['amount'],
+                    'txn_ref_no' => $item['txn_ref_no'],
+                    'transactionId' => $item['transactionId'],
+                    'txn_type' => $item['txn_type'],
+                    'status' => $item['status'],
+                    'pp_code' => $item['pp_code'],
+                    'pp_message' => $item['pp_message'],
+                    'created_at' => $item['created_at'],
+                    'updated_at' => $item['updated_at'],
+                ]);
+            } catch (QueryException $e) {
+                // Handle duplicate key exceptions silently for external data sync
+                if ($e->errorInfo[1] == 1062) {
+                    // Log duplicate but don't throw error for external data
+                    \Log::error('Duplicate orderId during external sync: external orderid=' . $item['orderId']);
+                    continue;
+                }
+                throw $e; // Re-throw other exceptions
+            }
         }
           
     }

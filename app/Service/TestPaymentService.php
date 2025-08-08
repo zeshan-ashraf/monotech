@@ -10,6 +10,8 @@ use DateTime;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Database\QueryException;
 
 class TestPaymentService
 {
@@ -134,7 +136,15 @@ class TestPaymentService
 			'url' => $request->callback_url
 		);
           
-		$transaction = Transaction::create($values);
+		try {
+			$transaction = Transaction::create($values);
+		} catch (QueryException $e) {
+			// Handle the case where the transaction already exists
+			Log::warning('Duplicate transaction attempt for txn_ref_no: ' . $pp_TxnRefNo, ['exception' => $e]);
+			// You might want to update the existing transaction or return an error
+			// For now, we'll just return true as the transaction is already there
+			return true;
+		}
 
         return true;
     }

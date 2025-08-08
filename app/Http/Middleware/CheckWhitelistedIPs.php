@@ -91,12 +91,43 @@ class CheckWhitelistedIPs
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Check if request is from Postman
+        $userAgent = $request->header('User-Agent');
+        $isPostman = str_contains($userAgent, 'PostmanRuntime');
+
+        // Only check testing key if request is from Postman
+        if ($isPostman) {
+            // $testingKey = $request->input('testing_key') ?? $request->header('X-Testing-Key');
+            $testingKey = $request->header('X-Testing-Key');
+            $envTestingKey = env('TESTING_SECRET_KEY');
+
+            if ($testingKey && $envTestingKey && $testingKey === $envTestingKey) {
+                Log::channel('payout')->info('Postman testing key authentication successful', [
+                    'ip' => $request->ip(),
+                    'method' => $request->method(),
+                    'path' => $request->path(),
+                    'user_agent' => $userAgent,
+                    'testing_key_provided' => !empty($testingKey)
+                ]);
+                return $next($request);
+            } else {
+                Log::channel('payout')->warning('Postman request with invalid or missing testing key', [
+                    'ip' => $request->ip(),
+                    'method' => $request->method(),
+                    'path' => $request->path(),
+                    'user_agent' => $userAgent,
+                    'testing_key_provided' => !empty($testingKey)
+                ]);
+                return response()->json(['error' => 'Invalid or missing testing key for Postman request'], 403);
+            }
+        }
+
         // Log the incoming request
         Log::channel('payout')->info('Incoming request to whitelisted endpoint', [
             'ip' => $request->ip(),
             'method' => $request->method(),
             'path' => $request->path(),
-            'user_agent' => $request->header('User-Agent'),
+            'user_agent' => $userAgent,
             'request_time' => now()->toDateTimeString()
         ]);
 
@@ -105,11 +136,10 @@ class CheckWhitelistedIPs
                 'ip' => $request->ip(),
                 'method' => $request->method(),
                 'path' => $request->path(),
-                'user_agent' => $request->header('User-Agent')
+                'user_agent' => $userAgent
             ]);
             return response()->json(['error' => 'Unauthorized IP'], 403);
         }
-
 
         return $next($request);
     }
