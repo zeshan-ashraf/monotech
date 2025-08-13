@@ -107,17 +107,17 @@ class ReportGenerate extends Command
                 $payoutUrl = 'https://novapay.pk/api/get-payout-data';
                 $novaResponse = Http::get($payoutUrl);
                 $novaData = $novaResponse->json();
-                if($user->id == "4"){
-                    $marketUrl = 'https://marketmaven.com.pk/api/get-payin-data';
-                    $marketResponse = Http::get($marketUrl);
-                    $marketData = $marketResponse->json();
-                    $marketPayinAmount = $marketData['today_payin'];
-                    $transactionSumEP = $transactionSumEP + $marketPayinAmount;
-                    $transactionReverseHalf = $transactionReverseHalf + $marketData['today_reverse'];
+                // if($user->id == "4"){
+                //     $marketUrl = 'https://marketmaven.com.pk/api/get-payin-data';
+                //     $marketResponse = Http::get($marketUrl);
+                //     $marketData = $marketResponse->json();
+                //     $marketPayinAmount = $marketData['today_payin'];
+                //     $transactionSumEP = $transactionSumEP + $marketPayinAmount;
+                //     $transactionReverseHalf = $transactionReverseHalf + $marketData['today_reverse'];
                     
-                    $payoutSumJC = $payoutSumJC + $novaData['today_piq_jc_payout'];
-                    $payoutSumEP = $payoutSumEP + $novaData['today_piq_ep_payout'];
-                }
+                //     $payoutSumJC = $payoutSumJC + $novaData['today_piq_jc_payout'];
+                //     $payoutSumEP = $payoutSumEP + $novaData['today_piq_ep_payout'];
+                // }
                 if($user->id == "2"){
                     $payoutSumJC = $payoutSumJC + $novaData['today_ok_jc_payout'];
                     $payoutSumEP = $payoutSumEP + $novaData['today_ok_ep_payout'];
