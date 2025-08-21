@@ -108,7 +108,8 @@ trait HighValueTransactionRestriction
 
                 return [
                     'status' => 'error',
-                    'message' => "High-value transactions ({$thresholdAmount}+) are restricted for {$restrictionMinutes} minutes after a transaction with status: " . implode(', ', $restrictedStatuses) . " from this number.",
+                    //'message' => "High-value transactions ({$thresholdAmount}+) are restricted for {$restrictionMinutes} minutes after a transaction with status: " . implode(', ', $restrictedStatuses) . " from this number.",
+                    'message' => "Your transactions is restricted.",
                     'code' => 429
                 ];
             }
