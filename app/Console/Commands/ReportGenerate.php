@@ -104,9 +104,9 @@ class ReportGenerate extends Command
                     ->whereDate('created_at', Carbon::today())
                     ->sum('amount');
 
-                $payoutUrl = 'https://novapay.pk/api/get-payout-data';
-                $novaResponse = Http::get($payoutUrl);
-                $novaData = $novaResponse->json();
+                // $payoutUrl = 'https://novapay.pk/api/get-payout-data';
+                // $novaResponse = Http::get($payoutUrl);
+                // $novaData = $novaResponse->json();
                 // if($user->id == "4"){
                 //     $marketUrl = 'https://marketmaven.com.pk/api/get-payin-data';
                 //     $marketResponse = Http::get($marketUrl);
@@ -118,30 +118,30 @@ class ReportGenerate extends Command
                 //     $payoutSumJC = $payoutSumJC + $novaData['today_piq_jc_payout'];
                 //     $payoutSumEP = $payoutSumEP + $novaData['today_piq_ep_payout'];
                 // }
-                if($user->id == "2"){
-                    $payoutSumJC = $payoutSumJC + $novaData['today_ok_jc_payout'];
-                    $payoutSumEP = $payoutSumEP + $novaData['today_ok_ep_payout'];
+                // if($user->id == "2"){
+                //     $payoutSumJC = $payoutSumJC + $novaData['today_ok_jc_payout'];
+                //     $payoutSumEP = $payoutSumEP + $novaData['today_ok_ep_payout'];
 
-                    $url = 'https://khushiconnect.com/api/get-payin-data';
-                    $khushiResponse = Http::get($url);
-                    $KhushiData = $khushiResponse->json();
-                    $khushiPayinAmount = $KhushiData['today_payin'];
+                //     $url = 'https://khushiconnect.com/api/get-payin-data';
+                //     $khushiResponse = Http::get($url);
+                //     $KhushiData = $khushiResponse->json();
+                //     $khushiPayinAmount = $KhushiData['today_payin'];
 
-                    // $setting = Setting::where('user_id', 2)->first();
-                    // $surplus=SurplusAmount::find(1);
-                    // $previousAmount=$surplus->temp_amount;
-                    // $surplus->temp_amount = $amount;
+                //     // $setting = Setting::where('user_id', 2)->first();
+                //     // $surplus=SurplusAmount::find(1);
+                //     // $previousAmount=$surplus->temp_amount;
+                //     // $surplus->temp_amount = $amount;
                     
-                    // $surplus->easypaisa = $surplus->easypaisa+$previousAmount-$amount;
-                    // $surplus->save();
+                //     // $surplus->easypaisa = $surplus->easypaisa+$previousAmount-$amount;
+                //     // $surplus->save();
                     
-                    // $setting->easypaisa= $setting->easypaisa-$previousAmount+$amount;
-                    // $setting->payout_balance = $setting->payout_balance-$previousAmount+$amount;
-                    // $setting->save();
+                //     // $setting->easypaisa= $setting->easypaisa-$previousAmount+$amount;
+                //     // $setting->payout_balance = $setting->payout_balance-$previousAmount+$amount;
+                //     // $setting->save();
 
-                    $transactionSumEP = $transactionSumEP + $khushiPayinAmount;
-                    $transactionReverseHalf = $transactionReverseHalf + $KhushiData['today_reverse'];
-                }
+                //     $transactionSumEP = $transactionSumEP + $khushiPayinAmount;
+                //     $transactionReverseHalf = $transactionReverseHalf + $KhushiData['today_reverse'];
+                // }
                 
             
                 
