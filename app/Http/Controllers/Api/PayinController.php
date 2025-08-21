@@ -26,6 +26,34 @@ class PayinController extends Controller
         $this->service = $service;
         $this->logger = Log::channel('payin');
     }
+    
+    // Temporary test method to check if trait is working
+    public function testTrait()
+    {
+        \Log::info('Testing trait method');
+        
+        // Test basic logging first
+        \Log::info('Basic log test');
+        
+        // Test if the method exists
+        \Log::info('Method exists check', [
+            'method_exists' => method_exists($this, 'checkHighValueTransactionRestriction'),
+            'class_methods' => get_class_methods($this)
+        ]);
+        
+        try {
+            $result = $this->checkHighValueTransactionRestriction(
+                new \Illuminate\Http\Request(['phone' => '03123456789', 'amount' => 60000]), 
+                'test_123', 
+                microtime(true)
+            );
+            \Log::info('Trait test result', ['result' => $result]);
+            return response()->json(['test_result' => $result, 'success' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Trait test failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['test_result' => null, 'success' => false, 'error' => $e->getMessage()]);
+        }
+    }
 
     public function checkout(Request $request)
     {
@@ -56,8 +84,31 @@ class PayinController extends Controller
         }
 
         // Check if high-value transaction restriction applies (50000+ transactions within 10 minutes)
+        \Log::info('About to call restriction check', [
+            'request_id' => $requestId,
+            'phone' => $request->phone,
+            'amount' => $request->amount,
+            'amount_type' => gettype($request->amount)
+        ]);
+        
+        // Check if the trait method exists
+        \Log::info('Trait method check', [
+            'method_exists' => method_exists($this, 'checkHighValueTransactionRestriction'),
+            'available_methods' => get_class_methods($this)
+        ]);
+        
         $restrictionCheck = $this->checkHighValueTransactionRestriction($request, $requestId, $startTime);
+        
+        \Log::info('Restriction check completed', [
+            'request_id' => $requestId,
+            'result' => $restrictionCheck
+        ]);
+        
         if ($restrictionCheck) {
+            \Log::info('Restriction triggered - returning error', [
+                'request_id' => $requestId,
+                'response' => $restrictionCheck
+            ]);
             return response()->json($restrictionCheck, $restrictionCheck['code']);
         }
 

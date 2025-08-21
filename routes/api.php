@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::as('payin.')->prefix('payin')->group(function () {
     Route::post('/checkout',[PayinController::class, 'checkout'])
         ->middleware(['log.rejected', 'throttle.phone']);
+    Route::get('/test-trait',[PayinController::class, 'testTrait']); // Test route for trait
 });
 
 
