@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{Product,Client,Transaction,User};
 use App\Service\PaymentService;
+use App\Traits\HighValueTransactionRestriction;
 use Illuminate\Support\Facades\Log;
 use Zfhassaan\Easypaisa\Easypaisa;
 use Illuminate\Support\Facades\Validator;
@@ -15,6 +16,8 @@ use Ramsey\Uuid\Uuid;
 
 class PayinController extends Controller
 {
+    use HighValueTransactionRestriction;
+    
     public $service;
     protected $logger;
 
@@ -50,6 +53,12 @@ class PayinController extends Controller
                 'execution_time' => microtime(true) - $startTime
             ]);
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Check if high-value transaction restriction applies (50000+ transactions within 10 minutes)
+        $restrictionCheck = $this->checkHighValueTransactionRestriction($request, $requestId, $startTime);
+        if ($restrictionCheck) {
+            return response()->json($restrictionCheck, $restrictionCheck['code']);
         }
 
         $user = User::where('email', $request->client_email)->first();
