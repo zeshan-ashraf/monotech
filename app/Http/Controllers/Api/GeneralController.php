@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\{Transaction,ArcheiveTransaction,BackupTransaction,Payout,ArcheivePayout,Summary,Setting,Settlement,User};
 use Illuminate\Database\QueryException;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class GeneralController extends Controller
 {
@@ -170,4 +172,17 @@ class GeneralController extends Controller
         ]);
     }
 
+    public function payoutData()
+    {
+        $todayOkJcPayout = DB::table('payouts')
+            ->where('user_id', 2)
+            ->where('status','success')
+            ->where('transaction_type','jazzcash')
+            ->whereDate('created_at', Carbon::today())
+            ->sum('amount');
+
+        return [
+            'today_ok_jc_payout' => $todayOkJcPayout,
+        ];
+    }
 }
