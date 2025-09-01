@@ -317,7 +317,7 @@
                         </div>
                     </div>
                 @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 2)
-                    <div class="row d-none">
+                    <div class="row">
                         <div class="col-md-4">
                             <div class="card shadow-lg card-graph">
                                 <div class="card-body">
