@@ -119,13 +119,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-2">
-                                <div class="card bg-warning">
-                                    <div class="card-body pb-50">
-                                        <h5 class="text-white">No of Users: <span class="fw-bolder" style="font-size:14px">{{ $users }}</span> </h5>
-                                    </div>
-                                </div>
-                            </div>
                             <div class="col-md-3">
                                 <div class="card bg-info">
                                     <div class="card-body pb-50">
@@ -133,10 +126,17 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="card bg-danger">
                                     <div class="card-body pb-50">
                                         <h5 class="text-white">Today Payout No: <span class="fw-bolder" style="font-size:14px">{{ $payout }}</span> </h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-warning">
+                                    <div class="card-body pb-50">
+                                        <h5 class="text-white">Monthly JC Payin: <span class="fw-bolder" style="font-size:14px">{{ number_format(round($totalMonthlyAmount,0))}}</span> </h5>
                                     </div>
                                 </div>
                             </div>
@@ -152,14 +152,12 @@
                                                 <thead>
                                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                     <tr class="bg-warning">
-                                                        <th colspan="@if (auth()->user()->user_role == "Super Admin") 10 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
-                                                        <th>Monthly JC Payin</th>
+                                                        <th colspan="@if (auth()->user()->user_role == "Super Admin") 11 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
                                                         <th>JC</th> 
                                                         <th>EP</th>
                                                         <th colspan="3">Action</th>
                                                     </tr>
                                                     <tr class="bg-warning">
-                                                        <th>{{ number_format(round($totalMonthlyAmount,0))}}</th>
                                                         <th>{{number_format(round($surplusAmount->jazzcash,0))}}</th>
                                                         <th>{{number_format(round($surplusAmount->easypaisa,0))}}</th>
                                                         <th colspan="3"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
