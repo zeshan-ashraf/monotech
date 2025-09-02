@@ -120,13 +120,13 @@ class GeneralController extends Controller
             "jazzcash" => number_format($assignedOkAmount->jazzcash),
         ];
         return response()->json([
-            'Previous Balance' => number_format($prevBal),
+           /* 'Previous Balance' => number_format($prevBal),
             'Payin' => number_format($payinSuccess),
             'Payout' => number_format($payoutSuccess),
             'JC' => number_format($assignedAmount->jazzcash ?? 0),
             'EP' => number_format($assignedAmount->easypaisa ?? 0),
             'Total' => number_format($assignedAmount->payout_balance ?? 0),
-            'USDT' => number_format($prevUsdt),
+            'USDT' => number_format($prevUsdt),*/
             'Unsettled (After Fee)' => number_format($unSettledAmount),
             'Amount Available for Payout' => $wallet,
         ]);
