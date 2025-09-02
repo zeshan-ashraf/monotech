@@ -115,7 +115,10 @@ class GeneralController extends Controller
             $payinSuccess = $epPayinAmount;
         } 
         $unSettledAmount= $prevBal + $payinSuccess - ($payinSuccess*$payin_fee + $payoutSuccess + $payoutSuccess*$payout_fee + $prevUsdt);
-    
+        $wallet = [
+            "easypaisa" => number_format($assignedOkAmount->easypaisa),
+            "jazzcash" => number_format($assignedOkAmount->jazzcash),
+        ];
         return response()->json([
             'Previous Balance' => number_format($prevBal),
             'Payin' => number_format($payinSuccess),
@@ -125,6 +128,7 @@ class GeneralController extends Controller
             'Total' => number_format($assignedAmount->payout_balance ?? 0),
             'USDT' => number_format($prevUsdt),
             'Unsettled (After Fee)' => number_format($unSettledAmount),
+            'wallet' => $wallet,
         ]);
     }
 
