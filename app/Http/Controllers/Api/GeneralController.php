@@ -111,9 +111,9 @@ class GeneralController extends Controller
         $payin_fee=$user->payin_fee;
         $payout_fee=$user->payout_fee;
         // Calculation for unsettled amount
-        if ($userId == 2) {
-            $payinSuccess = $epPayinAmount;
-        } 
+        //if ($userId == 2) {
+        //    $payinSuccess = $epPayinAmount;
+        //} 
         $unSettledAmount= $prevBal + $payinSuccess - ($payinSuccess*$payin_fee + $payoutSuccess + $payoutSuccess*$payout_fee + $prevUsdt);
         $wallet = [
             "easypaisa" => number_format($assignedAmount->easypaisa),
