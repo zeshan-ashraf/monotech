@@ -127,6 +127,12 @@ class GeneralController extends Controller
             'EP' => number_format($assignedAmount->easypaisa ?? 0),
             'Total' => number_format($assignedAmount->payout_balance ?? 0),
             'USDT' => number_format($prevUsdt),*/
+            'Previous Balance' => number_format($prevBal),
+            'Payin success' => number_format($payinSuccess),
+            'Payout success' => number_format($payoutSuccess),
+            'USDT' => number_format($prevUsdt),
+            'Payin fee' => number_format($payin_fee),
+            'Payout fee' => number_format($payout_fee),
             'Unsettled (After Fee)' => number_format($unSettledAmount),
             'Wallet' => $wallet,
         ]);
