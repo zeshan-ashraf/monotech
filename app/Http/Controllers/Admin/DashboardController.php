@@ -24,6 +24,19 @@ class DashboardController extends Controller
     {
         $today=today()->format('d-m-Y');
         $clients = User::where('user_role', 'Client')->where('active',1)->get();
+        $month = Carbon::now()->month;
+        $totalMonthlyAmount = DB::table(DB::raw("
+            (
+                SELECT amount, created_at, status FROM transactions
+                UNION ALL
+                SELECT amount, created_at, status FROM archeive_transactions
+                UNION ALL
+                SELECT amount, created_at, status FROM backup_transactions
+            ) as all_txns
+        "))
+        ->where('status', 'success')
+        ->whereMonth('created_at', $month)
+        ->sum('amount');
         $data = [];
         
         foreach ($clients as $client) {
