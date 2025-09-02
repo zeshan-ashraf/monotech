@@ -75,7 +75,7 @@ trait HighValueTransactionRestriction
                 return [
                     'status' => 'error',
                     'message' => "Your transactions is restricted.",
-                    'code' => 429
+                    'code' => 422
                 ];
             } else {
                 \Log::info('No recent high-value transactions found - restriction not triggered');
