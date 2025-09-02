@@ -152,12 +152,14 @@
                                                 <thead>
                                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                     <tr class="bg-warning">
-                                                        <th colspan="@if (auth()->user()->user_role == "Super Admin") 11 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
-                                                        <th>JC</th>
+                                                        <th colspan="@if (auth()->user()->user_role == "Super Admin") 10 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
+                                                        <th>Monthly JC Payin</th>
+                                                        <th>JC</th> 
                                                         <th>EP</th>
                                                         <th colspan="3">Action</th>
                                                     </tr>
                                                     <tr class="bg-warning">
+                                                        <th>{{ number_format(round($totalMonthlyAmount,0))}}</th>
                                                         <th>{{number_format(round($surplusAmount->jazzcash,0))}}</th>
                                                         <th>{{number_format(round($surplusAmount->easypaisa,0))}}</th>
                                                         <th colspan="3"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
