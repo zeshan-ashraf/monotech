@@ -128,7 +128,7 @@ class GeneralController extends Controller
             'Total' => number_format($assignedAmount->payout_balance ?? 0),
             'USDT' => number_format($prevUsdt),
             'Unsettled (After Fee)' => number_format($unSettledAmount),
-            'wallet' => $wallet,
+            'Amount Available for Payout' => $wallet,
         ]);
     }
 
