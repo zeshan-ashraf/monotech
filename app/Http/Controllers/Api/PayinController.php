@@ -113,6 +113,9 @@ class PayinController extends Controller
         }
 
         $user = User::where('email', $request->client_email)->first();
+        
+        
+        
         if(($request->payment_method == "jazzcash" && $user->jc_api == 0) || ($request->payment_method == "easypaisa" && $user->ep_api == 0)){
             $this->logger->warning('API suspended', [
                 'request_id' => $requestId,
@@ -126,6 +129,44 @@ class PayinController extends Controller
             ], 400);
         }
         else{
+            // Check daily limit for JazzCash payments for user ID 2
+            if ($request->payment_method == "jazzcash" && $user->id == 2) {
+                $todayStart = now()->startOfDay();
+                $todayEnd = now()->endOfDay();
+                
+                $todayTransactionsSum = Transaction::where('user_id', $user->id)
+                    ->whereBetween('created_at', [$todayStart, $todayEnd])
+                    ->sum('amount');
+                
+                $dailyLimit = 20000000; // 20 million
+                
+                $this->logger->info('Daily limit check for JazzCash', [
+                    'request_id' => $requestId,
+                    'user_id' => $user->id,
+                    'payment_method' => $request->payment_method,
+                    'today_transactions_sum' => $todayTransactionsSum,
+                    'current_transaction_amount' => $request->amount,
+                    'daily_limit' => $dailyLimit,
+                    'would_exceed_limit' => ($todayTransactionsSum + $request->amount) > $dailyLimit
+                ]);
+                
+                if (($todayTransactionsSum + $request->amount) > $dailyLimit) {
+                    $this->logger->warning('Daily limit exceeded for JazzCash', [
+                        'request_id' => $requestId,
+                        'user_id' => $user->id,
+                        'today_transactions_sum' => $todayTransactionsSum,
+                        'current_transaction_amount' => $request->amount,
+                        'daily_limit' => $dailyLimit,
+                        'execution_time' => microtime(true) - $startTime
+                    ]);
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Daily transaction limit exceeded. Please try again tomorrow.',
+                    ], 400);
+                }
+            }
+
+
             try {
                 $this->logger->info('Processing payment', [
                     'request_id' => $requestId,
