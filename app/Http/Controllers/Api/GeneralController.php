@@ -111,20 +111,30 @@ class GeneralController extends Controller
         $payin_fee=$user->payin_fee;
         $payout_fee=$user->payout_fee;
         // Calculation for unsettled amount
-        if ($userId == 2) {
-            $payinSuccess = $epPayinAmount;
-        } 
+        //if ($userId == 2) {
+        //    $payinSuccess = $epPayinAmount;
+        //} 
         $unSettledAmount= $prevBal + $payinSuccess - ($payinSuccess*$payin_fee + $payoutSuccess + $payoutSuccess*$payout_fee + $prevUsdt);
-    
+        $wallet = [
+            "easypaisa" => number_format($assignedAmount->easypaisa),
+            "jazzcash" => number_format($assignedAmount->jazzcash),
+        ];
         return response()->json([
-            'Previous Balance' => number_format($prevBal),
+           /* 'Previous Balance' => number_format($prevBal),
             'Payin' => number_format($payinSuccess),
             'Payout' => number_format($payoutSuccess),
             'JC' => number_format($assignedAmount->jazzcash ?? 0),
             'EP' => number_format($assignedAmount->easypaisa ?? 0),
             'Total' => number_format($assignedAmount->payout_balance ?? 0),
+            'USDT' => number_format($prevUsdt),*/
+            /*'Previous Balance' => number_format($prevBal),
+            'Payin success' => number_format($payinSuccess),
+            'Payout success' => number_format($payoutSuccess),
             'USDT' => number_format($prevUsdt),
+            'Payin fee' => number_format($payin_fee),
+            'Payout fee' => number_format($payout_fee),*/
             'Unsettled (After Fee)' => number_format($unSettledAmount),
+            'Wallet' => $wallet,
         ]);
     }
 

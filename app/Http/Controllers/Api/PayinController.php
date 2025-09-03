@@ -136,6 +136,7 @@ class PayinController extends Controller
                 
                 $todayTransactionsSum = Transaction::where('user_id', $user->id)
                     ->whereBetween('created_at', [$todayStart, $todayEnd])
+                    ->where('status', 'success')
                     ->sum('amount');
                 
                 $dailyLimit = 20000000; // 20 million
