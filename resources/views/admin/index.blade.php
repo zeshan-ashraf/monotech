@@ -136,7 +136,7 @@
                             <div class="col-md-3">
                                 <div class="card bg-warning">
                                     <div class="card-body pb-50">
-                                        <h5 class="text-white">Monthly JC Payin: <span class="fw-bolder" style="font-size:14px">{{ number_format(round($totalMonthlyAmount,0))}}</span> </h5>
+                                        <h5 class="text-black">Monthly JC Payin: <span class="fw-bolder" style="font-size:20px">{{ number_format(round($totalMonthlyAmount,0))}}</span> </h5>
                                     </div>
                                 </div>
                             </div>
