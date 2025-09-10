@@ -55,6 +55,72 @@ class PayinController extends Controller
         }
     }
 
+    /**
+     * Check for recent transaction restrictions
+     * Blocks transactions if there are recent failed (3 min) or successful (5 min) transactions
+     * 
+     * @param Request $request
+     * @param string $requestId
+     * @param float $startTime
+     * @return array|null Returns restriction response array or null if no restriction
+     */
+    private function checkRecentTransactionRestriction(Request $request, string $requestId, float $startTime)
+    {
+        $threeMinutesAgo = now()->subMinutes(3);
+        $fiveMinutesAgo = now()->subMinutes(5);
+        
+        $recentFailedTransaction = Transaction::where('phone', $request->phone)
+            ->where('status', 'fail')
+            ->where('created_at', '>=', $threeMinutesAgo)
+            ->first();
+            
+        $recentSuccessfulTransaction = Transaction::where('phone', $request->phone)
+            ->where('status', 'success')
+            ->where('created_at', '>=', $fiveMinutesAgo)
+            ->first();
+        
+        $this->logger->info('Recent transaction check', [
+            'request_id' => $requestId,
+            'phone' => $request->phone,
+            'recent_failed_transaction' => $recentFailedTransaction ? $recentFailedTransaction->toArray() : null,
+            'recent_successful_transaction' => $recentSuccessfulTransaction ? $recentSuccessfulTransaction->toArray() : null,
+            'three_minutes_ago' => $threeMinutesAgo->toDateTimeString(),
+            'five_minutes_ago' => $fiveMinutesAgo->toDateTimeString()
+        ]);
+        
+        if ($recentFailedTransaction) {
+            $this->logger->warning('Transaction blocked - recent failed transaction', [
+                'request_id' => $requestId,
+                'phone' => $request->phone,
+                'failed_transaction_id' => $recentFailedTransaction->id,
+                'failed_transaction_created_at' => $recentFailedTransaction->created_at->toDateTimeString(),
+                'execution_time' => microtime(true) - $startTime
+            ]);
+            return [
+                'status' => 'error',
+                'message' => 'Transaction blocked due to recent failed transaction. Please wait 3 minutes before trying again.',
+                'code' => 400
+            ];
+        }
+        
+        if ($recentSuccessfulTransaction) {
+            $this->logger->warning('Transaction blocked - recent successful transaction', [
+                'request_id' => $requestId,
+                'phone' => $request->phone,
+                'successful_transaction_id' => $recentSuccessfulTransaction->id,
+                'successful_transaction_created_at' => $recentSuccessfulTransaction->created_at->toDateTimeString(),
+                'execution_time' => microtime(true) - $startTime
+            ]);
+            return [
+                'status' => 'error',
+                'message' => 'Transaction blocked due to recent successful transaction. Please wait 5 minutes before trying again.',
+                'code' => 400
+            ];
+        }
+        
+        return null; // No restriction applied
+    }
+
     public function checkout(Request $request)
     {
         $requestId = uniqid('req_');
@@ -81,6 +147,12 @@ class PayinController extends Controller
                 'execution_time' => microtime(true) - $startTime
             ]);
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Check for recent transaction restrictions
+        $recentTransactionCheck = $this->checkRecentTransactionRestriction($request, $requestId, $startTime);
+        if ($recentTransactionCheck) {
+            return response()->json($recentTransactionCheck, $recentTransactionCheck['code']);
         }
 
         // Check if high-value transaction restriction applies (50000+ transactions within 10 minutes)
