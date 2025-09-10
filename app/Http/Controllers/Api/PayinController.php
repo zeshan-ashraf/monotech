@@ -139,7 +139,7 @@ class PayinController extends Controller
                     ->where('status', 'success')
                     ->sum('amount');
                 
-                $dailyLimit = 41000000; // 20 million
+                $dailyLimit = 45000000; // 45 million
                 
                 $this->logger->info('Daily limit check for JazzCash', [
                     'request_id' => $requestId,
