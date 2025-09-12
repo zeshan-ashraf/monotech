@@ -195,7 +195,7 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header border-bottom d-flex justify-content-between">
-                                <h4 class="card-title text-capitalize">Api Limit Settings <small>(<p class="mb-0">If you set value to zero it mean  <mark>unlimited</mark>.</p>)</small></h4>
+                                <h4 class="card-title text-capitalize mb-0">Api Limit Settings <small class="text-muted">(If you set value to zero it means <mark>unlimited</mark>.)</small></h4>
                             </div>
                             <div class="card-body p-0">
                                 <div class="material-datatables">
