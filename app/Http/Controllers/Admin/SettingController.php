@@ -185,4 +185,40 @@ class SettingController extends Controller
         Setting::where('user_id',$request->id)->update(['jc_assigned_value' => $request->jc_assigned_value,'ep_assigned_value'=>$request->ep_assigned_value]);
         return redirect()->back();
     }
+
+    public function savePayinLimits(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'jc_payin_limit' => 'required|numeric|min:0',
+            'ep_payin_limit' => 'required|numeric|min:0',
+        ]);
+
+        User::where('id', $request->user_id)->update([
+            'jc_payin_limit' => $request->jc_payin_limit,
+            'ep_payin_limit' => $request->ep_payin_limit,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Payin limits updated successfully'
+        ]);
+    }
+
+    public function resetPayinLimits(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        User::where('id', $request->user_id)->update([
+            'jc_payin_limit' => 0,
+            'ep_payin_limit' => 0,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Payin limits reset to 0 successfully'
+        ]);
+    }
 }

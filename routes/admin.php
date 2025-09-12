@@ -79,6 +79,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::post('/schedule/save', [SettingController::class,'saveScheduleSetting'])->name('schedule.save');
         Route::get('/get/suspend-setting', [SettingController::class,'getSuspendSetting'])->name('get.suspend');
         Route::post('/api-suspend/save', [SettingController::class,'apiSuspendSetting'])->name('api.suspend');
+        Route::post('/payin-limits/save', [SettingController::class,'savePayinLimits'])->name('payin.limits.save');
+        Route::post('/payin-limits/reset', [SettingController::class,'resetPayinLimits'])->name('payin.limits.reset');
         Route::post('/manual_payout/save', [ManualPayoutController::class,'save'])->name('manual_payout.save');
         Route::get('/manual_payout/detail/{id?}', [ManualPayoutController::class,'detail'])->name('detail');
         Route::get('easy-recipt/{id?}', [ManualPayoutController::class,'easyReceipt'])->name('easy_receipt');
