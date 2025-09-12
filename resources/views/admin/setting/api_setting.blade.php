@@ -195,7 +195,7 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header border-bottom d-flex justify-content-between">
-                                <h4 class="card-title text-capitalize">Api Limit Settings</h4>
+                                <h4 class="card-title text-capitalize">Api Limit Settings <small>(<p class="mb-0">If you set value to zero it mean  <mark>unlimited</mark>.</p>)</small></h4>
                             </div>
                             <div class="card-body p-0">
                                 <div class="material-datatables">
@@ -222,8 +222,8 @@
                                                     <input class="form-control" type="number" value="{{ $item->ep_payin_limit }}" id="ep-payin-limit-{{ $item->id }}">
                                                 </td>
                                                 <td>
-                                                    <button type="button" class="btn rounded-pill btn-success waves-effect waves-light save-payin-limits" data-user-id="{{ $item->id }}">Save</button>
-                                                    <button type="button" class="btn rounded-pill btn-danger waves-effect waves-light reset-payin-limits" data-user-id="{{ $item->id }}">Reset</button>
+                                                    <button type="button" class="btn rounded-pill btn-primary btn-sm waves-effect waves-light save-payin-limits" data-user-id="{{ $item->id }}">Save</button>
+                                                    <button type="button" class="btn rounded-pill btn-danger btn-sm waves-effect waves-light reset-payin-limits" data-user-id="{{ $item->id }}">Reset</button>
                                                 </td>
                                             </tr>
                                             @endforeach
