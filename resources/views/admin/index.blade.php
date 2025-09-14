@@ -105,34 +105,35 @@
                     @endphp
                     <div class="col-xl-12 col-md-12 col-12">
                         <div class="row">
-                            <div class="col-md-2">
+                        <div class="@if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin") col-md-2 @else col-md-3 @endif">
                                 <div class="card bg-primary">
                                     <div class="card-body pb-50">
                                         <h5 class="text-white">Dated: <span class="fw-bolder" style="font-size:14px">{{ now()->format('d-m-Y') }}</span> </h5>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="@if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin") col-md-2 @else col-md-3 @endif">
                                 <div class="card bg-success">
                                     <div class="card-body pb-50">
                                         <h5 class="text-white">No of Sub Stores: <span class="fw-bolder" style="font-size:14px">{{ $sub_stores }}</span> </h5>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="@if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin") col-md-3 @else col-md-3 @endif">
                                 <div class="card bg-info">
                                     <div class="card-body pb-50">
                                         <h5 class="text-white">Today Payin No: <span class="fw-bolder" style="font-size:14px">{{ $transaction }}</span> </h5>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="@if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin") col-md-2 @else col-md-3 @endif">
                                 <div class="card bg-danger">
                                     <div class="card-body pb-50">
                                         <h5 class="text-white">Today Payout No: <span class="fw-bolder" style="font-size:14px">{{ $payout }}</span> </h5>
                                     </div>
                                 </div>
                             </div>
+                            @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin")
                             <div class="col-md-3">
                                 <div class="card bg-warning">
                                     <div class="card-body pb-50">
@@ -140,6 +141,7 @@
                                     </div>
                                 </div>
                             </div>
+                            @endif
                         </div>
                         
                         
