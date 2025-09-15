@@ -56,6 +56,59 @@ class PayinController extends Controller
     }
 
     /**
+     * Check daily limit for JazzCash payments for specific users
+     * 
+     * @param Request $request
+     * @param User $user
+     * @param string $requestId
+     * @param float $startTime
+     * @return array|null Returns restriction response array or null if no restriction
+     */
+    private function checkDailyLimit(Request $request, User $user, string $requestId, float $startTime)
+    {
+        // Check daily limit for JazzCash payments for user ID 2
+        if ($request->payment_method == "jazzcash" && $user->id == 2 ) {
+            $todayStart = now()->startOfDay();
+            $todayEnd = now()->endOfDay();
+            
+            $todayTransactionsSum = Transaction::where('user_id', $user->id)
+                ->whereBetween('created_at', [$todayStart, $todayEnd])
+                ->where('status', 'success')
+                ->sum('amount');
+            
+            // $dailyLimit = 60000000; // 60 million
+            $dailyLimit = $user->jc_payin_limit;    
+            $this->logger->info('Daily limit check for JazzCash', [
+                'request_id' => $requestId,
+                'user_id' => $user->id,
+                'payment_method' => $request->payment_method,
+                'today_transactions_sum' => $todayTransactionsSum,
+                'current_transaction_amount' => $request->amount,
+                'daily_limit' => $dailyLimit,
+                'would_exceed_limit' => ($todayTransactionsSum + $request->amount) > $dailyLimit
+            ]);
+            
+            if (($todayTransactionsSum + $request->amount) > $dailyLimit) {
+                $this->logger->warning('Daily limit exceeded for JazzCash', [
+                    'request_id' => $requestId,
+                    'user_id' => $user->id,
+                    'today_transactions_sum' => $todayTransactionsSum,
+                    'current_transaction_amount' => $request->amount,
+                    'daily_limit' => $dailyLimit,
+                    'execution_time' => microtime(true) - $startTime
+                ]);
+                return [
+                    'status' => 'error',
+                    'message' => 'Daily transaction limit exceeded. Please try again tomorrow.',
+                    'code' => 400
+                ];
+            }
+        }
+        
+        return null; // No restriction applied
+    }
+
+    /**
      * Check for recent transaction restrictions
      * Blocks transactions if there are recent failed (3 min) or successful (5 min) transactions
      * 
@@ -201,42 +254,10 @@ class PayinController extends Controller
             ], 400);
         }
         else{
-            // Check daily limit for JazzCash payments for user ID 2
-            if ($request->payment_method == "jazzcash" && $user->id == 2) {
-                $todayStart = now()->startOfDay();
-                $todayEnd = now()->endOfDay();
-                
-                $todayTransactionsSum = Transaction::where('user_id', $user->id)
-                    ->whereBetween('created_at', [$todayStart, $todayEnd])
-                    ->where('status', 'success')
-                    ->sum('amount');
-                
-                $dailyLimit = 60000000; // 60 million
-                
-                $this->logger->info('Daily limit check for JazzCash', [
-                    'request_id' => $requestId,
-                    'user_id' => $user->id,
-                    'payment_method' => $request->payment_method,
-                    'today_transactions_sum' => $todayTransactionsSum,
-                    'current_transaction_amount' => $request->amount,
-                    'daily_limit' => $dailyLimit,
-                    'would_exceed_limit' => ($todayTransactionsSum + $request->amount) > $dailyLimit
-                ]);
-                
-                if (($todayTransactionsSum + $request->amount) > $dailyLimit) {
-                    $this->logger->warning('Daily limit exceeded for JazzCash', [
-                        'request_id' => $requestId,
-                        'user_id' => $user->id,
-                        'today_transactions_sum' => $todayTransactionsSum,
-                        'current_transaction_amount' => $request->amount,
-                        'daily_limit' => $dailyLimit,
-                        'execution_time' => microtime(true) - $startTime
-                    ]);
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Daily transaction limit exceeded. Please try again tomorrow.',
-                    ], 400);
-                }
+            // Check daily limit for JazzCash payments
+            $dailyLimitCheck = $this->checkDailyLimit($request, $user, $requestId, $startTime);
+            if ($dailyLimitCheck) {
+                return response()->json($dailyLimitCheck, $dailyLimitCheck['code']);
             }
 
 
