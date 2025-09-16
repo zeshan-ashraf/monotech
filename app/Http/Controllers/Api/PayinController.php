@@ -73,6 +73,7 @@ class PayinController extends Controller
             
             $todayTransactionsSum = Transaction::where('user_id', $user->id)
                 ->whereBetween('created_at', [$todayStart, $todayEnd])
+                ->where('txn_type', "jazzcash")
                 ->where('status', 'success')
                 ->sum('amount');
             
