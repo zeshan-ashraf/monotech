@@ -27,11 +27,11 @@ class DashboardController extends Controller
         $month = Carbon::now()->month;
         $totalMonthlyAmount = DB::table(DB::raw("
             (
-                SELECT amount, created_at, status FROM transactions
+                SELECT amount, txn_type, created_at, status FROM transactions
                 UNION ALL
-                SELECT amount, created_at, status FROM archeive_transactions
+                SELECT amount, txn_type, created_at, status FROM archeive_transactions
                 UNION ALL
-                SELECT amount, created_at, status FROM backup_transactions
+                SELECT amount, txn_type, created_at, status FROM backup_transactions
             ) as all_txns
         "))
         ->where('txn_type', 'easypaisa')
