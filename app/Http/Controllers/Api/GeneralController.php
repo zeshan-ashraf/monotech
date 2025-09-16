@@ -195,4 +195,59 @@ class GeneralController extends Controller
             'today_ok_jc_payout' => $todayOkJcPayout,
         ];
     }
+    public function getPayinData()
+    {
+        $users = [3, 4, 6];
+        $results = [];
+        
+        foreach ($users as $userId) {
+            $todayPayin = DB::table('transactions')
+                ->where('user_id', $userId)
+                ->where('txn_type','easypaisa')
+                ->whereIn('status', ['success', 'reverse'])
+                ->whereDate('created_at', Carbon::today())
+                ->sum('amount');
+        
+            $todayTransReverse = DB::table('transactions')
+                ->where('user_id', $userId)
+                ->where('status', 'reverse')
+                ->whereDate('updated_at', Carbon::today())
+                ->sum('amount');
+        
+            $todayArcReverse = DB::table('archeive_transactions')
+                ->where('user_id', $userId)
+                ->where('status', 'reverse')
+                ->whereDate('updated_at', Carbon::today())
+                ->sum('amount');
+        
+            $todayBackReverse = DB::table('backup_transactions')
+                ->where('user_id', $userId)
+                ->where('status', 'reverse')
+                ->whereDate('updated_at', Carbon::today())
+                ->sum('amount');
+        
+            $todayReverse = $todayTransReverse + $todayArcReverse + $todayBackReverse;
+        
+            if ($userId == 4) {
+                $todayPayinUserPiq   = $todayPayin;
+                $todayReverseUserPiq = $todayReverse;
+            } elseif ($userId == 2) {
+                $todayPayinUserOk   = $todayPayin;
+                $todayReverseUserOk = $todayReverse;
+            } elseif ($userId == 5) {
+                $todayPayinUserPkn   = $todayPayin;
+                $todayReverseUserPkn = $todayReverse;
+            }
+        }
+        
+        return [
+            'today_payin_piq'   => $todayPayinUserPiq ?? 0,
+            'today_reverse_piq' => $todayReverseUserPiq ?? 0,
+            'today_payin_ok'   => $todayPayinUserOk ?? 0,
+            'today_reverse_ok' => $todayReverseUserOk ?? 0,
+            'today_payin_pkn'   => $todayPayinUserPkn ?? 0,
+            'today_reverse_pkn' => $todayReverseUserPkn ?? 0,
+        ];
+        
+    }
 }

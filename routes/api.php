@@ -85,3 +85,4 @@ Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCal
 |    
 */
 Route::post('/payout/demo-checkout', [PayoutCheckoutController::class, 'payoutProceed']);
+Route::get('/get-payin-data', [GeneralController::class , 'getPayinData']);
