@@ -354,7 +354,7 @@
                     </div>
                 @endif
                 @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 5)
-                    <div class="row mt-1 d-none">
+                    <div class="row mt-1">
                         <div class="col-md-4">
                             <div class="card shadow-lg card-graph">
                                 <div class="card-body">
