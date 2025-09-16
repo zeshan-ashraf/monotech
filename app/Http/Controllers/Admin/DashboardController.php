@@ -34,6 +34,7 @@ class DashboardController extends Controller
                 SELECT amount, created_at, status FROM backup_transactions
             ) as all_txns
         "))
+        ->where('txn_type', 'easypaisa')
         ->where('status', 'success')
         ->whereMonth('created_at', $month)
         ->sum('amount');
