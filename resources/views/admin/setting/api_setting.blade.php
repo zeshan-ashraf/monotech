@@ -191,6 +191,49 @@
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header border-bottom d-flex justify-content-between">
+                                <h4 class="card-title text-capitalize mb-0">Api Limit Settings <small class="text-muted">(If you set value to zero it means <mark>unlimited</mark>.)</small></h4>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="material-datatables">
+                                    <table class="table table-hover m-b-0 datatables" cellspacing="0" width="100%" style="width:100%">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Client Name</th>
+                                                <th>Payin Jazzcash</th>
+                                                <th>Payin Easypaisa</th>
+                                                
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($list as $item)
+                                            <tr>
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>{{ $item->name }}</td>
+                                                <td>
+                                                    <input class="form-control" type="number" value="{{ $item->jc_payin_limit }}" id="jc-payin-limit-{{ $item->id }}">
+                                                </td>
+                                                <td>
+                                                    <input class="form-control" type="number" value="{{ $item->ep_payin_limit }}" id="ep-payin-limit-{{ $item->id }}">
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn rounded-pill btn-primary btn-sm waves-effect waves-light save-payin-limits" data-user-id="{{ $item->id }}">Save</button>
+                                                    <button type="button" class="btn rounded-pill btn-danger btn-sm waves-effect waves-light reset-payin-limits" data-user-id="{{ $item->id }}">Reset</button>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </div>
     </div>
@@ -300,6 +343,100 @@ $(document).ready(function () {
                 },
             });
         }
+    });
+</script>
+<script>
+    $(document).ready(function () {
+        // Save payin limits functionality
+        $('.save-payin-limits').on('click', function () {
+            const userId = $(this).data('user-id');
+            const jcLimit = $('#jc-payin-limit-' + userId).val();
+            const epLimit = $('#ep-payin-limit-' + userId).val();
+            
+            // Validate inputs
+            if (jcLimit < 0 || epLimit < 0) {
+                alert('Payin limits cannot be negative');
+                return;
+            }
+            
+            // Show loading state
+            const saveBtn = $(this);
+            const originalText = saveBtn.text();
+            saveBtn.prop('disabled', true).text('Saving...');
+            
+            $.ajax({
+                url: '{{ route("admin.setting.payin.limits.save") }}',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId,
+                    jc_payin_limit: jcLimit,
+                    ep_payin_limit: epLimit
+                }),
+                success: function (response) {
+                    if (response.status === 'success') {
+                        // Show success message
+                        saveBtn.removeClass('btn-success').addClass('btn-info').text('Saved!');
+                        setTimeout(function() {
+                            saveBtn.removeClass('btn-info').addClass('btn-success').text(originalText).prop('disabled', false);
+                        }, 2000);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error saving payin limits:', error);
+                    alert('Error saving payin limits. Please try again.');
+                    saveBtn.prop('disabled', false).text(originalText);
+                }
+            });
+        });
+        
+        // Reset payin limits functionality
+        $('.reset-payin-limits').on('click', function () {
+            const userId = $(this).data('user-id');
+            
+            // Confirm reset action
+            if (!confirm('Are you sure you want to reset the payin limits to 0 for this user?')) {
+                return;
+            }
+            
+            // Show loading state
+            const resetBtn = $(this);
+            const originalText = resetBtn.text();
+            resetBtn.prop('disabled', true).text('Resetting...');
+            
+            $.ajax({
+                url: '{{ route("admin.setting.payin.limits.reset") }}',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId
+                }),
+                success: function (response) {
+                    if (response.status === 'success') {
+                        // Reset input values to 0
+                        $('#jc-payin-limit-' + userId).val(0);
+                        $('#ep-payin-limit-' + userId).val(0);
+                        
+                        // Show success message
+                        resetBtn.removeClass('btn-danger').addClass('btn-info').text('Reset!');
+                        setTimeout(function() {
+                            resetBtn.removeClass('btn-info').addClass('btn-danger').text(originalText).prop('disabled', false);
+                        }, 2000);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error resetting payin limits:', error);
+                    alert('Error resetting payin limits. Please try again.');
+                    resetBtn.prop('disabled', false).text(originalText);
+                }
+            });
+        });
     });
 </script>
 @endpush

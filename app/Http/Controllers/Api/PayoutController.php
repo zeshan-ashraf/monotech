@@ -422,8 +422,72 @@ class PayoutController extends Controller
                 $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
                 curl_close($curl);
                 $decodeData = json_decode($response, true);
+                
+                // Check if JSON decoding was successful
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $this->logger->error('JazzCash API response JSON decode failed', [
+                        'request_id' => $requestId,
+                        'http_code' => $httpCode,
+                        'api_execution_time' => $apiExecutionTime,
+                        'response' => $response,
+                        'json_error' => json_last_error_msg(),
+                        'client_ip' => $request->ip(),
+                        'client_email' => $request->client_email,
+                        'user_id' => $user->id,
+                    ]);
+                    
+                    return response()->json(['error' => 'Invalid response format from JazzCash'], 500);
+                }
+                
+                // Check if 'data' key exists in the response
+                if (!isset($decodeData['data'])) {
+                    $this->logger->error('JazzCash API response missing data key', [
+                        'request_id' => $requestId,
+                        'http_code' => $httpCode,
+                        'api_execution_time' => $apiExecutionTime,
+                        'response' => $decodeData,
+                        'client_ip' => $request->ip(),
+                        'client_email' => $request->client_email,
+                        'user_id' => $user->id,
+                    ]);
+                    
+                    return response()->json(['error' => 'Invalid response structure from JazzCash'], 500);
+                }
+                
                 $decrptionData = $this->decrytionFunc($decodeData['data']);
+                
+                // Check if decryption was successful
+                if ($decrptionData === false || $decrptionData === null) {
+                    $this->logger->error('JazzCash API response decryption failed', [
+                        'request_id' => $requestId,
+                        'http_code' => $httpCode,
+                        'api_execution_time' => $apiExecutionTime,
+                        'encrypted_data' => $decodeData['data'],
+                        'client_ip' => $request->ip(),
+                        'client_email' => $request->client_email,
+                        'user_id' => $user->id,
+                    ]);
+                    
+                    return response()->json(['error' => 'Failed to decrypt JazzCash API response'], 500);
+                }
+                
                 $data = json_decode($decrptionData, true);
+                
+                // Check if second JSON decoding was successful
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $this->logger->error('JazzCash API decrypted response JSON decode failed', [
+                        'request_id' => $requestId,
+                        'http_code' => $httpCode,
+                        'api_execution_time' => $apiExecutionTime,
+                        'decrypted_data' => $decrptionData,
+                        'json_error' => json_last_error_msg(),
+                        'client_ip' => $request->ip(),
+                        'client_email' => $request->client_email,
+                        'user_id' => $user->id,
+                    ]);
+                    
+                    return response()->json(['error' => 'Invalid decrypted response format from JazzCash'], 500);
+                }
                 
                 $this->logger->info('JazzCash API response received', [
                     'request_id' => $requestId,

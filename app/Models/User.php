@@ -31,6 +31,8 @@ class User extends Authenticatable
         'user_role',
         'payout_jc_api',
         'payout_ep_api',
+        'jc_payin_limit',
+        'ep_payin_limit',
     ];
 
     /**
