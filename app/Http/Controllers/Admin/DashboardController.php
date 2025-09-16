@@ -49,7 +49,8 @@ class DashboardController extends Controller
             $jcPayinAmount = $settlement->jc_payin;
             $epPayoutAmount = $settlement->ep_payout;
             $jcPayoutAmount = $settlement->jc_payout;
-            $payinSuccess= $epPayinAmount + $jcPayinAmount;
+            // $payinSuccess= $epPayinAmount + $jcPayinAmount;
+            $payinSuccess= $jcPayinAmount;
             $payoutSuccess= $epPayoutAmount + $jcPayoutAmount;
             $prevUsdt= $settlement->usdt;
             $payinFee=$client->payin_fee;
