@@ -67,7 +67,7 @@ class PayinController extends Controller
     private function checkDailyLimit(Request $request, User $user, string $requestId, float $startTime)
     {
         // Check daily limit for JazzCash payments for user ID 2
-        if ($request->payment_method == "jazzcash" && $user->id == 2 ) {
+        if ($request->payment_method == "jazzcash" && $user->id == 2 && $user->jc_payin_limit > 0) {
             $todayStart = now()->startOfDay();
             $todayEnd = now()->endOfDay();
             
