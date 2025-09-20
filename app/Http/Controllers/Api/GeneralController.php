@@ -197,7 +197,7 @@ class GeneralController extends Controller
     }
     public function getPayinData()
     {
-        $users = [2, 4, 5];
+        $users = [4, 5];
         $results = [];
         
         foreach ($users as $userId) {
