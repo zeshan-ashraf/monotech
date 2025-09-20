@@ -58,7 +58,7 @@ class DashboardController extends Controller
             $assignedAmount=Setting::where('user_id',$userId)->select('jazzcash','easypaisa','payout_balance')->first();
             $balance= $unsettletdAmount - $assignedAmount->payout_balance ;
     
-            $data[] = [
+            $data[] = [ 
                 'user' => $client,
                 'prev_balance' => $prevBal,
                 'jc_payin' => $jcPayinAmount,
