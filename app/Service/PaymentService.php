@@ -280,15 +280,16 @@ class PaymentService
                     
                         $setting = Setting::where('user_id', $transaction->user_id)->first();
                         $surplus = SurplusAmount::find(1);
-                    
-                        // if ($setting && $surplus) {
-                        //     $setting->easypaisa += $amount;
-                        //     $setting->payout_balance += $amount;
-                        //     $setting->save();
-                    
-                        //     $surplus->easypaisa -= $amount;
-                        //     $surplus->save();
-                        // }
+                        if($user->id == 2){
+                            if ($setting && $surplus) {
+                                $setting->easypaisa += $amount;
+                                $setting->payout_balance += $amount;
+                                $setting->save();
+                        
+                                $surplus->easypaisa -= $amount;
+                                $surplus->save();
+                            }
+                        }
                     }
 			    } else {
 			        $transaction->update(['status'=>'failed','pp_code'=>$request['responseCode'], 'pp_message'=>$request['responseDesc']]);

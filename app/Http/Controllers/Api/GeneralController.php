@@ -231,9 +231,9 @@ class GeneralController extends Controller
             if ($userId == 4) {
                 $todayPayinUserPiq   = $todayPayin;
                 $todayReverseUserPiq = $todayReverse;
-            } elseif ($userId == 2) {
-                $todayPayinUserOk   = $todayPayin;
-                $todayReverseUserOk = $todayReverse;
+            // } elseif ($userId == 2) {
+            //     $todayPayinUserOk   = $todayPayin;
+            //     $todayReverseUserOk = $todayReverse;
             } elseif ($userId == 5) {
                 $todayPayinUserPkn   = $todayPayin;
                 $todayReverseUserPkn = $todayReverse;
@@ -243,8 +243,8 @@ class GeneralController extends Controller
         return [
             'today_payin_piq'   => $todayPayinUserPiq ?? 0,
             'today_reverse_piq' => $todayReverseUserPiq ?? 0,
-            'today_payin_ok'   => $todayPayinUserOk ?? 0,
-            'today_reverse_ok' => $todayReverseUserOk ?? 0,
+            // 'today_payin_ok'   => $todayPayinUserOk ?? 0,
+            // 'today_reverse_ok' => $todayReverseUserOk ?? 0,
             'today_payin_pkn'   => $todayPayinUserPkn ?? 0,
             'today_reverse_pkn' => $todayReverseUserPkn ?? 0,
         ];
