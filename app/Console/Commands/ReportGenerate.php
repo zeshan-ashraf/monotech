@@ -145,7 +145,7 @@ class ReportGenerate extends Command
                 
             
                 if($user->id == 2){
-                    $payinFeeJC = 0.038;
+                    $payinFeeJC = 0.036;
                 }else{
                     $payinFeeJC = $user->payin_fee;
                 }
