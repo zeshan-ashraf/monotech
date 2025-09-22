@@ -14,6 +14,7 @@
     <div class="shadow-bottom"></div>
     <div class="main-menu-content">
         <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
+            @if(auth()->user()->user_role != "Viewer")
             <li class="@if(url()->current() == route('admin.dashboard')) active @endif nav-item"><a
                     class="d-flex align-items-center" href="{{ route('admin.dashboard') }}">
                     <i data-feather="home"></i>Dashboard</a>
@@ -22,6 +23,13 @@
                     class="d-flex align-items-center" href="{{ route('admin.profile') }}">
                     <i data-feather="user-check"></i>Profile</a>
             </li>
+            @endif
+            @if(auth()->user()->user_role == "Viewer")
+            <li class="@if(url()->current() == route('admin.zig_dashboard')) active @endif nav-item"><a
+                    class="d-flex align-items-center" href="{{ route('admin.zig_dashboard') }}">
+                    <i data-feather="home"></i>Dashboard</a>
+            </li>
+            @endif
             @if(auth()->user()->user_role == "Super Admin")
                 <li class="@if (url()->current() == route('admin.searching.sr_list')) active @endif  nav-item">
                     <a class="d-flex align-items-center" href="{{ route('admin.searching.sr_list') }}"><i

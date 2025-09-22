@@ -78,6 +78,7 @@ class TransactionController extends Controller
             : 0;
         return $this->transactionDatatable->with(['user_id'=>'both','status' => $status])->render('admin.transaction.list', get_defined_vars());
     }
+    
     public function statusInquiry($id,$type)
     {
         $integritySalt;

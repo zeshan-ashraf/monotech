@@ -159,7 +159,23 @@ class DashboardController extends Controller
         return view('admin.index', get_defined_vars());
 
     }
-
+    public function zigIndex()
+    {
+        $client = User::where('user_id', 4)->where('active',1)->get();
+        $item=Settlement::where('user_id', 4)->whereDate('date', today())->first();
+        $prevBal=Settlement::where('user_id', 4)->whereDate('date', today()->subDay())->value('closing_bal') ?? 0;
+        $jcPayinAmount = $item->jc_payin;
+        $jcPayoutAmount = $item->jc_payout;
+        $payinSuccess= $jcPayinAmount;
+        $payoutSuccess= $jcPayoutAmount;
+        $prevUsdt= $item->usdt;
+        $payinFee=$client->payin_fee;
+        $payoutFee=$client->payout_fee;
+        $unsettletdAmount=$prevBal + $payinSuccess - ($payinSuccess*$payinFee + $payoutSuccess + $payoutSuccess*$payoutFee + $prevUsdt);
+        $assignedAmount=Setting::where('user_id',4)->select('jazzcash','easypaisa','payout_balance')->first();
+        $balance= $unsettletdAmount - $assignedAmount->payout_balance ;
+        return view('admin.zig_index', get_defined_vars());
+    }
     public function profile()
     {
         $user = auth()->user();
