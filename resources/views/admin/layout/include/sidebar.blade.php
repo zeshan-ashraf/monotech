@@ -208,6 +208,12 @@
                         <i data-feather="award"></i>Payout</a>
                 </li>
                 @endcan
+                @can('Settlement')
+                    <li class=" nav-item"><a class="d-flex align-items-center"
+                            href="{{ route('admin.settlement.zig') }}">
+                            <i data-feather="briefcase"></i>Settlement</a>
+                    </li>
+                @endcan
             @endif
         </ul>
     </div>

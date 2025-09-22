@@ -98,6 +98,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/corepay/list', [SettlementController::class,'corepayList'])->name('corepay');
         Route::get('/genxpay/list', [SettlementController::class,'genxpayList'])->name('genxpay');
         Route::get('/moneypay/list', [SettlementController::class,'moneypayList'])->name('moneypay');
+        Route::get('/zig/list', [SettlementController::class,'zigList'])->name('zig');
         Route::post('/store', [SettlementController::class,'store'])->name('store');
         Route::get('/modal/{id?}', [SettlementController::class,'modal'])->name('modal');
     });
