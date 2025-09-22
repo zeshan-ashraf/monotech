@@ -50,6 +50,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     
     Route::as('transaction.')->prefix('transaction')->group(function () {
         Route::get('/list', [TransactionController::class,'list'])->name('list');
+        Route::get('/client/list', [TransactionController::class,'zigList'])->name('zig_list');
         Route::get('easy-recipt/{id?}', [TransactionController::class,'easyReceipt'])->name('easy_receipt');
         Route::get('jazz-recipt/{id?}', [TransactionController::class,'jazzReceipt'])->name('jazz_receipt');
         Route::post('change-status', [TransactionController::class,'changeStatus'])->name('change_status');

@@ -196,6 +196,12 @@
                         class="d-flex align-items-center" href="{{ route('admin.zig_dashboard') }}">
                         <i data-feather="home"></i>Dashboard</a>
                 </li>
+                @can('Transactions')
+                <li class="@if (url()->current() == route('admin.transaction.zig_list')) active @endif nav-item"><a
+                        class="d-flex align-items-center" href="{{ route('admin.transaction.zig_list') }}">
+                        <i data-feather="dollar-sign"></i>Payin</a>
+                </li>
+                @endcan
             @endif
         </ul>
     </div>

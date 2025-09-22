@@ -3,18 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\DataTables\Admin\TransactionDataTable;
+use App\DataTables\Admin\ZigTransactionDataTable;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
-use App\Models\{Transaction,ArcheiveTransaction,BackupTransaction,Settlement};
+use App\Models\{User,Transaction,ArcheiveTransaction,BackupTransaction,Settlement};
 use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
     private $transactionDatatable;
-    private $megatransactionDatatable;
-    private $dragonTransactionDataTable;
-    private $clientTransactionDataTable;
+    private $transactionZigDatatable;
     protected $merchantId;
     protected $password;
     protected $transactionPostUrl;
@@ -29,6 +28,7 @@ class TransactionController extends Controller
     {
         $this->middleware(['permission:Transactions']);
         $this->transactionDatatable = new TransactionDataTable();
+        $this->transactionZigDatatable = new ZigTransactionDataTable();
         $this->merchantId = env('JAZZCASH_MERCHANT_ID');
         $this->password = env('JAZZCASH_PASSWORD');
         $this->jazzcashStatusUrl = env('JAZZCASH_STATUS_INQUIRY');
@@ -78,7 +78,34 @@ class TransactionController extends Controller
             : 0;
         return $this->transactionDatatable->with(['user_id'=>'both','status' => $status])->render('admin.transaction.list', get_defined_vars());
     }
-    
+    public function zigList()
+    {
+        $status = null;
+        $assets = ['data-table'];
+        $start = request()->start_date;
+        $end = request()->end_date;
+        $status = request()->status;
+        $baseQuery = Transaction::where('user_id', 4)
+        ->where('txn_type', 'jazzcash')
+        ->when(request()->filled('status') && $status !== 'all', function ($query) use ($status) {
+            return $query->where('status', $status);
+        })
+        ->when($start && $end, function ($query) use ($start, $end) {
+            return $query->whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"]);
+        }, function ($query) {
+            return $query->whereDate('created_at', Carbon::today());
+        });
+        
+        $totalPayinTransactionsCount = (clone $baseQuery)->count();
+        $totalPayinSuccessCount = (clone $baseQuery)->where('status', 'success')->count();
+        $totalPayinSuccessAmount = (clone $baseQuery)->where('status', 'success')->sum('amount');
+        $totalPayinFailedCount = (clone $baseQuery)->where('status', 'failed')->count();
+        
+        $payinSuccessRate = $totalPayinTransactionsCount > 0
+            ? ($totalPayinSuccessCount / $totalPayinTransactionsCount) * 100
+            : 0;
+        return $this->transactionZigDatatable->with(['user_id'=>'both','status' => $status])->render('admin.transaction.zig_list', get_defined_vars());
+    }
     public function statusInquiry($id,$type)
     {
         $integritySalt;
