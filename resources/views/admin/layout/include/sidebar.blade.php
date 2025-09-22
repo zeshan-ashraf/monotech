@@ -196,6 +196,10 @@
                         class="d-flex align-items-center" href="{{ route('admin.zig_dashboard') }}">
                         <i data-feather="home"></i>Dashboard</a>
                 </li>
+                <li class="@if(url()->current() == route('admin.profile')) active @endif nav-item"><a
+                        class="d-flex align-items-center" href="{{ route('admin.profile') }}">
+                        <i data-feather="user-check"></i>Profile</a>
+                </li>
                 @can('Transactions')
                 <li class="@if (url()->current() == route('admin.transaction.zig_list')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.transaction.zig_list') }}">
@@ -230,6 +234,10 @@
                         </ul>
                     </li>
                 @endcan
+                <li class="nav-item">
+                    <a class="d-flex align-items-center" href="#" onclick="logout();">
+                        <i data-feather="log-out"></i>Logout</a>
+                </li>
             @endif
         </ul>
     </div>
