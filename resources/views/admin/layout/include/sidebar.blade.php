@@ -214,6 +214,18 @@
                             <i data-feather="briefcase"></i>Settlement</a>
                     </li>
                 @endcan
+                @can('Archive Transactions')
+                    <li class="  nav-item">
+                        <a class="d-flex align-items-center" href="#"><i
+                                data-feather='dollar-sign'></i>Archive Folders</a>
+                        <ul class="menu-content">
+                            <li class="@if (url()->current() == route('admin.archive.zig_list')) active @endif  nav-item">
+                                <a class="d-flex align-items-center" href="{{ route('admin.archive.zig_list') }}"><i
+                                        data-feather="dollar-sign"></i>Archive Payin</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endcan
             @endif
         </ul>
     </div>
