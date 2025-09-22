@@ -202,6 +202,12 @@
                         <i data-feather="dollar-sign"></i>Payin</a>
                 </li>
                 @endcan
+                @can('Payouts')
+                <li class="@if (url()->current() == route('admin.payout.zig_list')) active @endif nav-item"><a
+                        class="d-flex align-items-center" href="{{ route('admin.payout.zig_list') }}">
+                        <i data-feather="award"></i>Payout</a>
+                </li>
+                @endcan
             @endif
         </ul>
     </div>

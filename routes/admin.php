@@ -59,6 +59,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     
     Route::as('payout.')->prefix('payout')->group(function () {
         Route::get('/list', [PayoutController::class,'list'])->name('list');
+        Route::get('/client/list', [PayoutController::class,'zigList'])->name('zig_list');
         Route::get('detail/{id?}', [PayoutController::class,'detail'])->name('detail');
         Route::get('easy-recipt/{id?}', [PayoutController::class,'easyReceipt'])->name('easy_receipt');
         Route::get('jazz-recipt/{id?}', [PayoutController::class,'jazzReceipt'])->name('jazz_receipt');

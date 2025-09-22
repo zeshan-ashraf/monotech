@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\DataTables\Admin\PayoutDataTable;
+use App\DataTables\Admin\PayoutZigDataTable;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{Payout,ArcheivePayout};
@@ -12,11 +13,13 @@ use Carbon\Carbon;
 class PayoutController extends Controller
 {
     private $payoutDatatable;
+    private $payoutZigDatatable;
 
     public function __construct() 
     {
         $this->middleware(['permission:Payouts'])->except('detail','easyReceipt','jazzReceipt');
         $this->payoutDatatable = new PayoutDataTable();
+        $this->payoutZigDatatable = new PayoutZigDataTable();
     }
 
     public function list()
@@ -86,6 +89,50 @@ class PayoutController extends Controller
             : 0;
             
         return $this->payoutDatatable->render('admin.payout.list', get_defined_vars());
+    }
+    public function zigList()
+    {
+        $status = null;
+        $assets = ['data-table'];
+        $start = request()->start_date;
+        $end = request()->end_date;
+        
+        $totalPayoutSuccessCount = Payout::where('user_id', 4)
+        ->where('transaction_type', 'jazzcash')
+        ->when($start && $end, function ($query) use ($start, $end) {
+            $query->whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"]);
+        }, function ($query) { // Fallback when $start and $end are not provided
+            $query->whereDate('created_at', Carbon::today());
+        })
+        ->where('status', 'success')
+        ->count();
+
+        $totalPayoutSuccessAmount = Payout::where('user_id', 4)
+        ->where('transaction_type', 'jazzcash')
+        ->when($start && $end, function ($query) use ($start, $end) {
+            $query->whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"]);
+        }, function ($query) { // Fallback when $start and $end are not provided
+            $query->whereDate('created_at', Carbon::today());
+        })
+        ->where('status', 'success')
+        ->sum('amount');
+
+        $totalPayoutFailedCount = Payout::where('user_id', 4)
+        ->where('transaction_type', 'jazzcash')
+        ->when($start && $end, function ($query) use ($start, $end) {
+            $query->whereBetween('created_at', ["$start 00:00:00", "$end 23:59:59"]);
+        }, function ($query) { // Fallback when $start and $end are not provided
+            $query->whereDate('created_at', Carbon::today());
+        })
+        ->where('status', 'failed')
+        ->count();
+        $totalPayoutTransactionsCount = $totalPayoutSuccessCount + $totalPayoutFailedCount;
+
+        $payoutSuccessRate = $totalPayoutTransactionsCount > 0
+            ? ($totalPayoutSuccessCount / $totalPayoutTransactionsCount) * 100
+            : 0;
+            
+        return $this->payoutZigDatatable->render('admin.payout.zig_list', get_defined_vars());
     }
     public function detail($id)
     {
