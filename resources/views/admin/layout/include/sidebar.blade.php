@@ -223,6 +223,10 @@
                                 <a class="d-flex align-items-center" href="{{ route('admin.archive.zig_list') }}"><i
                                         data-feather="dollar-sign"></i>Archive Payin</a>
                             </li>
+                            <li class="@if (url()->current() == route('admin.archive.payout_zig_list')) active @endif  nav-item">
+                                <a class="d-flex align-items-center" href="{{ route('admin.archive.payout_zig_list') }}"><i
+                                        data-feather="award"></i>Archive Payout</a>
+                            </li>
                         </ul>
                     </li>
                 @endcan
