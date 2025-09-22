@@ -161,7 +161,7 @@ class DashboardController extends Controller
     }
     public function zigIndex()
     {
-        $client = User::where('id', 4)->where('active',1)->get();
+        $client = User::where('id', 4)->where('active',1)->first();
         $item=Settlement::where('user_id', 4)->whereDate('date', today())->first();
         $prevBal=Settlement::where('user_id', 4)->whereDate('date', today()->subDay())->value('closing_bal') ?? 0;
         $jcPayinAmount = $item->jc_payin;
