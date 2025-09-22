@@ -20,6 +20,7 @@ class RouteServiceProvider extends ServiceProvider
     public const HOME = '/login';
     public const USER = '/user/dashboard';
     public const ADMIN = '/admin/dashboard';
+    public const VIEWER = '/admin/zig-dashboard';
 
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
