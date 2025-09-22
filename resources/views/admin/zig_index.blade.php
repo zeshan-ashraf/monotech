@@ -1,6 +1,92 @@
 @extends('admin.layout.app')
 @section('title','Dashboard')
 @push('css')
+    <link rel="stylesheet"
+        href="{{ asset('admin/assets/dashboard/css/dataTables.bootstrap4.min.css') }}" />
+        <style>
+            .table:not(.table-dark):not(.table-light) thead:not(.table-dark) th, .table:not(.table-dark):not(.table-light) tfoot:not(.table-dark) th {
+                background-color: #808080bf;
+                color:#000 !important;
+                border: 1px solid #343a40 !important;
+            }
+            .table thead th, .table tfoot th{
+                font-size: 0.9rem;
+                vertical-align: middle;
+                text-transform: uppercase !important;
+            }
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+        
+            .table thead {
+                /*background-color: #343a40;*/
+                color: white;
+            }
+        
+            .table th, .table td {
+                text-align: center;
+                padding: 10px;
+                border: 1px solid #000;
+                color: #000;
+            }
+        
+            .table tbody tr:nth-child(even) {
+                background-color: #f8f9fa;
+            }
+        
+            .table tbody tr:hover {
+                background-color: #e9ecef;
+            }
+        
+            .table th {
+                font-size:20px;
+                font-weight: bold;
+            }
+            .table td{
+                font-size:18px;
+                /*color:black !important;*/
+            }
+            .table-bordered {
+                border: 1px solid #000;
+            }
+            /*.bg-green{*/
+            /*    background-color: #58c38a80 !important;*/
+            /*}*/
+            /*.bg-red{*/
+            /*    background-color:#ff00007a !important;*/
+            /*}*/
+            /*.bg-gray{*/
+            /*    background-color:#df720694 !important;*/
+            /*}*/
+            .client{
+                text-transform: uppercase;
+            }
+            .card-graph{
+                background: #c8c9c2;
+                height:75%;
+            }
+            .card-graph-red{
+                background: #df720694;
+                height:75%;
+            }
+            .card-graph-green{
+                background: #58c38a80;
+                height:75%;
+            }
+            .font-weight-bold{
+                font-weight: 600 !important;
+            }
+            .text-red{
+                color:red !important;
+            }
+            .form-switch .form-check-input{
+                    margin-left: 0 !important;
+            }
+            
+        </style>
+@endpush
+@section('content')
 <div class="app-content content ">
     <div class="content-overlay"></div>
     <div class="content-wrapper container-xxl pt-0 px-0 pb-sm-0 pb-5">
