@@ -33,10 +33,7 @@
                                                             <th>Date</th>
                                                             <th>Opening Bal</th>
                                                             <th>Payin</th>
-                                                            <th>Payin Fee</th>
-                                                            <th>Payin Bal</th>
                                                             <th>Payout</th>
-                                                            <th>Payout Fee</th>
                                                             <th>USDT</th>
                                                             <th>Settled</th>
                                                             <th>Closing Bal/Unsettled</th>
@@ -48,10 +45,7 @@
                                                                 <td>{{ $item->date->format('d-M') }}</td>
                                                                 <td>{{ number_format(round($item->opening_bal,0))}}</td>
                                                                 <td>{{ number_format(round($item->jc_payin,0)) }}</td>
-                                                                <td>{{ number_format(round($item->jc_payin_fee)) }}</td>
-                                                                <td>{{ number_format(round($item->payin_bal,0)) }}</td>
                                                                 <td>{{ number_format(round($item->jc_payout,0)) }}</td>
-                                                                <td>{{ number_format($item->jc_payout_fee) }}</td>
                                                                 <td>{{ number_format(round($item->usdt,0)) }}</td>
                                                                 <td>{{ number_format(round(($item->settled),0)) }}</td>
                                                                 <td>{{ number_format($item->closing_bal) }}</td>

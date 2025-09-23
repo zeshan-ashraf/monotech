@@ -160,7 +160,8 @@ class SettlementController extends Controller
     public function zigList()
     {
         $user = auth()->user();
-        $results = Settlement::where('user_id', '4')
+        $results = Settlement::where('user_id', 4)
+            ->whereDate('date', '>=', '2025-09-16')
             ->orderBy('date', 'DESC')
             ->get();
         
