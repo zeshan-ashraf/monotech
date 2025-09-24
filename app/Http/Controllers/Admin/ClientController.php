@@ -80,7 +80,9 @@ class ClientController extends Controller
     }
     public function userList()
     {
-        $list=User::where('user_role','Client')->get();
+        $list=User::where('user_role','Client')
+        ->where('status',1)
+        ->get();
         return view('admin.client.user_list',get_defined_vars());
     }
     public function userStore(Request $request)
