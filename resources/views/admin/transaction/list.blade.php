@@ -34,7 +34,7 @@
                                                 </div>
                                                 @if(auth()->user()->user_role == "Super Admin")
                                                 @php
-                                                $users = \App\Models\User::where('user_role','Client')->get();
+                                                $users = \App\Models\User::where('user_role','Client')->where('active',1)->get();
                                                 @endphp
                                                 <div class="col-md-2">
                                                     <select name="client" class="form-select border-primary">
