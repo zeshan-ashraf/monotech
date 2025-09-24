@@ -81,7 +81,7 @@ class ClientController extends Controller
     public function userList()
     {
         $list=User::where('user_role','Client')
-        ->where('status',1)
+        ->where('active',1)
         ->get();
         return view('admin.client.user_list',get_defined_vars());
     }
