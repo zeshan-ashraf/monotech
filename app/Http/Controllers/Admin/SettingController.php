@@ -57,7 +57,7 @@ class SettingController extends Controller
 
         // Get all active users for the dropdown
         $users = User::where('user_role', 'Client')
-            ->where('status', 'active')
+            ->where('active', '1')
             ->orderBy('name')
             ->get();
 
