@@ -33,9 +33,19 @@
                                                     </div>
                                                 </fieldset>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-2">
+                                                <select name="client" class="form-select border-primary">
+                                                    <option value="" {{ request()->client == '' ? 'selected' : '' }}>All Clients</option>
+                                                    @foreach($users as $user)
+                                                    <option value="{{$user->id}}"
+                                                        {{ request()->client == $user->id ? 'selected' : '' }}>{{$user->name}}
+                                                    </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
                                                 <select name="txn_type" class="form-select border-primary">
-                                                    <option selected disabled>Filter Type</option>
+                                                    <option value="" {{ request()->txn_type == '' ? 'selected' : '' }}>All Types</option>
                                                     <option value="easypaisa"
                                                         {{ request()->txn_type == 'easypaisa' ? 'selected' : '' }}>Easypaisa
                                                     </option>

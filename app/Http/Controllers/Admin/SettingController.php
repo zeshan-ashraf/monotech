@@ -14,23 +14,27 @@ class SettingController extends Controller
         $start = request()->start_date;
         $end = request()->end_date;
         $txn_type = request()->txn_type;
+        $client = request()->client;
 
         $query1 = DB::table('transactions')
             ->select('*')
             ->where('status', 'reverse')
             ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
+            ->when($client && $client !== 'all', fn($q) => $q->where('user_id', $client))
             ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
 
         $query2 = DB::table('archeive_transactions')
             ->select('*')
             ->where('status', 'reverse')
             ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
+            ->when($client && $client !== 'all', fn($q) => $q->where('user_id', $client))
             ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
 
         $query3 = DB::table('backup_transactions')
             ->select('*')
             ->where('status', 'reverse')
             ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
+            ->when($client && $client !== 'all', fn($q) => $q->where('user_id', $client))
             ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
 
         // Combine queries using union
@@ -51,10 +55,17 @@ class SettingController extends Controller
             ->selectRaw('COUNT(*) as reverse_count, SUM(amount) as total_reverse_amount')
             ->first();
 
+        // Get all active users for the dropdown
+        $users = User::where('user_role', 'Client')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
         return view("admin.setting.list", [
             'list' => $list,
             'reverse_count' => $summary->reverse_count,
             'total_reverse_amount' => $summary->total_reverse_amount,
+            'users' => $users,
         ]);
     }
 
