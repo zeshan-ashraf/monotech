@@ -31,24 +31,34 @@
                                                     <thead class="table-dark border">
                                                         <tr class="text-center">
                                                             <th>Date</th>
-                                                            <th>Opening Bal</th>
                                                             <th>Payin</th>
-                                                            <th>Payout</th>
-                                                            <th>USDT</th>
-                                                            <th>Settled</th>
-                                                            <th>Closing Bal/Unsettled</th>
+                                                            <th>PNL</th>
+                                                            <th>Withdraw</th>
+                                                            <th>Total PNL</th>
+                                                            @if($loop->iteration == 1)
+                                                                <th rowspan="2">Action</th>
+                                                            @endif
                                                         </tr>
                                                     </thead>
                                                     <tbody class="border">
                                                         @foreach($items as $item)
                                                             <tr class="text-center">
                                                                 <td>{{ $item->date->format('d-M') }}</td>
-                                                                <td>{{ number_format(round($item->opening_bal,0))}}</td>
                                                                 <td>{{ number_format(round($item->jc_payin,0)) }}</td>
-                                                                <td>{{ number_format(round($item->jc_payout,0)) }}</td>
+                                                                <td>{{ number_format(round($item->pnl_amount,0)) }}</td>
                                                                 <td>{{ number_format(round($item->usdt,0)) }}</td>
-                                                                <td>{{ number_format(round(($item->settled),0)) }}</td>
-                                                                <td>{{ number_format($item->closing_bal) }}</td>
+                                                                <td>{{ number_format($item->total_pnl_amount) }}</td>
+                                                                @if($loop->iteration == 1)
+                                                                    <td>
+                                                                        <a data-target="#attributeModal"
+                                                                            class="btn btn-primary waves-effect waves-float waves-light open_modal" 
+                                                                            data-url="{{route('admin.settlement.modal',$item->id)}}">
+                                                                            Manual
+                                                                        </a>
+                                                                    </td>
+                                                                @else
+                                                                    <td></td>
+                                                                @endif
                                                             </tr>
                                                         @endforeach
                                                     </tbody>

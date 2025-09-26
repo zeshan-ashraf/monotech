@@ -42,6 +42,10 @@ class ReportGenerate extends Command
                     ->where('user_id', $user->id)
                     ->whereDate('date', Carbon::today()->subDay(1)->format('y-m-d'))
                     ->value('closing_bal');
+                $prev_pnl = DB::table('settlements')
+                    ->where('user_id', $user->id)
+                    ->whereDate('date', Carbon::today()->subDay(1)->format('y-m-d'))
+                    ->value('total_pnl_amount');
                 
                 $todayUsdt = DB::table('settlements')
                     ->where('user_id', $user->id)
@@ -160,7 +164,7 @@ class ReportGenerate extends Command
                     $payinBal = $closingBal + $transactionSumJC - ($transactionSumJC * $payinFeeJC) - $transactionReverseHalf;
                 }
                 $settleAmount = $payoutSumJC + $payoutSumEP + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) + $todayUsdt;
-            
+                $pnl_amount=round($transactionSumJC * 0.01, 2);
                 // Create a summary for the user
                 $sumamry->update([
                     'date' => Carbon::today()->format('y-m-d'),
@@ -179,7 +183,8 @@ class ReportGenerate extends Command
                     'usdt' => $sumamry->usdt,
                     'settled' => $settleAmount,
                     'closing_bal' => $payinBal - $settleAmount,
-                    'pnl_amount' => round($transactionSumJC * 0.01, 2),
+                    'pnl_amount' => $pnl_amount,
+                    'total_pnl_amount' => $pnl_amount,
                 ]);
                 
             }
@@ -202,6 +207,7 @@ class ReportGenerate extends Command
                     'settled' => '0',
                     'closing_bal' => '0',
                     'pnl_amount' => '0',
+                    'total_pnl_amount' => '0',
                 ]);
             }
         }
