@@ -244,7 +244,7 @@
                                                                 <td class="bg-green">{{ number_format($item['ep_payin']) }}</td>
                                                                 
                                                                 <td class="bg-green font-weight-bold">{{ number_format($item['total_payin']) }}</td>
-                                                                <td class="bg-green text-red">{{ number_format($item['reverse_amount']) }}</td>
+                                                                <td class="font-weight-bold text-red">{{ number_format($item['reverse_amount']) }}</td>
                                                                 <td class="bg-red">{{ number_format($item['jc_payout']) }}</td>
                                                                 <td class="bg-red">{{ number_format($item['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($item['total_payout']) }}</td>
