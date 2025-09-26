@@ -91,6 +91,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('jazz-recipt/{id?}', [ManualPayoutController::class,'jazzReceipt'])->name('jazz_receipt');
     });
     Route::as('settlement.')->prefix('settlement')->group(function () {
+        // Unified route for all settlement types
+        Route::get('/{type}/list', [SettlementController::class,'list'])->name('list');
+        Route::get('/list', [SettlementController::class,'list'])->name('list'); // For backward compatibility
+        
+        // Legacy individual routes for backward compatibility
         Route::get('/ok/list', [SettlementController::class,'okList'])->name('ok');
         Route::get('/piq/list', [SettlementController::class,'piqList'])->name('piq');
         Route::get('/pkn/list', [SettlementController::class,'pknList'])->name('pkn');
@@ -100,6 +105,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/genxpay/list', [SettlementController::class,'genxpayList'])->name('genxpay');
         Route::get('/moneypay/list', [SettlementController::class,'moneypayList'])->name('moneypay');
         Route::get('/zig/list', [SettlementController::class,'zigList'])->name('zig');
+        
+        // Common settlement actions
         Route::post('/store', [SettlementController::class,'store'])->name('store');
         Route::get('/modal/{id?}', [SettlementController::class,'modal'])->name('modal');
     });

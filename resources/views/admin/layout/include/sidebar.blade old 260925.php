@@ -80,30 +80,74 @@
                 @endif
                
                 @can('Settlement')
-                    @php
-                        // Get active settlement users from database
-                        $activeSettlementUsers = \App\Models\User::getActiveSettlementUsers();
-                        $sidebarSettlementUsers = \App\Models\User::getSettlementUsersForSidebar();
-                    @endphp
-                    
                     @if(auth()->user()->user_role == "Super Admin")
-                        <li class="nav-item">
-                            <a class="d-flex align-items-center" href="#"><i data-feather='briefcase'></i>Settlement</a>
+                        <li class="  nav-item">
+                            <a class="d-flex align-items-center" href="#"><i
+                                    data-feather='briefcase'></i>Settlement</a>
                             <ul class="menu-content">
-                                @foreach($activeSettlementUsers as $settlementUser)
-                                    <li class="@if (url()->current() == route('admin.settlement.list', $settlementUser->id)) active @endif nav-item">
-                                        <a class="d-flex align-items-center" href="{{ route('admin.settlement.list', $settlementUser->id) }}">
-                                            <i data-feather="circle"></i>{{ $settlementUser->name }}
-                                        </a>
-                                    </li>
-                                @endforeach
+                                <li class="@if (url()->current() == route('admin.settlement.ok')) active @endif nav-item"><a class="d-flex align-items-center"
+                                        href="{{ route('admin.settlement.ok') }}">
+                                        <i data-feather="circle"></i>OK Pay</a>
+                                </li>
+                                <li class="@if (url()->current() == route('admin.settlement.piq')) active @endif nav-item"><a class="d-flex align-items-center"
+                                        href="{{ route('admin.settlement.piq') }}">
+                                        <i data-feather="circle"></i>PIQ Pay</a>
+                                </li>
+                                <li class="@if (url()->current() == route('admin.settlement.pkn')) active @endif nav-item"><a class="d-flex align-items-center"
+                                        href="{{ route('admin.settlement.pkn') }}">
+                                        <i data-feather="circle"></i>PK9 Pay</a>
+                                </li>
+                                {{--<li class="@if (url()->current() == route('admin.settlement.cspkr')) active @endif nav-item"><a class="d-flex align-items-center"
+                                        href="{{ route('admin.settlement.cspkr') }}">
+                                        <i data-feather="circle"></i>C7 PKR</a>
+                                </li>
+                                <li class="@if (url()->current() == route('admin.settlement.toppay')) active @endif nav-item"><a class="d-flex align-items-center"
+                                        href="{{ route('admin.settlement.toppay') }}">
+                                        <i data-feather="circle"></i>Top Pay</a>
+                                </li>
+                                <li class="@if (url()->current() == route('admin.settlement.corepay')) active @endif nav-item"><a class="d-flex align-items-center"
+                                        href="{{ route('admin.settlement.corepay') }}">
+                                        <i data-feather="circle"></i>Core Pay</a>
+                                </li>
+                                <li class="@if (url()->current() == route('admin.settlement.genxpay')) active @endif nav-item"><a class="d-flex align-items-center"
+                                        href="{{ route('admin.settlement.genxpay') }}">
+                                        <i data-feather="circle"></i>Genx Pay</a>
+                                </li>--}}
+                                <li class="@if (url()->current() == route('admin.settlement.moneypay')) active @endif nav-item"><a class="d-flex align-items-center"
+                                        href="{{ route('admin.settlement.moneypay') }}">
+                                        <i data-feather="circle"></i>Money Pay</a>
+                                </li>
                             </ul>
                         </li>
-                    @elseif($sidebarSettlementUsers->contains('id', auth()->user()->id))
-                        <li class="nav-item">
-                            <a class="d-flex align-items-center" href="{{ route('admin.settlement.list', auth()->user()->id) }}">
-                                <i data-feather="briefcase"></i>Settlement
-                            </a>
+                    @endif
+                    @if(auth()->user()->id == "2")
+                        <li class=" nav-item"><a class="d-flex align-items-center"
+                                href="{{ route('admin.settlement.ok') }}">
+                                <i data-feather="briefcase"></i>Settlement</a>
+                        </li>
+                    @endif
+                    @if(auth()->user()->id == "4")
+                        <li class=" nav-item"><a class="d-flex align-items-center"
+                                href="{{ route('admin.settlement.piq') }}">
+                                <i data-feather="briefcase"></i>Settlement</a>
+                        </li>
+                    @endif
+                    @if(auth()->user()->id == "5")
+                        <li class=" nav-item"><a class="d-flex align-items-center"
+                                href="{{ route('admin.settlement.pkn') }}">
+                                <i data-feather="briefcase"></i>Settlement</a>
+                        </li>
+                    @endif
+                    @if(auth()->user()->id == "9")
+                        <li class=" nav-item"><a class="d-flex align-items-center"
+                                href="{{ route('admin.settlement.cspkr') }}">
+                                <i data-feather="briefcase"></i>Settlement</a>
+                        </li>
+                    @endif
+                    @if(auth()->user()->id == "14")
+                        <li class=" nav-item"><a class="d-flex align-items-center"
+                                href="{{ route('admin.settlement.moneypay') }}">
+                                <i data-feather="briefcase"></i>Settlement</a>
                         </li>
                     @endif
                 @endcan

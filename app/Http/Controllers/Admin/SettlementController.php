@@ -3,178 +3,99 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Transaction,Payout,Settlement};
+use App\Models\{Transaction,Payout,Settlement,User};
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class SettlementController extends Controller
 {
+    // Settlement type mapping with user IDs and names
+    private $settlementTypes = [
+        'ok' => ['user_id' => '2', 'name' => 'OK Pay'],
+        'piq' => ['user_id' => '4', 'name' => 'PIQ Pay'],
+        'pkn' => ['user_id' => '5', 'name' => 'PK9 Pay'],
+        'cspkr' => ['user_id' => '9', 'name' => 'C7 PKR'],
+        'toppay' => ['user_id' => '10', 'name' => 'Top Pay'],
+        'corepay' => ['user_id' => '12', 'name' => 'Core Pay'],
+        'genxpay' => ['user_id' => '13', 'name' => 'Genx Pay'],
+        'moneypay' => ['user_id' => '14', 'name' => 'Money Pay'],
+    ];
+
     public function __construct()
     {
         $this->middleware(['permission:Settlement']);
     }
     
-    public function okList()
+    /**
+     * Unified method to handle all settlement types
+     */
+    public function list(Request $request, $type = null)
     {
         $user = auth()->user();
-        $results = Settlement::where('user_id', '2')
-            ->orderBy('date', 'DESC')
-            ->get();
         
+        // Determine user ID based on type or current user
+      
+        $userId = $user->id;
+        
+        if (!$userId) {
+            abort(404, 'Settlement type not found');
+        }
+        
+        // Build query
+        $query = Settlement::where('user_id', $userId);
+        
+        // Special handling for zig settlement
+        if ($type === 'zig') {
+            $query->whereDate('date', '>=', '2025-09-16');
+        }
+        
+        $results = $query->orderBy('date', 'DESC')->get();
+        
+        // Add transaction count for each settlement
         foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '2')
+            $date = $summary->date;
+            $transactionCount = Transaction::where('user_id', $userId)
                 ->whereDate('created_at', $date)
                 ->whereIn('status', ['success', 'failed'])
                 ->count();
             $summary->transaction_count = $transactionCount;
         }
-        return view('admin.settlement.list', get_defined_vars());
+        
+        // Determine which view to use
+        $view = ($type === 'zig') ? 'admin.settlement.zig_list' : 'admin.settlement.list';
+        
+        return view($view, get_defined_vars());
     }
     
-    public function piqList()
+   
+    
+    /**
+     * Get all active settlement users from database
+     */
+    public function getActiveSettlementUsers()
     {
-        $user = auth()->user();
-        $results = Settlement::where('user_id', '4')
-            ->orderBy('date', 'DESC')
-            ->get();
-        
-        foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '4')
-                ->whereDate('created_at', $date)
-                ->whereIn('status', ['success', 'failed'])
-                ->count();
-            $summary->transaction_count = $transactionCount;
-        }
-        return view('admin.settlement.list', get_defined_vars());
+        return User::getActiveSettlementUsers();
     }
     
-    public function cspkrList()
+    /**
+     * Get settlement users for sidebar
+     */
+    public function getSettlementUsersForSidebar()
     {
-        $user = auth()->user();
-        $results = Settlement::where('user_id', '9')
-            ->orderBy('date', 'DESC')
-            ->get();
-        
-        foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '9')
-                ->whereDate('created_at', $date)
-                ->whereIn('status', ['success', 'failed'])
-                ->count();
-            $summary->transaction_count = $transactionCount;
-        }
-        return view('admin.settlement.list', get_defined_vars());
+        return User::getSettlementUsersForSidebar();
     }
     
-    public function toppayList()
-    {
-        $user = auth()->user();
-        $results = Settlement::where('user_id', '10')
-            ->orderBy('date', 'DESC')
-            ->get();
-        
-        foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '10')
-                ->whereDate('created_at', $date)
-                ->whereIn('status', ['success', 'failed'])
-                ->count();
-            $summary->transaction_count = $transactionCount;
-        }
-        return view('admin.settlement.list', get_defined_vars());
-    }
-    
-    public function pknList()
-    {
-        $user = auth()->user();
-        $results = Settlement::where('user_id', '5')
-            ->orderBy('date', 'DESC')
-            ->get();
-        
-        foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '5')
-                ->whereDate('created_at', $date)
-                ->whereIn('status', ['success', 'failed'])
-                ->count();
-            $summary->transaction_count = $transactionCount;
-        }
-        return view('admin.settlement.list', get_defined_vars());
-    }
-    public function corepayList()
-    {
-        $user = auth()->user();
-        $results = Settlement::where('user_id', '12')
-            ->orderBy('date', 'DESC')
-            ->get();
-        
-        foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '12')
-                ->whereDate('created_at', $date)
-                ->whereIn('status', ['success', 'failed'])
-                ->count();
-            $summary->transaction_count = $transactionCount;
-        }
-        return view('admin.settlement.list', get_defined_vars());
-    }
-    
-    public function genxpayList()
-    {
-        $user = auth()->user();
-        $results = Settlement::where('user_id', '13')
-            ->orderBy('date', 'DESC')
-            ->get();
-        
-        foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '13')
-                ->whereDate('created_at', $date)
-                ->whereIn('status', ['success', 'failed'])
-                ->count();
-            $summary->transaction_count = $transactionCount;
-        }
-        return view('admin.settlement.list', get_defined_vars());
-    }
-    
-    public function moneypayList()
-    {
-        $user = auth()->user();
-        $results = Settlement::where('user_id', '14')
-            ->orderBy('date', 'DESC')
-            ->get();
-        
-        foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '14')
-                ->whereDate('created_at', $date)
-                ->whereIn('status', ['success', 'failed'])
-                ->count();
-            $summary->transaction_count = $transactionCount;
-        }
-        return view('admin.settlement.list', get_defined_vars());
-    }
-    public function zigList()
-    {
-        $user = auth()->user();
-        $results = Settlement::where('user_id', 4)
-            ->whereDate('date', '>=', '2025-09-16')
-            ->orderBy('date', 'DESC')
-            ->get();
-        
-        foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '4')
-                ->whereDate('created_at', $date)
-                ->whereIn('status', ['success', 'failed'])
-                ->count();
-            $summary->transaction_count = $transactionCount;
-        }
-        return view('admin.settlement.zig_list', get_defined_vars());
-    }
+    // Legacy methods for backward compatibility
+    public function okList() { return $this->list(request(), 'ok'); }
+    public function piqList() { return $this->list(request(), 'piq'); }
+    public function pknList() { return $this->list(request(), 'pkn'); }
+    public function cspkrList() { return $this->list(request(), 'cspkr'); }
+    public function toppayList() { return $this->list(request(), 'toppay'); }
+    public function corepayList() { return $this->list(request(), 'corepay'); }
+    public function genxpayList() { return $this->list(request(), 'genxpay'); }
+    public function moneypayList() { return $this->list(request(), 'moneypay'); }
+    public function zigList() { return $this->list(request(), 'zig'); }
     public function modal(Request $request)
     {
         $id = $request->id;

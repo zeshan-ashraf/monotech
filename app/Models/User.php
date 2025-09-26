@@ -68,4 +68,40 @@ class User extends Authenticatable
     {
         return $this->hasMany(BlockedNumber::class);
     }
+
+    /**
+     * Get the settlements for the user
+     */
+    public function settlements()
+    {
+        return $this->hasMany(Settlement::class);
+    }
+
+    /**
+     * Get all active users who have settlements
+     */
+    public static function getActiveSettlementUsers()
+    {
+        //for admin sub dropdown menu for settlement
+        return self::whereHas('settlements')
+            ->where('user_role', '==', 'Client')
+            ->select('id', 'name', 'user_role')
+            ->orderBy('name')
+            ->where('active', 1)
+            ->get();
+    }
+
+    /**
+     * Get settlement users for sidebar (excluding Super Admin)
+     */
+    public static function getSettlementUsersForSidebar()
+    {
+        return self::whereHas('settlements')
+            ->where('user_role', '==', 'Client')
+            ->where('user_role', '!=', 'Super Admin')
+            ->select('id', 'name', 'user_role')
+            ->orderBy('name')
+            ->where('active', 1)
+            ->get();
+    }
 }
