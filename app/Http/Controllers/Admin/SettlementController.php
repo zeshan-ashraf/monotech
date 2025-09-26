@@ -34,6 +34,11 @@ class SettlementController extends Controller
     {
         $user = auth()->user();
         
+        // Handle query parameter if type is not in URL path
+        if (!$type && $request->has('type')) {
+            $type = $request->get('type');
+        }
+        
         // Determine user ID based on type or current user
         $userId = $this->getUserIdForSettlement($type, $user);
         
@@ -77,6 +82,15 @@ class SettlementController extends Controller
             // First try to find by user ID if type is numeric
             if (is_numeric($type)) {
                 $targetUser = User::find($type);
+                if ($targetUser && $targetUser->settlements()->exists() && $targetUser->user_role === 'Client' && $targetUser->active == 1 && !str_contains($targetUser->email, 'test@')) {
+                    return $targetUser->id;
+                }
+            }
+            
+            // Check static mapping for legacy support
+            if (isset($this->settlementTypes[$type])) {
+                $mappedUserId = $this->settlementTypes[$type]['user_id'];
+                $targetUser = User::find($mappedUserId);
                 if ($targetUser && $targetUser->settlements()->exists() && $targetUser->user_role === 'Client' && $targetUser->active == 1 && !str_contains($targetUser->email, 'test@')) {
                     return $targetUser->id;
                 }

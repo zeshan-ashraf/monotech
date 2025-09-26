@@ -93,7 +93,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     Route::as('settlement.')->prefix('settlement')->group(function () {
         // Unified route for all settlement types
         Route::get('/{type}/list', [SettlementController::class,'list'])->name('list');
-        Route::get('/list', [SettlementController::class,'list'])->name('list'); // For backward compatibility
+        Route::get('/list', [SettlementController::class,'list'])->name('list'); // For backward compatibility with query parameters
         
         // Legacy individual routes for backward compatibility
         Route::get('/ok/list', [SettlementController::class,'okList'])->name('ok');
