@@ -215,8 +215,9 @@
                                                         @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Client")
                                                         <th>JC</th>
                                                         <th>EP</th>
-                                                        <th>deduction</th>
+                                                        
                                                         <th>Total</th>
+                                                        <th>deduction</th>
                                                         <th>JC</th>
                                                         <th>EP</th>
                                                         <th>Total</th>
