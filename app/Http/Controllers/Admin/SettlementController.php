@@ -133,6 +133,7 @@ class SettlementController extends Controller
     {
         return User::getSettlementUsersForSidebar();
     }
+    
     public function zigList()
     {
         $user = auth()->user();
@@ -151,8 +152,7 @@ class SettlementController extends Controller
         }
         return view('admin.settlement.zig_list', get_defined_vars());
     }
-    // Legacy methods for backward compatibility (only keeping essential ones)
-    
+
     public function modal(Request $request)
     {
         $id = $request->id;
