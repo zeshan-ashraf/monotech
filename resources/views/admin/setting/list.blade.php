@@ -33,6 +33,7 @@
                                                     </div>
                                                 </fieldset>
                                             </div>
+                                            @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin")
                                             <div class="col-md-2">
                                                 <select name="client" class="form-select border-primary">
                                                     <option value="" {{ request()->client == '' ? 'selected' : '' }}>All Clients</option>
@@ -43,6 +44,7 @@
                                                     @endforeach
                                                 </select>
                                             </div>
+                                            @endif
                                             <div class="col-md-2">
                                                 <select name="txn_type" class="form-select border-primary">
                                                     <option value="" {{ request()->txn_type == '' ? 'selected' : '' }}>All Types</option>

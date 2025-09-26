@@ -55,11 +55,14 @@ class SettingController extends Controller
             ->selectRaw('COUNT(*) as reverse_count, SUM(amount) as total_reverse_amount')
             ->first();
 
-        // Get all active users for the dropdown
-        $users = User::where('user_role', 'Client')
-            ->where('active', '1')
-            ->orderBy('name')
-            ->get();
+        // Get all active users for the dropdown (only for Super Admin and Admin)
+        $users = collect();
+        if (auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin") {
+            $users = User::where('user_role', 'Client')
+                ->where('active', '1')
+                ->orderBy('name')
+                ->get();
+        }
 
         return view("admin.setting.list", [
             'list' => $list,
