@@ -41,6 +41,7 @@ class DashboardController extends Controller
             $jcPayinAmount = $settlement->jc_payin;
             $epPayoutAmount = $settlement->ep_payout;
             $jcPayoutAmount = $settlement->jc_payout;
+            $reverseAmount = $settlement->reverse_amount ?? 0;
             if($userId == 2){
                 $payinSuccess= $epPayinAmount + $jcPayinAmount;
             }else{
@@ -63,6 +64,7 @@ class DashboardController extends Controller
                 'prev_balance' => $prevBal,
                 'jc_payin' => $jcPayinAmount,
                 'ep_payin' => $epPayinAmount,
+                'reverse_amount' => $reverseAmount,
                 'total_payin' => $payinSuccess,
                 'jc_payout' => $jcPayoutAmount,
                 'ep_payout' => $epPayoutAmount,
@@ -78,6 +80,7 @@ class DashboardController extends Controller
             'prev_balance' => 0,
             'jc_payin' => 0,
             'ep_payin' => 0,
+            'reverse_amount' => 0,
             'total_payin' => 0,
             'jc_payout' => 0,
             'ep_payout' => 0,
@@ -94,6 +97,7 @@ class DashboardController extends Controller
             $totals['prev_balance'] += $item['prev_balance'];
             $totals['jc_payin'] += $item['jc_payin'];
             $totals['ep_payin'] += $item['ep_payin'];
+            $totals['reverse_amount'] += $item['reverse_amount'];
             $totals['total_payin'] += $item['total_payin'];
             $totals['jc_payout'] += $item['jc_payout'];
             $totals['ep_payout'] += $item['ep_payout'];
