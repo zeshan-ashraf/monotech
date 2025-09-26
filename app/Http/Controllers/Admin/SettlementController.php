@@ -148,10 +148,16 @@ class SettlementController extends Controller
         $request->validate([
             'usdt'=>'required',
         ]);
-        $item = Settlement::findOrFail($request->id);
-        $totalUsdt = $item->usdt+$request->usdt;
-        $item->usdt = $totalUsdt;
-        $item->settled = $item->settled+$totalUsdt;
+        if(auth()->user()->id == 16){
+            $item = Settlement::findOrFail($request->id);
+            $totalUsdt = $item->usdt_pnl_amount+$request->usdt;
+            $item->usdt_pnl_amount = $totalUsdt;
+        } else{
+            $item = Settlement::findOrFail($request->id);
+            $totalUsdt = $item->usdt+$request->usdt;
+            $item->usdt = $totalUsdt;
+            $item->settled = $item->settled+$totalUsdt;
+        }
         $item->save();
         $msg = "Summary Updated Successfully!";
         return redirect()->back()->with('message',$msg);
