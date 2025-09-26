@@ -84,6 +84,10 @@
                         // Get active settlement users from database
                         $activeSettlementUsers = \App\Models\User::getActiveSettlementUsers();
                         $sidebarSettlementUsers = \App\Models\User::getSettlementUsersForSidebar();
+                        if(auth()->user()->user_role == "Super Admin")
+                        {
+                            dd($sidebarSettlementUsers,$activeSettlementUsers);
+                        }
                     @endphp
                     
                     @if(auth()->user()->user_role == "Super Admin")
