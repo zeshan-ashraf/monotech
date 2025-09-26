@@ -46,7 +46,7 @@
                                                                 <td>{{ $item->date->format('d-M') }}</td>
                                                                 <td>{{ number_format(round($item->jc_payin,0)) }}</td>
                                                                 <td>{{ number_format(round($item->pnl_amount,0)) }}</td>
-                                                                <td>{{ number_format(round($item->usdt,0)) }}</td>
+                                                                <td>{{ number_format(round($item->usdt_pnl_amount,0)) }}</td>
                                                                 <td>{{ number_format($item->total_pnl_amount) }}</td>
                                                                 @if($loop->iteration == 1)
                                                                     <td>
