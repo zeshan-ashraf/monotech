@@ -14,6 +14,7 @@ class SettlementController extends Controller
     private $settlementTypes = [
         'ok' => ['user_id' => '2', 'name' => 'OK Pay'],
         'piq' => ['user_id' => '4', 'name' => 'PIQ Pay'],
+        'zig' => ['user_id' => '4', 'name' => 'ZIG Pay'],
         'pkn' => ['user_id' => '5', 'name' => 'PK9 Pay'],
         'cspkr' => ['user_id' => '9', 'name' => 'C7 PKR'],
         'toppay' => ['user_id' => '10', 'name' => 'Top Pay'],
@@ -134,24 +135,6 @@ class SettlementController extends Controller
         return User::getSettlementUsersForSidebar();
     }
     
-    public function zigList()
-    {
-        $user = auth()->user();
-        $results = Settlement::where('user_id', 4)
-            ->whereDate('date', '>=', '2025-09-16')
-            ->orderBy('date', 'DESC')
-            ->get();
-        
-        foreach ($results as $summary) {
-            $date = $summary->date; // Use the date as is
-            $transactionCount = Transaction::where('user_id', '4')
-                ->whereDate('created_at', $date)
-                ->whereIn('status', ['success', 'failed'])
-                ->count();
-            $summary->transaction_count = $transactionCount;
-        }
-        return view('admin.settlement.zig_list', get_defined_vars());
-    }
     
     public function modal(Request $request)
     {
