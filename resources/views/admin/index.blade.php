@@ -241,7 +241,7 @@
                                                                 <td class="bg-green">{{ number_format($item['jc_payin']) }}</td>
                                                                 <td class="bg-green">{{ number_format($item['ep_payin']) }}</td>
                                                                 <td class="bg-green font-weight-bold">{{ number_format($item['total_payin']) }}</td>
-                                                                <td class="bg-green">deduction</td>
+                                                                
                                                                 <td class="bg-red">{{ number_format($item['jc_payout']) }}</td>
                                                                 <td class="bg-red">{{ number_format($item['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($item['total_payout']) }}</td>
