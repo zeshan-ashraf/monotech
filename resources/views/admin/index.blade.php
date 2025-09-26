@@ -216,10 +216,11 @@
                                                         <th>JC</th>
                                                         <th>EP</th>
                                                         <th>Total</th>
+                                                        <th>Deduction</th>
                                                         <th>JC</th>
                                                         <th>EP</th>
                                                         <th>Total</th>
-                                                        <th>Deduction</th>
+                                                        
                                                         @endif
                                                         <th>JC</th>
                                                         <th>EP</th>
