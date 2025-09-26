@@ -28,6 +28,7 @@ class Settlement extends Model
         'usdt',
         'settled',
         'closing_bal',
+        'pnl_amount',
     ];
     
     protected $casts = [

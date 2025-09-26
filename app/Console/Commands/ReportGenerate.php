@@ -179,6 +179,7 @@ class ReportGenerate extends Command
                     'usdt' => $sumamry->usdt,
                     'settled' => $settleAmount,
                     'closing_bal' => $payinBal - $settleAmount,
+                    'pnl_amount' => round($transactionSumJC * 0.01, 2),
                 ]);
                 
             }
@@ -200,6 +201,7 @@ class ReportGenerate extends Command
                     'usdt' => '0',
                     'settled' => '0',
                     'closing_bal' => '0',
+                    'pnl_amount' => '0',
                 ]);
             }
         }
