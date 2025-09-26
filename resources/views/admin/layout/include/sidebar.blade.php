@@ -86,7 +86,7 @@
                         $sidebarSettlementUsers = \App\Models\User::getSettlementUsersForSidebar();
                         if(auth()->user()->user_role == "Super Admin")
                         {
-                            dd($sidebarSettlementUsers,$activeSettlementUsers);
+                            //dd($sidebarSettlementUsers,$activeSettlementUsers);
                         }
                     @endphp
                     
