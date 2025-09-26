@@ -135,7 +135,29 @@ class SettlementController extends Controller
     }
     
     // Legacy methods for backward compatibility (only keeping essential ones)
-    public function zigList() { return $this->list(request(), 'zig'); }
+    
+
+
+    public function zigList()
+    {
+        $user = auth()->user();
+        $results = Settlement::where('user_id', 4)
+            ->whereDate('date', '>=', '2025-09-16')
+            ->orderBy('date', 'DESC')
+            ->get();
+        
+        foreach ($results as $summary) {
+            $date = $summary->date; // Use the date as is
+            $transactionCount = Transaction::where('user_id', '4')
+                ->whereDate('created_at', $date)
+                ->whereIn('status', ['success', 'failed'])
+                ->count();
+            $summary->transaction_count = $transactionCount;
+        }
+        return view('admin.settlement.zig_list', get_defined_vars());
+    }
+
+
     public function modal(Request $request)
     {
         $id = $request->id;
