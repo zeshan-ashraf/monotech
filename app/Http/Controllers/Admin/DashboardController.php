@@ -159,6 +159,7 @@ class DashboardController extends Controller
         return view('admin.index', get_defined_vars());
 
     }
+    
     public function zigIndex()
     {
         $client = User::where('id', 4)->where('active',1)->first();
