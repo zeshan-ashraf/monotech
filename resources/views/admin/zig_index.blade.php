@@ -143,26 +143,20 @@
                                             <table class="table table-bordered">
                                                 <thead>
                                                     <tr>
-                                                        <th>Name</th>
-                                                        <th>Previous Balance</th>
+                                                        <th>Date</th>
                                                         <th>Payin</th>
-                                                        <th>Payout</th>
-                                                        <th>USDT</th>
-                                                        <th>Unsettled (Payable)</th>
-                                                        <th>Wallet</th>
-                                                        <th>Balance</th>
+                                                        <th>PNL</th>
+                                                        <th>Withdraw</th>
+                                                        <th>Total PNL</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     <tr>
-                                                        <td class="client">{{ $client->name }}</td>
-                                                        <td>{{ number_format($prevBal) }}</td>
-                                                        <td class="bg-green">{{ number_format($jcPayinAmount) }}</td>
-                                                        <td class="bg-red">{{ number_format($jcPayoutAmount) }}</td>
-                                                        <td>{{ number_format($prevUsdt) }}</td>
-                                                        <td class="font-weight-bold text-red">{{ number_format($unsettletdAmount) }}</td>
-                                                        <td class="bg-gray">{{ number_format($assignedAmount->jazzcash ?? 0) }}</td>
-                                                        <td class="bg-warning">{{ number_format(round($balance, 0)) }}</td>
+                                                        <td>{{ $item->date->format('d-M') }}</td>
+                                                        <td>{{ number_format(round($item->jc_payin,0)) }}</td>
+                                                        <td>{{ number_format(round($item->pnl_amount,0)) }}</td>
+                                                        <td>{{ number_format(round($item->usdt_pnl_amount,0)) }}</td>
+                                                        <td>{{ number_format($item->total_pnl_amount) }}</td>
                                                     </tr>
                                                 </tbody>
                                             </table>
