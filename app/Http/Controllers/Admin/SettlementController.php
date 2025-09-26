@@ -35,8 +35,7 @@ class SettlementController extends Controller
         $user = auth()->user();
         
         // Determine user ID based on type or current user
-      
-        $userId = $user->id;
+        $userId = $this->getUserIdForSettlement($type, $user);
         
         if (!$userId) {
             abort(404, 'Settlement type not found');
@@ -66,6 +65,62 @@ class SettlementController extends Controller
         $view = ($type === 'zig') ? 'admin.settlement.zig_list' : 'admin.settlement.list';
         
         return view($view, get_defined_vars());
+    }
+    
+    /**
+     * Get user ID for settlement based on type or current user
+     */
+    private function getUserIdForSettlement($type, $user)
+    {
+        // If type is provided, try to find user by name or ID
+        if ($type) {
+            // First try to find by user ID if type is numeric
+            if (is_numeric($type)) {
+                $targetUser = User::find($type);
+                if ($targetUser && $targetUser->settlements()->exists() && $targetUser->user_role === 'Client' && $targetUser->active == 1) {
+                    return $targetUser->id;
+                }
+            }
+            
+            // Try to find by name (case insensitive)
+            $targetUser = User::whereRaw('LOWER(name) = ?', [strtolower($type)])
+                ->whereHas('settlements')
+                ->where('user_role', 'Client')
+                ->where('active', 1)
+                ->first();
+            if ($targetUser) {
+                return $targetUser->id;
+            }
+            
+            // Check static mapping for legacy support
+            if (isset($this->settlementTypes[$type])) {
+                $mappedUserId = $this->settlementTypes[$type]['user_id'];
+                $targetUser = User::find($mappedUserId);
+                if ($targetUser && $targetUser->settlements()->exists() && $targetUser->user_role === 'Client' && $targetUser->active == 1) {
+                    return $targetUser->id;
+                }
+            }
+        }
+        
+        // For specific user IDs (legacy support)
+        $userSettlementMap = [
+            '2' => '2',   // OK Pay
+            '4' => '4',   // PIQ Pay  
+            '5' => '5',   // PK9 Pay
+            '9' => '9',   // C7 PKR
+            '14' => '14', // Money Pay
+        ];
+        
+        if (isset($userSettlementMap[$user->id])) {
+            return $userSettlementMap[$user->id];
+        }
+        
+        // If user has settlements, use their own ID
+        if ($user->settlements()->exists() && $user->user_role === 'Client' && $user->active == 1) {
+            return $user->id;
+        }
+        
+        return null;
     }
     
    

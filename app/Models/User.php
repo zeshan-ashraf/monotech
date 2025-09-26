@@ -84,10 +84,10 @@ class User extends Authenticatable
     {
         //for admin sub dropdown menu for settlement
         return self::whereHas('settlements')
-            ->where('user_role', '==', 'Client')
+            ->where('user_role', 'Client')
+            ->where('active', 1)
             ->select('id', 'name', 'user_role')
             ->orderBy('name')
-            ->where('active', 1)
             ->get();
     }
 
@@ -97,11 +97,10 @@ class User extends Authenticatable
     public static function getSettlementUsersForSidebar()
     {
         return self::whereHas('settlements')
-            ->where('user_role', '==', 'Client')
-            ->where('user_role', '!=', 'Super Admin')
+            ->where('user_role', 'Client')
+            ->where('active', 1)
             ->select('id', 'name', 'user_role')
             ->orderBy('name')
-            ->where('active', 1)
             ->get();
     }
 }
