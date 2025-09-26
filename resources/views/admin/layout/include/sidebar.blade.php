@@ -95,8 +95,8 @@
                             <a class="d-flex align-items-center" href="#"><i data-feather='briefcase'></i>Settlement</a>
                             <ul class="menu-content">
                                 @foreach($activeSettlementUsers as $settlementUser)
-                                    <li class="@if (url()->current() == route('admin.settlement.list', $settlementUser->id)) active @endif nav-item">
-                                        <a class="d-flex align-items-center" href="{{ route('admin.settlement.list', $settlementUser->id) }}">
+                                    <li class="@if (url()->current() == route('admin.settlement.list', ['type' => $settlementUser->id])) active @endif nav-item">
+                                        <a class="d-flex align-items-center" href="{{ route('admin.settlement.list', ['type' => $settlementUser->id]) }}">
                                             <i data-feather="circle"></i>{{ $settlementUser->name }}
                                         </a>
                                     </li>
@@ -105,7 +105,7 @@
                         </li>
                     @elseif($sidebarSettlementUsers->contains('id', auth()->user()->id))
                         <li class="nav-item">
-                            <a class="d-flex align-items-center" href="{{ route('admin.settlement.list', auth()->user()->id) }}">
+                            <a class="d-flex align-items-center" href="{{ route('admin.settlement.list', ['type' => auth()->user()->id]) }}">
                                 <i data-feather="briefcase"></i>Settlement
                             </a>
                         </li>

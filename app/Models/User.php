@@ -86,6 +86,7 @@ class User extends Authenticatable
         return self::whereHas('settlements')
             ->where('user_role', 'Client')
             ->where('active', 1)
+            ->where('email', 'not like', '%test@%')
             ->select('id', 'name', 'user_role')
             ->orderBy('name')
             ->get();
@@ -99,6 +100,7 @@ class User extends Authenticatable
         return self::whereHas('settlements')
             ->where('user_role', 'Client')
             ->where('active', 1)
+            ->where('email', 'not like', '%test@%')
             ->select('id', 'name', 'user_role')
             ->orderBy('name')
             ->get();

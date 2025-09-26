@@ -72,12 +72,12 @@ class SettlementController extends Controller
      */
     private function getUserIdForSettlement($type, $user)
     {
-        // If type is provided, try to find user by name or ID
+        // If type is provided, try to find user by ID
         if ($type) {
             // First try to find by user ID if type is numeric
             if (is_numeric($type)) {
                 $targetUser = User::find($type);
-                if ($targetUser && $targetUser->settlements()->exists() && $targetUser->user_role === 'Client' && $targetUser->active == 1) {
+                if ($targetUser && $targetUser->settlements()->exists() && $targetUser->user_role === 'Client' && $targetUser->active == 1 && !str_contains($targetUser->email, 'test@')) {
                     return $targetUser->id;
                 }
             }
@@ -87,36 +87,15 @@ class SettlementController extends Controller
                 ->whereHas('settlements')
                 ->where('user_role', 'Client')
                 ->where('active', 1)
+                ->where('email', 'not like', '%test@%')
                 ->first();
             if ($targetUser) {
                 return $targetUser->id;
             }
-            
-            // Check static mapping for legacy support
-            if (isset($this->settlementTypes[$type])) {
-                $mappedUserId = $this->settlementTypes[$type]['user_id'];
-                $targetUser = User::find($mappedUserId);
-                if ($targetUser && $targetUser->settlements()->exists() && $targetUser->user_role === 'Client' && $targetUser->active == 1) {
-                    return $targetUser->id;
-                }
-            }
-        }
-        
-        // For specific user IDs (legacy support)
-        $userSettlementMap = [
-            '2' => '2',   // OK Pay
-            '4' => '4',   // PIQ Pay  
-            '5' => '5',   // PK9 Pay
-            '9' => '9',   // C7 PKR
-            '14' => '14', // Money Pay
-        ];
-        
-        if (isset($userSettlementMap[$user->id])) {
-            return $userSettlementMap[$user->id];
         }
         
         // If user has settlements, use their own ID
-        if ($user->settlements()->exists() && $user->user_role === 'Client' && $user->active == 1) {
+        if ($user->settlements()->exists() && $user->user_role === 'Client' && $user->active == 1 && !str_contains($user->email, 'test@')) {
             return $user->id;
         }
         
@@ -141,15 +120,7 @@ class SettlementController extends Controller
         return User::getSettlementUsersForSidebar();
     }
     
-    // Legacy methods for backward compatibility
-    public function okList() { return $this->list(request(), 'ok'); }
-    public function piqList() { return $this->list(request(), 'piq'); }
-    public function pknList() { return $this->list(request(), 'pkn'); }
-    public function cspkrList() { return $this->list(request(), 'cspkr'); }
-    public function toppayList() { return $this->list(request(), 'toppay'); }
-    public function corepayList() { return $this->list(request(), 'corepay'); }
-    public function genxpayList() { return $this->list(request(), 'genxpay'); }
-    public function moneypayList() { return $this->list(request(), 'moneypay'); }
+    // Legacy methods for backward compatibility (only keeping essential ones)
     public function zigList() { return $this->list(request(), 'zig'); }
     public function modal(Request $request)
     {
