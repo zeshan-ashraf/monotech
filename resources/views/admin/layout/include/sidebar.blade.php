@@ -72,13 +72,13 @@
                         <a class="d-flex align-items-center @if (url()->current() == route('admin.setting.list')) active @endif"
                             href="{{ route('admin.setting.list') }}"><i data-feather='credit-card'></i>Reversed Payin</a>
                     </li>
-                @endif
-                @if(auth()->user()->id == "2")
+                @else
                     <li class="nav-item">
-                        <a class="d-flex align-items-center @if (url()->current() == route('admin.setting.ok_list')) active @endif"
-                            href="{{ route('admin.setting.ok_list') }}"><i data-feather='credit-card'></i>Reversed Payin</a>
+                        <a class="d-flex align-items-center @if (url()->current() == route('admin.setting.reverse_payin_list')) active @endif"
+                            href="{{ route('admin.setting.reverse_payin_list') }}"><i data-feather='credit-card'></i>Reversed Payin</a>
                     </li>
                 @endif
+               
                 @can('Settlement')
                     @if(auth()->user()->user_role == "Super Admin")
                         <li class="  nav-item">
