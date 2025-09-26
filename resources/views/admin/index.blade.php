@@ -215,9 +215,9 @@
                                                         @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Client")
                                                         <th>JC</th>
                                                         <th>EP</th>
-                                                        <th>deduction</th>
-                                                        <th>Total</th>
                                                         
+                                                        <th>Total</th>
+                                                        <th>deduction</th>
                                                         <th>JC</th>
                                                         <th>EP</th>
                                                         <th>Total</th>
@@ -242,9 +242,9 @@
                                                                 <td>{{ number_format($item['prev_balance']) }}</td>
                                                                 <td class="bg-green">{{ number_format($item['jc_payin']) }}</td>
                                                                 <td class="bg-green">{{ number_format($item['ep_payin']) }}</td>
-                                                                <td class="font-weight-bold text-red">{{ number_format($item['reverse_amount']) }}</td>
-                                                                <td class="bg-green font-weight-bold">{{ number_format($item['total_payin']) }}</td>
                                                                 
+                                                                <td class="bg-green font-weight-bold">{{ number_format($item['total_payin']) }}</td>
+                                                                <td class="font-weight-bold text-red">{{ number_format($item['reverse_amount']) }}</td>
                                                                 <td class="bg-red">{{ number_format($item['jc_payout']) }}</td>
                                                                 <td class="bg-red">{{ number_format($item['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($item['total_payout']) }}</td>
