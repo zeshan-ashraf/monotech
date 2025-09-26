@@ -154,7 +154,7 @@
                                                 <thead>
                                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                     <tr class="bg-warning">
-                                                        <th colspan="@if (auth()->user()->user_role == "Super Admin") 12 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
+                                                        <th colspan="@if (auth()->user()->user_role == "Super Admin") 11 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
                                                         <th>JC</th> 
                                                         <th>EP</th>
                                                         <th colspan="3">Action</th>
@@ -215,12 +215,12 @@
                                                         @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Client")
                                                         <th>JC</th>
                                                         <th>EP</th>
+                                                        <th>deduction</th>
                                                         <th>Total</th>
-                                                        <th>Deduction</th>
                                                         <th>JC</th>
                                                         <th>EP</th>
                                                         <th>Total</th>
-                                                        
+                                                        <th>Deduction</th>
                                                         @endif
                                                         <th>JC</th>
                                                         <th>EP</th>
@@ -241,8 +241,8 @@
                                                                 <td>{{ number_format($item['prev_balance']) }}</td>
                                                                 <td class="bg-green">{{ number_format($item['jc_payin']) }}</td>
                                                                 <td class="bg-green">{{ number_format($item['ep_payin']) }}</td>
+                                                                <td class="bg-green">{{ number_format($item['reverse_amount']) }}</td>
                                                                 <td class="bg-green font-weight-bold">{{ number_format($item['total_payin']) }}</td>
-                                                                
                                                                 <td class="bg-red">{{ number_format($item['jc_payout']) }}</td>
                                                                 <td class="bg-red">{{ number_format($item['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($item['total_payout']) }}</td>
