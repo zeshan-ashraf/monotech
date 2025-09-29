@@ -77,7 +77,7 @@ class SettingController extends Controller
         $start = request()->start_date;
         $end = request()->end_date;
         $txn_type = request()->txn_type;
-        echo $currentUserId = auth()->user()->id;
+        $currentUserId = auth()->user()->id;
 
         $query1 = DB::table('transactions')
             ->select('*')

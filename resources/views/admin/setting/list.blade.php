@@ -18,7 +18,7 @@
                             <div class="card-body">
                                 <div>
                                     <div class="toolbar w-100">
-                                        <form action="{{ route('admin.setting.list') }}" method="GET"
+                                        <form action="{{ route('admin.setting.reverse_payin_list') }}" method="GET"
                                             class="d-flex justify-content-between">
                                             <div class="col-md-4">
                                                 <fieldset>
