@@ -136,6 +136,7 @@ class TransactionController extends Controller
             $response=$this->easypaisaStatusFunc($id,$storeId,$accountNumber,$easyUsername,$easyPassword);
 		}
 		$transactionDetails=$response;
+        dd($transactionDetails);
         return view('admin.transaction.detail',get_defined_vars());
     }
 	public function jazzcashStatusFunc($id,$integritySalt,$merchantId,$password)

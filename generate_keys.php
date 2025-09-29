@@ -6,3 +6,4 @@ $api_secret = bin2hex(random_bytes(64)); // 128 characters
 echo "API Key: " . $api_key . PHP_EOL;
 echo "API Secret: " . $api_secret . PHP_EOL;
 ?>
+
