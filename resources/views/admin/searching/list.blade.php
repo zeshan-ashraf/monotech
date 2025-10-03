@@ -45,14 +45,17 @@
                                                         $clients= \App\Models\User::where('user_role', 'Client')->where('active',1)->get();
                                                     @endphp
                                                 <div class="col-md-2">
-                                                    <select name="client" class="form-select border-primary">
-                                                        <option selected disabled>Filter Client</option>
-                                                        @foreach($clients as $client)
-                                                        <option value="{{$client->id}}"
-                                                            {{ request()->client == $client->id ? 'selected' : '' }}>{{$client->name}}
-                                                        </option>
-                                                        @endforeach
-                                                    </select>
+                                                    <div class="form-group">
+                                                        <label>Client</label>
+                                                        <select name="client" class="form-select border-primary">
+                                                            <option selected disabled>Filter Client</option>
+                                                            @foreach($clients as $client)
+                                                            <option value="{{$client->id}}"
+                                                                {{ request()->client == $client->id ? 'selected' : '' }}>{{$client->name}}
+                                                            </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
                                                 </div>
                                                 @endif
                                                 <div class="col-md-3">
