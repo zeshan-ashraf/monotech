@@ -66,7 +66,7 @@
                                                             value="{{request()->phone}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
                                                     <div class="form-group">
                                                         <label>Transaction Id</label>
                                                         <input type="text" name="transaction_Id" id="fp-range"
@@ -74,7 +74,7 @@
                                                             value="{{request()->transaction_Id}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
                                                     <div class="form-group">
                                                         <label>Order Id</label>
                                                         <input type="text" name="order_id" id="fp-range"
