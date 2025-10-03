@@ -51,6 +51,7 @@
                                                         <option value="{{$client->id}}"
                                                             {{ request()->client == $client->id ? 'selected' : '' }}>{{$client->name}}
                                                         </option>
+                                                        @endforeach
                                                     </select>
                                                 </div>
                                                 @endif
