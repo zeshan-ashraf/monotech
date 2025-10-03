@@ -40,6 +40,20 @@
                                         <form method="GET" action="{{route('admin.searching.list')}}">
                                             <input type="hidden" name="params" value="true">
                                             <div class="row">
+                                                @if(auth()->user()->user_role == "Super Admin")
+                                                    @php
+                                                        $clients= \App\Models\User::where('user_role', 'Client')->where('active',1)->get();
+                                                    @endphp
+                                                <div class="col-md-2">
+                                                    <select name="client" class="form-select border-primary">
+                                                        <option selected disabled>Filter Client</option>
+                                                        @foreach($clients as $client)
+                                                        <option value="{{$client->id}}"
+                                                            {{ request()->client == {{$client->id}} ? 'selected' : '' }}>{{$client->name}}
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                                @endif
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Phone</label>
