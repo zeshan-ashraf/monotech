@@ -56,6 +56,9 @@ class SearchingDataTable extends DataTable
             ->when(request()->phone, function ($q) {
                 $q->where('phone', 'like', '%' . request()->phone . '%');
             })
+            ->when(request()->client, function ($q) {
+                $q->where('user_id', request()->client);
+            })
             ->when(request()->order_id, function ($q) {
                 $q->where('orderId', 'like', '%' . request()->order_id . '%');
             });
@@ -67,6 +70,9 @@ class SearchingDataTable extends DataTable
             ->when(request()->phone, function ($q) {
                 $q->where('phone', 'like', '%' . request()->phone . '%');
             })
+            ->when(request()->client, function ($q) {
+                $q->where('user_id', request()->client);
+            })
             ->when(request()->order_id, function ($q) {
                 $q->where('orderId', 'like', '%' . request()->order_id . '%');
             });
@@ -76,6 +82,9 @@ class SearchingDataTable extends DataTable
             })
             ->when(request()->phone, function ($q) {
                 $q->where('phone', 'like', '%' . request()->phone . '%');
+            })
+            ->when(request()->client, function ($q) {
+                $q->where('user_id', request()->client);
             })
             ->when(request()->order_id, function ($q) {
                 $q->where('orderId', 'like', '%' . request()->order_id . '%');
