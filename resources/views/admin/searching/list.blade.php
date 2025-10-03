@@ -66,7 +66,7 @@
                                                             value="{{request()->phone}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-2">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Transaction Id</label>
                                                         <input type="text" name="transaction_Id" id="fp-range"
@@ -74,14 +74,6 @@
                                                             value="{{request()->transaction_Id}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                {{--<div class="col-md-2">
-                                                    <div class="form-group">
-                                                        <label>Transaction Ref No</label>
-                                                        <input type="text" name="transaction_ref_no" id="fp-range"
-                                                            class="form-control flatpickr-range  flatpickr-input"
-                                                            value="{{request()->transaction_ref_no}}" autocomplete="off">
-                                                    </div>
-                                                </div>--}}
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Order Id</label>
