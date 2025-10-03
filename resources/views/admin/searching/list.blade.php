@@ -58,7 +58,7 @@
                                                     </div>
                                                 </div>
                                                 @endif
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
                                                     <div class="form-group">
                                                         <label>Phone</label>
                                                         <input type="text" name="phone" id="fp-range"
@@ -66,7 +66,7 @@
                                                             value="{{request()->phone}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
                                                     <div class="form-group">
                                                         <label>Transaction Id</label>
                                                         <input type="text" name="transaction_Id" id="fp-range"
