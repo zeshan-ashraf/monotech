@@ -287,7 +287,7 @@ class PayoutController extends Controller
                     $url =$callback_url;
                     $call_data = [
                         'orderId' => $request->orderId,
-                        'tid' => $request->transaction_reference,
+                        'tid' => $values['transaction_reference'],
                         'amount' => $transaction->amount,
                         'status' => 'success',
                     ];
@@ -330,7 +330,7 @@ class PayoutController extends Controller
                     $url =$callback_url;
                     $call_data = [
                         'orderId' => $request->orderId,
-                        'tid' => $request->transaction_reference,
+                        'tid' => $values['transaction_reference'],
                         'message' => 'Your payout cannot be processed due to '. $data['ResponseMessage']. ' , please try again.',
                         'status' => 'failed',
                     ];
@@ -525,7 +525,7 @@ class PayoutController extends Controller
                     $call_url =$callback_url;
                     $call_data = [
                         'orderId' => $request->orderId,
-                        'tid' => $request->transaction_reference,
+                        'tid' => $values['transaction_reference'],
                         'amount' => $transaction->amount,
                         'status' => 'success',
                     ];
