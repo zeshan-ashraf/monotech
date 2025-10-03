@@ -181,7 +181,7 @@ class SettingController extends Controller
     }
     public function getSuspendSetting()
     {
-        $list = User::where('user_role','client')->get();
+        $list = User::where('user_role','client')->where('active',1)->get();
         $list2 = ScheduleSetting::where('txns_type','jazzcash')->get();
         $list3 = ScheduleSetting::where('txns_type','easypaisa')->get();
         return view("admin.setting.api_setting",get_defined_vars());
