@@ -40,25 +40,7 @@
                                         <form method="GET" action="{{route('admin.searching.list')}}">
                                             <input type="hidden" name="params" value="true">
                                             <div class="row">
-                                                @if(auth()->user()->user_role == "Super Admin")
-                                                    @php
-                                                        $clients= \App\Models\User::where('user_role', 'Client')->where('active',1)->get();
-                                                    @endphp
-                                                <div class="col-md-2">
-                                                    <div class="form-group">
-                                                        <label>Client</label>
-                                                        <select name="client" class="form-select border-primary">
-                                                            <option selected disabled>Filter Client</option>
-                                                            @foreach($clients as $client)
-                                                            <option value="{{$client->id}}"
-                                                                {{ request()->client == $client->id ? 'selected' : '' }}>{{$client->name}}
-                                                            </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                @endif
-                                                <div class="col-md-2">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Phone</label>
                                                         <input type="text" name="phone" id="fp-range"
@@ -66,7 +48,7 @@
                                                             value="{{request()->phone}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-2">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Transaction Id</label>
                                                         <input type="text" name="transaction_Id" id="fp-range"
@@ -74,7 +56,7 @@
                                                             value="{{request()->transaction_Id}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-2">
+                                                <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Order Id</label>
                                                         <input type="text" name="order_id" id="fp-range"

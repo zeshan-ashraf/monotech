@@ -63,4 +63,8 @@ class Transaction extends Model
             'amount.min' => 'Amount must be greater than 0.',
         ];
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

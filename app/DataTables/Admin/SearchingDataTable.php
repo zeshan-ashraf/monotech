@@ -13,6 +13,9 @@ class SearchingDataTable extends DataTable
     {
         return datatables()
             ->eloquent($query)
+            ->addColumn('client_name', function ($transaction) {
+                return $transaction->user ? $transaction->user->name : '-';
+            })
             ->editColumn('status',function ($query){
                 $reason = $query->pp_message;
                 $type = $query->status;
@@ -56,9 +59,6 @@ class SearchingDataTable extends DataTable
             ->when(request()->phone, function ($q) {
                 $q->where('phone', 'like', '%' . request()->phone . '%');
             })
-            ->when(request()->client, function ($q) {
-                $q->where('user_id', request()->client);
-            })
             ->when(request()->order_id, function ($q) {
                 $q->where('orderId', 'like', '%' . request()->order_id . '%');
             });
@@ -70,9 +70,6 @@ class SearchingDataTable extends DataTable
             ->when(request()->phone, function ($q) {
                 $q->where('phone', 'like', '%' . request()->phone . '%');
             })
-            ->when(request()->client, function ($q) {
-                $q->where('user_id', request()->client);
-            })
             ->when(request()->order_id, function ($q) {
                 $q->where('orderId', 'like', '%' . request()->order_id . '%');
             });
@@ -82,9 +79,6 @@ class SearchingDataTable extends DataTable
             })
             ->when(request()->phone, function ($q) {
                 $q->where('phone', 'like', '%' . request()->phone . '%');
-            })
-            ->when(request()->client, function ($q) {
-                $q->where('user_id', request()->client);
             })
             ->when(request()->order_id, function ($q) {
                 $q->where('orderId', 'like', '%' . request()->order_id . '%');
@@ -125,6 +119,7 @@ class SearchingDataTable extends DataTable
     {
         return [
             ['data' => 'orderId', 'name' => 'orderId', 'title' => 'Order Id', 'orderable' => true,'searchable' => true,'width'=>30],
+            ['data' => 'client_name', 'name' => 'user.name', 'title' => 'Client Name', 'orderable' => true, 'searchable' => true, 'width'=>30],
             ['data' => 'transactionId', 'name' => 'transactionId', 'title' => 'Trans Id', 'orderable' => true,'searchable' => true,'width'=>30],
             ['data' => 'phone', 'name' => 'phone', 'title' => 'Phone', 'orderable' => true, 'searchable' => true, 'width'=>30],
             ['data' => 'txn_ref_no', 'name' => 'txn_ref_no', 'title' => 'Trans Ref No', 'orderable' => true,'searchable' => true,'width'=>30],
