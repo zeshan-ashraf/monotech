@@ -49,7 +49,7 @@
                                                         <option selected disabled>Filter Client</option>
                                                         @foreach($clients as $client)
                                                         <option value="{{$client->id}}"
-                                                            {{ request()->client == {{$client->id}} ? 'selected' : '' }}>{{$client->name}}
+                                                            {{ request()->client == $client->id ? 'selected' : '' }}>{{$client->name}}
                                                         </option>
                                                     </select>
                                                 </div>
