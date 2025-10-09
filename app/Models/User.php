@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password',
         'visible_password',
         'payin_fee',
+        'payin_ep_fee',
         'payout_fee',
         'per_payin_fee',
         'per_payout_fee',
