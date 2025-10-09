@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->double('payin_ep_fee', 12, 2)->default(0);
+            $table->boolean('payin_ep_fee')->default(0);
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->double('payin_ep_fee', 12, 2)->default(0);
+            $table->boolean('payin_ep_fee')->default(0);
         });
     }
 };
