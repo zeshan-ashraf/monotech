@@ -11,8 +11,12 @@
         <div class="modal-body">
             <div class="row">
                 <div class="col-md-12">
-                    <label>Payin Fee</label>
+                    <label>Payin JC Fee</label>
                     <input class="form-control title_box" name="payin_fee" value="{{$item->payin_fee ?? ""}}" required type="text">
+                </div>
+                <div class="col-md-12">
+                    <label>Payin EP Fee</label>
+                    <input class="form-control title_box" name="payin_ep_fee" value="{{$item->payin_ep_fee ?? ""}}" required type="text">
                 </div>
                 <div class="col-md-12">
                     <label>Payout Fee</label>

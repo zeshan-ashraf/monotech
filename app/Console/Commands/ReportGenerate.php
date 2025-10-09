@@ -152,16 +152,8 @@ class ReportGenerate extends Command
                 //     $transactionReverseHalf = $transactionReverseHalf + $KhushiData['today_reverse'];
                 // }
                 
-            
-                // if($user->id == 2){
-                //     $payinFeeJC = 0.036;
-                //     $payinFeeEP = 0.0385;
-                // }else{
-                //     $payinFeeJC = $user->payin_fee;
-                //     $payinFeeEP = $user->payin_fee;
-                // }
                 $payinFeeJC = $user->payin_fee;
-                $payinFeeEP = $user->payin_fee;
+                $payinFeeEP = $user->payin_ep_fee;
                 $PayoutFeeJC = $user->payout_fee;
                 $PayoutFeeEP = $user->payout_fee;
             
