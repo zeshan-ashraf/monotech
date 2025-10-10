@@ -158,7 +158,7 @@ class ReportGenerate extends Command
                 $PayoutFeeEP = $user->payout_fee;
             
                 // Calculate balances
-                if($user->id == 2){
+                if($user->id == 2 || $user->id == 18){
                     $payinBal = $closingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
                 }else{
                     $payinBal = $closingBal + $transactionSumJC - ($transactionSumJC * $payinFeeJC) - $transactionReverseHalf;
