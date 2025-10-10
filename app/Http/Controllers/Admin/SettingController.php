@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\{User, Summary, Setting, ScheduleSetting,SurplusAmount,Transaction,ManualPayout};
+use App\Models\{User, Summary, Setting,Settlement, ScheduleSetting,SurplusAmount,Transaction,ManualPayout};
 use Illuminate\Http\Request;
 use DB;
 
@@ -147,16 +147,51 @@ class SettingController extends Controller
     }
     public function saveSetting(Request $request)
     {
-        $setting=Setting::where('user_id',$request->id)->first();
-        $setting->easypaisa = $setting->easypaisa+$request->easypaisa;
-        $setting->jazzcash = $setting->jazzcash+$request->jazzcash;
-        $setting->payout_balance = $setting->easypaisa+$setting->jazzcash;
-        $setting->save();
-        
-        $surplus=SurplusAmount::where('id','1')->first();
-        $surplus->jazzcash=$surplus->jazzcash - $request->jazzcash;
-        $surplus->easypaisa=$surplus->easypaisa - $request->easypaisa;
-        $surplus->save();
+        $userid = auth()->user()->id;
+        if(auth()->user()->id == 18){// copay
+            $settlement=Settlement::where('user_id',$userid)->whereDate('date', today())->first();
+            $prevBal=Settlement::where('user_id', $userid)->whereDate('date', today()->subDay())->value('closing_bal') ?? 0;
+            $client=User::find($userid);
+            $epPayinAmount = $settlement->ep_payin;
+            $jcPayinAmount = $settlement->jc_payin;
+            $epPayoutAmount = $settlement->ep_payout;
+            $jcPayoutAmount = $settlement->jc_payout;
+            $payinSuccess= $epPayinAmount + $jcPayinAmount;
+            $payoutSuccess= $epPayoutAmount + $jcPayoutAmount;
+            $prevUsdt= $settlement->usdt;
+            $payinFee=$client->payin_fee;
+            $payoutFee=$client->payout_fee;
+            $unsettletdAmount=$prevBal + $payinSuccess - ($payinSuccess*$payinFee + $payoutSuccess + $payoutSuccess*$payoutFee + $prevUsdt);
+
+            //$setting=Setting::where('user_id',$request->id)->first();// can be manipulated
+            $setting=Setting::where('user_id',$userid)->first();
+            $setting->easypaisa += $request->easypaisa;
+            $setting->jazzcash += $request->jazzcash;
+            $newAmount=$setting->easypaisa + $setting->jazzcash;
+            if ($newAmount > $unsettletdAmount) {
+                return redirect()->back()->with('error', 'Assigned amount cannot be greater than unsettled amount.');
+            }
+            else{
+                $setting->payout_balance = $setting->easypaisa+$setting->jazzcash;
+                $setting->save();
+                
+                $surplus=SurplusAmount::where('id','1')->first();
+                $surplus->jazzcash -= $request->jazzcash;
+                $surplus->easypaisa -= $request->easypaisa;
+                $surplus->save();
+            }
+        } else {
+            $setting=Setting::where('user_id',$request->id)->first();
+            $setting->easypaisa += $request->easypaisa;
+            $setting->jazzcash += $request->jazzcash;
+            $setting->payout_balance = $setting->easypaisa+$setting->jazzcash;
+            $setting->save();
+            
+            $surplus=SurplusAmount::where('id','1')->first();
+            $surplus->jazzcash -= $request->jazzcash;
+            $surplus->easypaisa -= $request->easypaisa;
+            $surplus->save();
+        }
         return redirect()->back();
     }
     public function saveScheduleSetting(Request $request)
