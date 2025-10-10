@@ -280,7 +280,7 @@ class PaymentService
                     
                         $setting = Setting::where('user_id', $transaction->user_id)->first();
                         $surplus = SurplusAmount::find(1);
-                        if($user->id == 2){
+                        if($user->id == 2 || $user->id == 18){
                             if ($setting && $surplus) {
                                 $setting->easypaisa += $amount;
                                 $setting->payout_balance += $amount;
