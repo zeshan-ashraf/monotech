@@ -43,9 +43,9 @@ class DashboardController extends Controller
             $jcPayoutAmount = $settlement->jc_payout;
             $reverseAmount = $settlement->reverse_amount ?? 0;
             // if($userId == 2 || $userId == 18){
-            //     $payinSuccess= $epPayinAmount + $jcPayinAmount;
+                $payinSuccess= $epPayinAmount + $jcPayinAmount;
             // }else{
-                $payinSuccess= $jcPayinAmount;
+                // $payinSuccess= $jcPayinAmount;
             // }
             $payoutSuccess= $epPayoutAmount + $jcPayoutAmount;
             $prevUsdt= $settlement->usdt;
