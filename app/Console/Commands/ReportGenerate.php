@@ -175,11 +175,11 @@ class ReportGenerate extends Command
                 $PayoutFeeEP = $user->payout_fee;
             
                 // Calculate balances
-                if($user->id == 2 || $user->id == 18){
+                // if($user->id == 2 || $user->id == 18){
                     $payinBal = $closingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
-                }else{
-                    $payinBal = $closingBal + $transactionSumJC - ($transactionSumJC * $payinFeeJC) - $transactionReverseHalf;
-                }
+                // }else{
+                //     $payinBal = $closingBal + $transactionSumJC - ($transactionSumJC * $payinFeeJC) - $transactionReverseHalf;
+                // }
                 $settleAmount = $payoutSumJC + $payoutSumEP + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) + $todayUsdt;
                 $pnl_amount=round($transactionSumJC * 0.01, 2);
                 $total_pnl_amount=$pnl_amount+$prev_pnl-$prev_usdt_pnl;
@@ -227,6 +227,9 @@ class ReportGenerate extends Command
                     'pnl_amount' => '0',
                     'total_pnl_amount' => '0',
                     'usdt_pnl_amount' => '0',
+                ]);
+                User::query()->update([
+                    'temp_amount' => 0
                 ]);
             }
         }
