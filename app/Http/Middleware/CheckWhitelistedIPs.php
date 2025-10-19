@@ -146,7 +146,9 @@ class CheckWhitelistedIPs
                 'ip' => $request->ip(),
                 'method' => $request->method(),
                 'path' => $request->path(),
-                'user_agent' => $userAgent
+                'user_agent' => $userAgent,
+                'request_body' => $request->all(),
+                'headers' => $request->headers->all()
             ]);
             return response()->json(['error' => 'Unauthorized IP'], 403);
         }
