@@ -127,42 +127,59 @@ class ReportGenerate extends Command
                 //     $payoutSumJC = $payoutSumJC + $novaData['today_piq_jc_payout'];
                 //     $payoutSumEP = $payoutSumEP + $novaData['today_piq_ep_payout'];
                 // }
-                // if($user->id == "2"){
-                //     $payoutSumJC = $payoutSumJC + $novaData['today_ok_jc_payout'];
-                //     $payoutSumEP = $payoutSumEP + $novaData['today_ok_ep_payout'];
+                $url = 'https://khushiconnect.com/api/get-payin-data';
+                $khushiResponse = Http::get($url);
+                $KhushiData = $khushiResponse->json();
+                if($user->id == "2"){
+                    $khushiPayinAmount = $KhushiData['today_payin_ok'];
 
-                //     $url = 'https://khushiconnect.com/api/get-payin-data';
-                //     $khushiResponse = Http::get($url);
-                //     $KhushiData = $khushiResponse->json();
-                //     $khushiPayinAmount = $KhushiData['today_payin'];
+                    $setting = Setting::where('user_id', 2)->first();
+                    $user=User::find(2);
+                    $surplus=SurplusAmount::find(1);
+                    $previousAmount=$user->temp_amount;
+                    $user->temp_amount = $khushiPayinAmount;
+                    $user->save();
+                    $surplus->easypaisa = $surplus->easypaisa+$previousAmount-$khushiPayinAmount;
+                    $surplus->save();
 
-                //     // $setting = Setting::where('user_id', 2)->first();
-                //     // $surplus=SurplusAmount::find(1);
-                //     // $previousAmount=$surplus->temp_amount;
-                //     // $surplus->temp_amount = $amount;
+                    $setting->easypaisa= $setting->easypaisa-$previousAmount+$khushiPayinAmount;
+                    $setting->payout_balance = $setting->payout_balance-$previousAmount+$khushiPayinAmount;
+                    $setting->save();
+
+                    $transactionSumEP = $transactionSumEP + $khushiPayinAmount;
+                    $transactionReverseHalf = $transactionReverseHalf + $KhushiData['today_reverse_ok'];
+                }
+                if($user->id == "4"){
                     
-                //     // $surplus->easypaisa = $surplus->easypaisa+$previousAmount-$amount;
-                //     // $surplus->save();
-                    
-                //     // $setting->easypaisa= $setting->easypaisa-$previousAmount+$amount;
-                //     // $setting->payout_balance = $setting->payout_balance-$previousAmount+$amount;
-                //     // $setting->save();
+                    $khushiPayinAmount = $KhushiData['today_payin_piq'];
 
-                //     $transactionSumEP = $transactionSumEP + $khushiPayinAmount;
-                //     $transactionReverseHalf = $transactionReverseHalf + $KhushiData['today_reverse'];
-                // }
-                
+                    $setting = Setting::where('user_id', 4)->first();
+                    $user=User::find(4);
+                    $surplus=SurplusAmount::find(1);
+                    $previousAmount=$user->temp_amount;
+                    $user->temp_amount = $khushiPayinAmount;
+                    $user->save();
+                    $surplus->easypaisa = $surplus->easypaisa+$previousAmount-$khushiPayinAmount;
+                    $surplus->save();
+
+                    $setting->easypaisa= $setting->easypaisa-$previousAmount+$khushiPayinAmount;
+                    $setting->payout_balance = $setting->payout_balance-$previousAmount+$khushiPayinAmount;
+                    $setting->save();
+
+                    $transactionSumEP = $transactionSumEP + $khushiPayinAmount;
+                    $transactionReverseHalf = $transactionReverseHalf + $KhushiData['today_reverse_piq'];
+                }
                 $payinFeeJC = $user->payin_fee;
                 $payinFeeEP = $user->payin_ep_fee;
                 $PayoutFeeJC = $user->payout_fee;
                 $PayoutFeeEP = $user->payout_fee;
             
                 // Calculate balances
-                if($user->id == 2 || $user->id == 18){
+                // if($user->id == 2 || $user->id == 18){
                     $payinBal = $closingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
-                }else{
-                    $payinBal = $closingBal + $transactionSumJC - ($transactionSumJC * $payinFeeJC) - $transactionReverseHalf;
-                }
+                // }else{
+                //     $payinBal = $closingBal + $transactionSumJC - ($transactionSumJC * $payinFeeJC) - $transactionReverseHalf;
+                // }
                 $settleAmount = $payoutSumJC + $payoutSumEP + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) + $todayUsdt;
                 $pnl_amount=round($transactionSumJC * 0.01, 2);
                 $total_pnl_amount=$pnl_amount+$prev_pnl-$prev_usdt_pnl;
@@ -210,6 +227,9 @@ class ReportGenerate extends Command
                     'pnl_amount' => '0',
                     'total_pnl_amount' => '0',
                     'usdt_pnl_amount' => '0',
+                ]);
+                User::query()->update([
+                    'temp_amount' => 0
                 ]);
             }
         }
