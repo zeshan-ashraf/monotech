@@ -789,6 +789,7 @@ class PayoutController extends Controller
         $encodeData = json_encode([
             "receiverMSISDN" => $data['phone'],
             "amount" => $data['amount'],
+            "receiverCNIC" => "0000000000000",
             "referenceId" => $pp_TxnRefNo
         ]);
  
