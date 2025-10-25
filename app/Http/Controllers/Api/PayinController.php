@@ -308,11 +308,16 @@ class PayinController extends Controller
                 
                                     try {
                                         $callbackStartTime = microtime(true);
-                                        Http::timeout(120)->post($url, $data);
+                                        $callbackResponse = Http::timeout(120)->post($url, $data);
                                         $this->logger->info('Callback URL notification sent', [
                                             'request_id' => $requestId,
                                             'callback_url' => $url,
                                             'callback_data' => $data,
+                                            'callback_response' => [
+                                                'status' => $callbackResponse->status(),
+                                                'body' => $callbackResponse->body(),
+                                                'headers' => $callbackResponse->headers()
+                                            ],
                                             'callback_execution_time' => microtime(true) - $callbackStartTime
                                         ]);
                 
@@ -435,11 +440,16 @@ class PayinController extends Controller
         
                             try {
                                 $callbackStartTime = microtime(true);
-                                $response = Http::timeout(120)->post($url, $data);
+                                $callbackResponse = Http::timeout(120)->post($url, $data);
                                 $this->logger->info('Callback URL notification sent', [
                                     'request_id' => $requestId,
                                     'callback_url' => $url,
                                     'callback_data' => $data,
+                                    'callback_response' => [
+                                        'status' => $callbackResponse->status(),
+                                        'body' => $callbackResponse->body(),
+                                        'headers' => $callbackResponse->headers()
+                                    ],
                                     'callback_execution_time' => microtime(true) - $callbackStartTime
                                 ]);
                                 
