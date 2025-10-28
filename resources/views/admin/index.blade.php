@@ -288,7 +288,7 @@
                                                                 </div>
                                                             </td>
                                                             @endif
-                                                            @if(auth()->user()->id == 18)
+                                                            @if(auth()->user()->id == 18 || auth()->user()->id == 2)
                                                             <td class="bg-warning">
                                                                 <div class="d-flex justify-content-start">
                                                                     <a class="dropdown-item btn btn-primary w-auto open_modal me-1" 
