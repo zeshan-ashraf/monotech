@@ -211,12 +211,12 @@ class SettingController extends Controller
         }*/
         
         $submittedTotal = $submittedEasypaisa + $submittedJazzcash;
-        dd($submittedTotal,$currentSetting->easypaisa ,  $currentSetting->jazzcash,( $submittedTotal +$currentSetting->easypaisa +  $currentSetting->jazzcash),$unsettledAmountBalance);
+        dd($submittedTotal,$currentSetting->easypaisa ,  $currentSetting->jazzcash,( $submittedTotal +$currentSetting->easypaisa +  $currentSetting->jazzcash),$unsettletdAmount);
         // Validate: submitted amount should not be greater than unsettled_amount_balance
         // Skip this validation for Admin and Super Admin
         $userRole = auth()->user()->user_role ?? '';
         if ($userRole !== "Admin" && $userRole !== "Super Admin") {
-            if ( ( $submittedTotal +$currentSetting->easypaisa +  $currentSetting->jazzcash) > $unsettledAmountBalance) {
+            if ( ( $submittedTotal +$currentSetting->easypaisa +  $currentSetting->jazzcash) > $unsettletdAmount) {
                 $errorMsg = 'Submitted amount (Easypaisa + Jazzcash) cannot be greater than unsettled amount balance. Available balance: ' . number_format(round($unsettledAmountBalance, 0));
                 if ($request->ajax()) {
                     return response()->json(['error' => $errorMsg]);
