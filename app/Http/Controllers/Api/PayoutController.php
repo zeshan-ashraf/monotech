@@ -42,16 +42,19 @@ class PayoutController extends Controller
         ]);
     
         if ($validator->fails()) {
+            $executionTime = microtime(true) - $startTime;
             $this->logger->warning('Validation failed', [
                 'request_id' => $requestId,
                 'errors' => $validator->errors()->toArray(),
-                'execution_time' => microtime(true) - $startTime
+                'execution_time' => $executionTime
             ]);
+            $this->logRequestEnd($requestId, $startTime, 'validation_failed');
             return response()->json(['errors' => $validator->errors()], 422);
         }
         // dd($request->all());
         $user= User::where('email',$request->client_email)->first();
         if(($request->payout_method == "jazzcash" && $user->payout_jc_api == 0) || ($request->payout_method == "easypaisa" && $user->payout_ep_api == 0)) {
+            $this->logRequestEnd($requestId, $startTime, 'api_suspended');
             return response()->json([
                 'status' => 'error',
                 'message' => 'Payout Api suspended by administrator.',
@@ -85,6 +88,7 @@ class PayoutController extends Controller
                 'response_status' => $response->status(),
                 'response_body' => $response->json()
             ]);
+            $this->logRequestEnd($requestId, $startTime, 'duplicate_order_id');
             return response()->json([
                 'status' => 'error',
                 'message' => 'Your payout cannot be processed due to due to Order Id already exist, please try again.',
@@ -124,6 +128,7 @@ class PayoutController extends Controller
                         'status' => 'failed',
                     ];
                     $response = Http::timeout(60)->post($url, $call_data);
+                    $this->logRequestEnd($requestId, $startTime, 'merchant_limit_breached');
                     return response()->json([
                         'status' => 'error',
                         'message' => 'Merchant assigned limit breached',
@@ -155,6 +160,7 @@ class PayoutController extends Controller
                         'request_detail' => json_encode($requestDetail),
                     ];
                     Payout::create($values);
+                    $this->logRequestEnd($requestId, $startTime, 'merchant_limit_breached');
                     return response()->json([
                         'status' => 'error',
                         'message' => 'Merchant assigned limit breached',
@@ -245,6 +251,7 @@ class PayoutController extends Controller
                         'user_id' => $user->id,
                     ]);
                     
+                    $this->logRequestEnd($requestId, $startTime, 'easypaisa_api_error');
                     return response()->json(['error' => $error], 500);
                 }
         
@@ -315,6 +322,7 @@ class PayoutController extends Controller
                         'response_body' => $response->json()
                     ]);
 
+                    $this->logRequestEnd($requestId, $startTime, 'easypaisa_success');
                     return response()->json([
                         'success' => true,
                         'message' => 'Payout processed successfully.',
@@ -345,6 +353,7 @@ class PayoutController extends Controller
                         'response_status' => $response->status(),
                         'response_body' => $response->json()
                     ]);
+                    $this->logRequestEnd($requestId, $startTime, 'easypaisa_failed');
                     return response()->json([
                         'status' => 'error',
                         'message' => 'Your payout cannot be processed due to '. $data['ResponseMessage']. ' , please try again.',
@@ -416,6 +425,7 @@ class PayoutController extends Controller
                         'user_id' => $user->id,
                     ]);
                     
+                    $this->logRequestEnd($requestId, $startTime, 'jazzcash_api_error');
                     return response()->json(['error' => $error], 500);
                 }
                 
@@ -436,6 +446,7 @@ class PayoutController extends Controller
                         'user_id' => $user->id,
                     ]);
                     
+                    $this->logRequestEnd($requestId, $startTime, 'jazzcash_json_decode_error');
                     return response()->json(['error' => 'Invalid response format from JazzCash'], 500);
                 }
                 
@@ -451,6 +462,7 @@ class PayoutController extends Controller
                         'user_id' => $user->id,
                     ]);
                     
+                    $this->logRequestEnd($requestId, $startTime, 'jazzcash_missing_data_key');
                     return response()->json(['error' => 'Invalid response structure from JazzCash'], 500);
                 }
                 
@@ -468,6 +480,7 @@ class PayoutController extends Controller
                         'user_id' => $user->id,
                     ]);
                     
+                    $this->logRequestEnd($requestId, $startTime, 'jazzcash_decryption_error');
                     return response()->json(['error' => 'Failed to decrypt JazzCash API response'], 500);
                 }
                 
@@ -486,6 +499,7 @@ class PayoutController extends Controller
                         'user_id' => $user->id,
                     ]);
                     
+                    $this->logRequestEnd($requestId, $startTime, 'jazzcash_decrypted_json_error');
                     return response()->json(['error' => 'Invalid decrypted response format from JazzCash'], 500);
                 }
                 
@@ -564,6 +578,7 @@ class PayoutController extends Controller
                         'response_body' => $response->json()
                     ]);
 
+                    $this->logRequestEnd($requestId, $startTime, 'jazzcash_success');
                     return response()->json([
                         'success' => true,
                         'message' => 'Payout processed successfully.',
@@ -593,6 +608,7 @@ class PayoutController extends Controller
                         'response_status' => $response->status(),
                         'response_body' => $response->json()
                     ]);
+                    $this->logRequestEnd($requestId, $startTime, 'jazzcash_failed');
                     return response()->json([
                         'status' => 'error',
                         'message' => 'Your payout cannot be processed due to '. $data['responseDescription']. ' , please try again.',
@@ -682,6 +698,39 @@ class PayoutController extends Controller
             ]);
         }
     }
+    
+    private function logRequestEnd($requestId, $startTime, $outcome)
+    {
+        try {
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            
+            $this->logger->info('********************************************************************************');
+            
+            $this->logger->info('Request completed', [
+                'request_id' => $requestId,
+                'outcome' => $outcome,
+                'timestamp' => now()->toDateTimeString(),
+                'execution_start' => $startTime,
+                'execution_end' => $endTime,
+                'total_execution_time_seconds' => round($executionTime, 4),
+                'total_execution_time_milliseconds' => round($executionTime * 1000, 2),
+                'memory_usage_end' => memory_get_usage(true),
+                'memory_peak_end' => memory_get_peak_usage(true),
+            ]);
+            
+            $this->logger->info('********************************************************************************');
+            
+        } catch (\Exception $e) {
+            // Log the error but don't break the main flow
+            $this->logger->error('Error in logRequestEnd', [
+                'request_id' => $requestId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    
     public function getTimeStamp($clientId,$clientSecret,$channel)
     {
         $url = env('EASYPAY_LOGIN_URL');
