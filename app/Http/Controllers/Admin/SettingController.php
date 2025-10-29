@@ -199,7 +199,7 @@ class SettingController extends Controller
         // Get and validate submitted amounts
         $submittedEasypaisa = floatval($request->easypaisa ?? 0);
         $submittedJazzcash = floatval($request->jazzcash ?? 0);
-        dd($submittedEasypaisa,$submittedJazzcash);
+        
         /*
         // Ensure submitted amounts are non-negative
         if ($submittedEasypaisa < 0 || $submittedJazzcash < 0) {
@@ -211,7 +211,7 @@ class SettingController extends Controller
         }*/
         
         $submittedTotal = $submittedEasypaisa + $submittedJazzcash;
-        
+        dd($submittedTotal,$currentSetting->easypaisa ,  $currentSetting->jazzcash);
         // Validate: submitted amount should not be greater than unsettled_amount_balance
         // Skip this validation for Admin and Super Admin
         $userRole = auth()->user()->user_role ?? '';
