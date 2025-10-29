@@ -200,6 +200,7 @@ class SettingController extends Controller
         $submittedEasypaisa = floatval($request->easypaisa ?? 0);
         $submittedJazzcash = floatval($request->jazzcash ?? 0);
         
+        /*
         // Ensure submitted amounts are non-negative
         if ($submittedEasypaisa < 0 || $submittedJazzcash < 0) {
             $errorMsg = 'Submitted amounts cannot be negative.';
@@ -207,17 +208,21 @@ class SettingController extends Controller
                 return response()->json(['error' => $errorMsg]);
             }
             return redirect()->back()->with('error', $errorMsg);
-        }
+        }*/
         
         $submittedTotal = $submittedEasypaisa + $submittedJazzcash;
         
         // Validate: submitted amount should not be greater than unsettled_amount_balance
-        if ( ( $submittedTotal +$currentSetting->easypaisa +  $currentSetting->jazzcash) > $unsettledAmountBalance) {
-            $errorMsg = 'Submitted amount (Easypaisa + Jazzcash) cannot be greater than unsettled amount balance. Available balance: ' . number_format(round($unsettledAmountBalance, 0));
-            if ($request->ajax()) {
-                return response()->json(['error' => $errorMsg]);
+        // Skip this validation for Admin and Super Admin
+        $userRole = auth()->user()->user_role ?? '';
+        if ($userRole !== "Admin" && $userRole !== "Super Admin") {
+            if ( ( $submittedTotal +$currentSetting->easypaisa +  $currentSetting->jazzcash) > $unsettledAmountBalance) {
+                $errorMsg = 'Submitted amount (Easypaisa + Jazzcash) cannot be greater than unsettled amount balance. Available balance: ' . number_format(round($unsettledAmountBalance, 0));
+                if ($request->ajax()) {
+                    return response()->json(['error' => $errorMsg]);
+                }
+                return redirect()->back()->with('error', $errorMsg);
             }
-            return redirect()->back()->with('error', $errorMsg);
         }
         
         if($userid == 18){// copay
