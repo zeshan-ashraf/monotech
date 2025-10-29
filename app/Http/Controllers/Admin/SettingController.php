@@ -199,7 +199,7 @@ class SettingController extends Controller
         // Get and validate submitted amounts
         $submittedEasypaisa = floatval($request->easypaisa ?? 0);
         $submittedJazzcash = floatval($request->jazzcash ?? 0);
-        
+        dd($submittedEasypaisa,$submittedJazzcash);
         /*
         // Ensure submitted amounts are non-negative
         if ($submittedEasypaisa < 0 || $submittedJazzcash < 0) {
