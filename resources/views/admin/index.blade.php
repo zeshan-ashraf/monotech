@@ -292,11 +292,11 @@
                                                             <td class="bg-warning">
                                                                 <div class="d-flex justify-content-start">
                                                                    
-                                                                        <a class="dropdown-item btn btn-primary w-auto open_modal me-1" 
-                                                                            data-url="{{ route('admin.setting.modal') }}" 
-                                                                            data-id="{{ $user->id }}">
-                                                                            <i class="fa fa-edit"></i>
-                                                                        </a>
+                                                                    <a class="dropdown-item btn btn-primary w-auto open_modal me-1" 
+                                                                        data-url="{{ route('admin.setting.modal') }}" 
+                                                                        data-id="{{ $user->id }}">
+                                                                        <i class="fa fa-edit"></i>
+                                                                    </a>
                                                                    
                                                                 </div>
                                                             </td>

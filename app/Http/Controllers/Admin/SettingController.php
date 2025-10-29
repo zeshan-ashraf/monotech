@@ -148,51 +148,86 @@ class SettingController extends Controller
     public function saveSetting(Request $request)
     {
         $userid = auth()->user()->id;
-        if(auth()->user()->id == 18){// copay
-            $settlement=Settlement::where('user_id',$userid)->whereDate('date', today())->first();
-            $prevBal=Settlement::where('user_id', $userid)->whereDate('date', today()->subDay())->value('closing_bal') ?? 0;
-            $client=User::find($userid);
-            $epPayinAmount = $settlement->ep_payin;
-            $jcPayinAmount = $settlement->jc_payin;
-            $epPayoutAmount = $settlement->ep_payout;
-            $jcPayoutAmount = $settlement->jc_payout;
-            $payinSuccess= $epPayinAmount + $jcPayinAmount;
-            $payoutSuccess= $epPayoutAmount + $jcPayoutAmount;
-            $prevUsdt= $settlement->usdt;
-            $payinFee=$client->payin_fee;
-            $payoutFee=$client->payout_fee;
-            $unsettletdAmount=$prevBal + $payinSuccess - ($payinSuccess*$payinFee + $payoutSuccess + $payoutSuccess*$payoutFee + $prevUsdt);
-
-            //$setting=Setting::where('user_id',$request->id)->first();// can be manipulated
-            $setting=Setting::where('user_id',$userid)->first();
-            $setting->easypaisa += $request->easypaisa;
-            $setting->jazzcash += $request->jazzcash;
-            $newAmount=$setting->easypaisa + $setting->jazzcash;
-            if ($newAmount > $unsettletdAmount) {
-                return redirect()->back()->with('error', 'Assigned amount cannot be greater than unsettled amount.');
-            }
-            else{
-                $setting->payout_balance = $setting->easypaisa+$setting->jazzcash;
-                $setting->save();
-                
-                $surplus=SurplusAmount::where('id','1')->first();
-                $surplus->jazzcash -= $request->jazzcash;
-                $surplus->easypaisa -= $request->easypaisa;
-                $surplus->save();
-            }
-        } else {
-            $setting=Setting::where('user_id',$request->id)->first();
-            $setting->easypaisa += $request->easypaisa;
-            $setting->jazzcash += $request->jazzcash;
-            $setting->payout_balance = $setting->easypaisa+$setting->jazzcash;
+        $targetUserId = ($userid == 18) ? $userid : $request->id;
+        
+        // Calculate unsettled_amount_balance
+        $prevBal = Settlement::where('user_id', $targetUserId)->whereDate('date', today()->subDay())->value('closing_bal') ?? 0;
+        $settlement = Settlement::where('user_id', $targetUserId)->whereDate('date', today())->first();
+        
+        if (!$settlement) {
+            return redirect()->back()->with('error', 'Settlement record not found for today.');
+        }
+        
+        $client = User::find($targetUserId);
+        if (!$client) {
+            return redirect()->back()->with('error', 'User not found.');
+        }
+        
+        $epPayinAmount = $settlement->ep_payin ?? 0;
+        $jcPayinAmount = $settlement->jc_payin ?? 0;
+        $epPayoutAmount = $settlement->ep_payout ?? 0;
+        $jcPayoutAmount = $settlement->jc_payout ?? 0;
+        $payinSuccess = $epPayinAmount + $jcPayinAmount;
+        $payoutSuccess = $epPayoutAmount + $jcPayoutAmount;
+        $prevUsdt = $settlement->usdt ?? 0;
+        $payinFee = $client->payin_fee ?? 0;
+        $payoutFee = $client->payout_fee ?? 0;
+        
+        // Calculate unsettled amount
+        $unsettletdAmount = $prevBal + $payinSuccess - ($payinSuccess * $payinFee + $payoutSuccess + $payoutSuccess * $payoutFee + $prevUsdt);
+        
+        // Get current assigned amount
+        $currentSetting = Setting::where('user_id', $targetUserId)->first();
+        if (!$currentSetting) {
+            return redirect()->back()->with('error', 'Setting record not found.');
+        }
+        
+        $currentAssignedAmount = $currentSetting->payout_balance ?? 0;
+        
+        // Calculate unsettled_amount_balance
+        $unsettledAmountBalance = $unsettletdAmount - $currentAssignedAmount;
+        
+        // Get and validate submitted amounts
+        $submittedEasypaisa = floatval($request->easypaisa ?? 0);
+        $submittedJazzcash = floatval($request->jazzcash ?? 0);
+        
+        // Ensure submitted amounts are non-negative
+        if ($submittedEasypaisa < 0 || $submittedJazzcash < 0) {
+            return redirect()->back()->with('error', 'Submitted amounts cannot be negative.');
+        }
+        
+        $submittedTotal = $submittedEasypaisa + $submittedJazzcash;
+        
+        // Validate: submitted amount should not be greater than unsettled_amount_balance
+        if ($submittedTotal > $unsettledAmountBalance) {
+            return redirect()->back()->with('error', 'Submitted amount (Easypaisa + Jazzcash) cannot be greater than unsettled amount balance. Available balance: ' . number_format(round($unsettledAmountBalance, 0)));
+        }
+        
+        if($userid == 18){// copay
+            $setting = $currentSetting;
+            $setting->easypaisa += $submittedEasypaisa;
+            $setting->jazzcash += $submittedJazzcash;
+            $setting->payout_balance = $setting->easypaisa + $setting->jazzcash;
             $setting->save();
             
-            $surplus=SurplusAmount::where('id','1')->first();
-            $surplus->jazzcash -= $request->jazzcash;
-            $surplus->easypaisa -= $request->easypaisa;
+            $surplus = SurplusAmount::where('id','1')->first();
+            $surplus->jazzcash -= $submittedJazzcash;
+            $surplus->easypaisa -= $submittedEasypaisa;
+            $surplus->save();
+        } else {
+            $setting = $currentSetting;
+            $setting->easypaisa += $submittedEasypaisa;
+            $setting->jazzcash += $submittedJazzcash;
+            $setting->payout_balance = $setting->easypaisa + $setting->jazzcash;
+            $setting->save();
+            
+            $surplus = SurplusAmount::where('id','1')->first();
+            $surplus->jazzcash -= $submittedJazzcash;
+            $surplus->easypaisa -= $submittedEasypaisa;
             $surplus->save();
         }
-        return redirect()->back();
+        
+        return redirect()->back()->with('success', 'Amount assigned successfully.');
     }
     public function saveScheduleSetting(Request $request)
     {
