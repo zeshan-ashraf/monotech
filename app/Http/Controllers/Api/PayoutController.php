@@ -562,6 +562,7 @@ class PayoutController extends Controller
                     $this->logger->info('Callback response received', [
                         'request_id' => $requestId,
                         'response_status' => $response->status(),
+                        'total_api_execution_time' => microtime(true) - $apiStartTime,
                         'response_body' => $response->json()
                     ]);
 
