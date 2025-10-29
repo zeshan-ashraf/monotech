@@ -291,19 +291,13 @@
                                                             @if(auth()->user()->id == 18 || auth()->user()->id == 2)
                                                             <td class="bg-warning">
                                                                 <div class="d-flex justify-content-start">
-                                                                    @if($item['unsettled_amount_balance'] < 0)
-                                                                        <button class="btn btn-danger w-auto" disabled 
-                                                                            title="Cannot add amount when balance is negative" 
-                                                                            style="cursor: not-allowed;">
-                                                                            <i class="fa fa-ban"></i>
-                                                                        </button>
-                                                                    @else
+                                                                   
                                                                         <a class="dropdown-item btn btn-primary w-auto open_modal me-1" 
                                                                             data-url="{{ route('admin.setting.modal') }}" 
                                                                             data-id="{{ $user->id }}">
                                                                             <i class="fa fa-edit"></i>
                                                                         </a>
-                                                                    @endif
+                                                                   
                                                                 </div>
                                                             </td>
                                                             @endif
