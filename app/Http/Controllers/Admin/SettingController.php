@@ -155,11 +155,17 @@ class SettingController extends Controller
         $settlement = Settlement::where('user_id', $targetUserId)->whereDate('date', today())->first();
         
         if (!$settlement) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Settlement record not found for today.']);
+            }
             return redirect()->back()->with('error', 'Settlement record not found for today.');
         }
         
         $client = User::find($targetUserId);
         if (!$client) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'User not found.']);
+            }
             return redirect()->back()->with('error', 'User not found.');
         }
         
@@ -179,6 +185,9 @@ class SettingController extends Controller
         // Get current assigned amount
         $currentSetting = Setting::where('user_id', $targetUserId)->first();
         if (!$currentSetting) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Setting record not found.']);
+            }
             return redirect()->back()->with('error', 'Setting record not found.');
         }
         
@@ -193,14 +202,22 @@ class SettingController extends Controller
         
         // Ensure submitted amounts are non-negative
         if ($submittedEasypaisa < 0 || $submittedJazzcash < 0) {
-            return redirect()->back()->with('error', 'Submitted amounts cannot be negative.');
+            $errorMsg = 'Submitted amounts cannot be negative.';
+            if ($request->ajax()) {
+                return response()->json(['error' => $errorMsg]);
+            }
+            return redirect()->back()->with('error', $errorMsg);
         }
         
         $submittedTotal = $submittedEasypaisa + $submittedJazzcash;
         
         // Validate: submitted amount should not be greater than unsettled_amount_balance
         if ($submittedTotal > $unsettledAmountBalance) {
-            return redirect()->back()->with('error', 'Submitted amount (Easypaisa + Jazzcash) cannot be greater than unsettled amount balance. Available balance: ' . number_format(round($unsettledAmountBalance, 0)));
+            $errorMsg = 'Submitted amount (Easypaisa + Jazzcash) cannot be greater than unsettled amount balance. Available balance: ' . number_format(round($unsettledAmountBalance, 0));
+            if ($request->ajax()) {
+                return response()->json(['error' => $errorMsg]);
+            }
+            return redirect()->back()->with('error', $errorMsg);
         }
         
         if($userid == 18){// copay
@@ -227,7 +244,11 @@ class SettingController extends Controller
             $surplus->save();
         }
         
-        return redirect()->back()->with('success', 'Amount assigned successfully.');
+        $successMsg = 'Amount assigned successfully.';
+        if ($request->ajax()) {
+            return response()->json(['success' => $successMsg]);
+        }
+        return redirect()->back()->with('success', $successMsg);
     }
     public function saveScheduleSetting(Request $request)
     {
