@@ -68,21 +68,25 @@ $(document).on("submit", ".submit_form", function (e) {
         },
         success: function (response) {
             $(".sipnner").addClass("d-none");
-            $(".modal").modal("hide");
             if (response.success) {
                 toastr.success(response.success);
+                $(".modal").modal("hide");
+                if(response.route)
+                {
+                    window.location.href = response.route;
+                }
+                else{
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 2000);
+                }
             }
             if (response.error) {
                 toastr.error(response.error);
-            }
-            if(response.route)
-            {
-                window.location.href = response.route;
-            }
-            else{
-                setTimeout(function () {
-                    window.location.reload();
-                }, 2000);
+                // Don't hide modal or reload on error - keep form open for user to fix
+                $(".sipnner").addClass("d-none");
+                $(submit_btn).prop("disabled", false);
+                $(submit_btn).closest("div").find(".loader").addClass("d-none");
             }
            
         },
