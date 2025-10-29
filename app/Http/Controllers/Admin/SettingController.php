@@ -212,7 +212,7 @@ class SettingController extends Controller
         $submittedTotal = $submittedEasypaisa + $submittedJazzcash;
         
         // Validate: submitted amount should not be greater than unsettled_amount_balance
-        if ( ( $submittedTotal +$setting->easypaisa +  $setting->jazzcash) > $unsettledAmountBalance) {
+        if ( ( $submittedTotal +$currentSetting->easypaisa +  $currentSetting->jazzcash) > $unsettledAmountBalance) {
             $errorMsg = 'Submitted amount (Easypaisa + Jazzcash) cannot be greater than unsettled amount balance. Available balance: ' . number_format(round($unsettledAmountBalance, 0));
             if ($request->ajax()) {
                 return response()->json(['error' => $errorMsg]);
