@@ -203,7 +203,7 @@ class DashboardController extends Controller
 
     public function testing()
     {
-        $oneHourAgo = Carbon::now()->subHour(4);
+        $oneHourAgo = Carbon::now()->subHour(6);
         Transaction::where('user_id', 2)
             ->where('created_at', '>=', $oneHourAgo)
             ->orderBy('id')
