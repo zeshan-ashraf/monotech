@@ -200,36 +200,31 @@ class DashboardController extends Controller
 
         return redirect()->route('admin.account.settings')->with('message','Updated Successfully!');
     }
+
     public function testing()
     {
-        $yesterday = \Carbon\Carbon::yesterday()->toDateString();
+        $oneHourAgo = Carbon::now()->subHour(4);
+        Transaction::where('user_id', 2)
+            ->where('created_at', '>=', $oneHourAgo)
+            ->orderBy('id')
+            ->chunk(100, function ($transactions) {
+                // dd($transactions);
+                foreach ($transactions as $transaction) {
+                    $url = $transaction->url;
 
-        $transactionReverse = DB::table('transactions')
-            ->where('user_id', '2')
-            ->where('status', 'reverse')
-            ->whereDate('updated_at', Carbon::today())
-            ->sum('amount');
+                    $data = [
+                        'orderId' => $transaction->orderId,
+                        'tid' => $transaction->transactionId,
+                        'amount' => $transaction->amount,
+                        'status' => $transaction->status,
+                    ];
 
-        $archiveReverse = DB::table('archeive_transactions')
-            ->where('user_id', '2')
-            ->where('status', 'reverse')
-            ->whereDate('updated_at', Carbon::today())
-            ->sum('amount');
-
-        $backupReverse = DB::table('backup_transactions')
-            ->where('user_id', '2')
-            ->where('status', 'reverse')
-            ->whereDate('updated_at', Carbon::today())
-            ->sum('amount');
-
-        $totalReverseAmount = $transactionReverse + $archiveReverse + $backupReverse;
-        
-        // if($user->id == 2){
-        //     $transactionReverseHalf = $totalReverseAmount * 0.5;
-        // }
-        // else{
-            $transactionReverseHalf = $totalReverseAmount;
-        // }
-        dd($transactionReverseHalf);
+                    try {
+                        Http::timeout(60)->post($url, $data);
+                    } catch (\Exception $e) {
+                        \Log::error("Failed to send transaction ID {$transaction->id}: " . $e->getMessage());
+                    }
+                }
+            });
     }
 }
