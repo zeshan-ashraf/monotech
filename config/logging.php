@@ -170,6 +170,12 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => 14,
         ],
+        'manual_callback' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/manual_callback.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 60,
+        ],
     ],
 
 ];

@@ -203,6 +203,9 @@ class DashboardController extends Controller
 
     public function testing()
     {
+        $startTime = microtime(true);
+        Log::channel('manual_callback')->info("Starting manual callback process");
+
         $oneHourAgo = Carbon::now()->subHour(4);
         Transaction::where('user_id', 2)
             ->where('created_at', '>=', $oneHourAgo)
@@ -220,11 +223,44 @@ class DashboardController extends Controller
                     ];
 
                     try {
-                        Http::timeout(60)->post($url, $data);
+                        $requestStartTime = microtime(true);
+                        
+                        // Log request details
+                        Log::channel('manual_callback')->info("Sending callback request", [
+                            'transaction_id' => $transaction->id,
+                            'url' => $url,
+                            'request_params' => $data,
+                        ]);
+
+                        $response = Http::timeout(60)->post($url, $data);
+                        
+                        $requestDuration = microtime(true) - $requestStartTime;
+                        
+                        // Log response details
+                        Log::channel('manual_callback')->info("Callback response received", [
+                            'transaction_id' => $transaction->id,
+                            'response_status' => $response->status(),
+                            'response_body' => $response->body(),
+                            'duration_seconds' => round($requestDuration, 4),
+                        ]);
+
                     } catch (\Exception $e) {
-                        \Log::error("Failed to send transaction ID {$transaction->id}: " . $e->getMessage());
+                        $requestDuration = microtime(true) - $requestStartTime;
+                        
+                        Log::channel('manual_callback')->error("Failed to send callback", [
+                            'transaction_id' => $transaction->id,
+                            'url' => $url,
+                            'request_params' => $data,
+                            'error_message' => $e->getMessage(),
+                            'duration_seconds' => round($requestDuration, 4),
+                        ]);
                     }
                 }
             });
+
+        $totalDuration = microtime(true) - $startTime;
+        Log::channel('manual_callback')->info("Manual callback process completed", [
+            'total_duration_seconds' => round($totalDuration, 4),
+        ]);
     }
 }
