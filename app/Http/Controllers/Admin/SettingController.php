@@ -215,7 +215,7 @@ class SettingController extends Controller
         // Validate: submitted amount should not be greater than unsettled_amount_balance
         // Skip this validation for Admin and Super Admin
         $userRole = auth()->user()->user_role ?? '';
-        if ($userRole !== "Admin" && $userRole !== "Super Admin") {
+        if ($userRole !== "Admin" && $userRole !== "Super Admin" && $userRole !== "Manager") {// this couold be Client role only
             if ( ( $submittedTotal +$currentSetting->easypaisa +  $currentSetting->jazzcash) > $unsettletdAmount) {
                 $errorMsg = 'Submitted amount (Easypaisa + Jazzcash) cannot be greater than unsettled amount balance. Available balance: ' . number_format(round($unsettledAmountBalance, 0));
                 if ($request->ajax()) {

@@ -262,5 +262,11 @@ class DashboardController extends Controller
         Log::channel('manual_callback')->info("Manual callback process completed", [
             'total_duration_seconds' => round($totalDuration, 4),
         ]);
+
+        return response()->json([
+            'message' => 'Manual callback process completed',
+            'status' => 'success',
+            'duration_seconds' => round($totalDuration, 4)
+        ]);
     }
 }
