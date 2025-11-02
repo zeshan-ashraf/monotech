@@ -203,14 +203,7 @@ class DashboardController extends Controller
 
     public function testing()
     {
-<<<<<<< HEAD
         $oneHourAgo = Carbon::now()->subHour(6);
-=======
-        $startTime = microtime(true);
-        Log::channel('manual_callback')->info("Starting manual callback process");
-
-        $oneHourAgo = Carbon::now()->subHour(4);
->>>>>>> dc73916dd91bac3102281c1ab5d340296e94a09a
         Transaction::where('user_id', 2)
             ->where('created_at', '>=', $oneHourAgo)
             ->orderBy('id')
