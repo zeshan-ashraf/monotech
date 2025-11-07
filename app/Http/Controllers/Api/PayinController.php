@@ -20,6 +20,17 @@ class PayinController extends Controller
     
     public $service;
     protected $logger;
+    protected array $monthlyLimits = [
+        //'jazzcash' => [
+            // 'user_id' => monthly_limit_amount
+        //    2 => 0,
+        //],
+        'easypaisa' => [
+            // 'user_id' => monthly_limit_amount
+            2 => 930000000,
+            ,
+        ],
+    ];
 
     public function __construct(PaymentService $service)
     {
@@ -67,7 +78,8 @@ class PayinController extends Controller
     private function checkDailyLimit(Request $request, User $user, string $requestId, float $startTime)
     {
         // Check daily limit for JazzCash payments for user ID 2
-        if ($request->payment_method == "jazzcash" && $user->id == 2 && $user->jc_payin_limit > 0) {
+        //if ($request->payment_method == "jazzcash" && $user->id == 2 && $user->jc_payin_limit > 0) {
+        if ($request->payment_method == "easypaisa" && $user->id == 2 && $user->ep_payin_limit > 0) {
             $todayStart = now()->startOfDay();
             $todayEnd = now()->endOfDay();
             
@@ -106,6 +118,71 @@ class PayinController extends Controller
             }
         }
         
+        return null; // No restriction applied
+    }
+
+    /**
+     * Check monthly limit across active, archive, and backup transactions
+     *
+     * @param Request $request
+     * @param User $user
+     * @param string $requestId
+     * @param float $startTime
+     * @return array|null Returns restriction response array or null if no restriction
+     */
+    private function checkMonthlyLimit(Request $request, User $user, string $requestId, float $startTime)
+    {
+        $paymentMethod = $request->payment_method;
+
+        if (!isset($this->monthlyLimits[$paymentMethod][$user->id])) {
+            return null;
+        }
+
+        $monthStart = now()->startOfMonth();
+        $monthEnd = now()->endOfMonth();
+
+        $tables = ['transactions', 'archeive_transactions', 'backup_transactions'];
+        $monthlySum = 0;
+
+        foreach ($tables as $table) {
+            $monthlySum += DB::table($table)
+                ->where('user_id', $user->id)
+                ->whereBetween('created_at', [$monthStart, $monthEnd])
+                ->where('status', 'success')
+                ->where('txn_type', $paymentMethod)
+                ->sum('amount');
+        }
+
+        $monthlyLimit = $this->monthlyLimits[$paymentMethod][$user->id];
+
+        $this->logger->info('Monthly limit check', [
+            'request_id' => $requestId,
+            'user_id' => $user->id,
+            'payment_method' => $paymentMethod,
+            'monthly_transactions_sum' => $monthlySum,
+            'current_transaction_amount' => $request->amount,
+            'monthly_limit' => $monthlyLimit,
+            'would_exceed_limit' => ($monthlySum + $request->amount) > $monthlyLimit
+        ]);
+
+        if (($monthlySum + $request->amount) > $monthlyLimit) {
+            $this->logger->warning('Monthly limit exceeded', [
+                'request_id' => $requestId,
+                'user_id' => $user->id,
+                'payment_method' => $paymentMethod,
+                'monthly_transactions_sum' => $monthlySum,
+                'current_transaction_amount' => $request->amount,
+                'monthly_limit' => $monthlyLimit,
+                'execution_time' => microtime(true) - $startTime
+            ]);
+
+            return [
+                'status' => 'error',
+                'message' => 'Monthly limit has been breached.',
+                'code' => 400
+            ];
+        }
+
         return null; // No restriction applied
     }
 
@@ -259,6 +336,12 @@ class PayinController extends Controller
             $dailyLimitCheck = $this->checkDailyLimit($request, $user, $requestId, $startTime);
             if ($dailyLimitCheck) {
                 return response()->json($dailyLimitCheck, $dailyLimitCheck['code']);
+            }
+
+            // Check monthly limit across all transaction tables
+            $monthlyLimitCheck = $this->checkMonthlyLimit($request, $user, $requestId, $startTime);
+            if ($monthlyLimitCheck) {
+                return response()->json($monthlyLimitCheck, $monthlyLimitCheck['code']);
             }
 
 
