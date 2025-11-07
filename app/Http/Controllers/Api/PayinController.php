@@ -28,7 +28,6 @@ class PayinController extends Controller
         'easypaisa' => [
             // 'user_id' => monthly_limit_amount
             2 => 930000000,
-            ,
         ],
     ];
 
@@ -146,7 +145,6 @@ class PayinController extends Controller
 
         foreach ($tables as $table) {
             $monthlySum += DB::table($table)
-                ->where('user_id', $user->id)
                 ->whereBetween('created_at', [$monthStart, $monthEnd])
                 ->where('status', 'success')
                 ->where('txn_type', $paymentMethod)
