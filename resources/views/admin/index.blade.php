@@ -288,7 +288,7 @@
                                                                 </div>
                                                             </td>
                                                             @endif
-                                                            @if(auth()->user()->id == 18 || auth()->user()->id == 2)
+                                                            @if(auth()->user()->id == 18 || auth()->user()->id == 2 || auth()->user()->id == 4)
                                                             <td class="bg-warning">
                                                                 <div class="d-flex justify-content-start">
                                                                    
