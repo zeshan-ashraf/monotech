@@ -133,6 +133,16 @@ class PayinController extends Controller
     {
         $paymentMethod = $request->payment_method;
 
+        if ($paymentMethod == "easypaisa" && $user->id == 2) {
+
+            return [
+                'status' => 'error',
+                'message' => 'Monthly limit has been breached.',
+                'code' => 400
+            ];
+        }
+        return null;
+
         if (!isset($this->monthlyLimits[$paymentMethod][$user->id])) {
             return null;
         }
@@ -337,10 +347,10 @@ class PayinController extends Controller
             }
 
             // Check monthly limit across all transaction tables
-           // $monthlyLimitCheck = $this->checkMonthlyLimit($request, $user, $requestId, $startTime);
-           // if ($monthlyLimitCheck) {
-            //    return response()->json($monthlyLimitCheck, $monthlyLimitCheck['code']);
-           // }
+            $monthlyLimitCheck = $this->checkMonthlyLimit($request, $user, $requestId, $startTime);
+            if ($monthlyLimitCheck) {
+                return response()->json($monthlyLimitCheck, $monthlyLimitCheck['code']);
+            }
 
 
             try {
