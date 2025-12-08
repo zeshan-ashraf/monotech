@@ -15,8 +15,8 @@ class RoleController extends Controller
     {
         $roles = Role::with('permissions')->get();
         $permissions = Permission::get();
-
-        return view('admin.authorization.roles.roles', get_defined_vars());
+        dd($permissions);
+        return view('admin.authorization.roles.roles', compact('roles', 'permissions'));
     }
 
     public function create()
