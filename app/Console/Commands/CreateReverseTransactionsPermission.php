@@ -16,7 +16,7 @@ class CreateReverseTransactionsPermission extends Command
             // Check if permission already exists
             $exists = DB::table('permissions')
                 ->where('name', 'Reverse Transactions')
-                ->where('guard_name', 'user')
+                ->where('guard_name', 'web')
                 ->exists();
 
             if ($exists) {
@@ -27,7 +27,7 @@ class CreateReverseTransactionsPermission extends Command
             // Insert the new permission
             DB::table('permissions')->insert([
                 'name' => 'Reverse Transactions',
-                'guard_name' => 'user',
+                'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
