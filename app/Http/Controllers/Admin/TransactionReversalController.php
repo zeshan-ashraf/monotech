@@ -37,7 +37,8 @@ class TransactionReversalController extends Controller
         ]);
 
         $transactionId = $request->id;
-        $tableType = $request->table_type ?? $this->reversalService->getTableType($transactionId);
+        //$tableType = $request->table_type ?? $this->reversalService->getTableType($transactionId);
+        $tableType = $this->reversalService->getTableType($transactionId);
 
         if (!$tableType) {
             return response()->json([
