@@ -17,6 +17,11 @@ return new class extends Migration
         $pivotRole = $columnNames['role_pivot_key'] ?? 'role_id';
         $pivotPermission = $columnNames['permission_pivot_key'] ?? 'permission_id';
 
+        // If permissions table already exists (e.g., seeded manually), skip creating it again
+        if (!empty($tableNames['permissions']) && Schema::hasTable($tableNames['permissions'])) {
+            return;
+        }
+
         if (empty($tableNames)) {
             throw new \Exception('Error: config/permission.php not loaded. Run [php artisan config:clear] and try again.');
         }
