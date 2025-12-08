@@ -19,8 +19,9 @@ class ReversalDataTable extends DataTable
 
     public function dataTable($query)
     {
+        // $query is already a collection from getPendingReversals()
         return datatables()
-            ->eloquent($query)
+            ->collection($query)
             ->addIndexColumn()
             ->addColumn('checkbox', function ($query) {
                 return '<input type="checkbox" class="transaction-checkbox" value="' . $query->id . '" data-table-type="' . ($query->table_type ?? 'transactions') . '">';
@@ -43,21 +44,28 @@ class ReversalDataTable extends DataTable
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';
             })
             ->editColumn('reverse_requested_at', function ($query) {
-                return $query->reverse_requested_at ? $query->reverse_requested_at->format('d-m-y H:i:s') : 'N/A';
+                if (!$query->reverse_requested_at) {
+                    return 'N/A';
+                }
+                // Handle both Carbon instance and string
+                $date = $query->reverse_requested_at instanceof Carbon ? $query->reverse_requested_at : Carbon::parse($query->reverse_requested_at);
+                return $date->format('d-m-y H:i:s');
             })
             ->addColumn('remaining_time', function ($query) {
                 if (!$query->reverse_requested_at) {
                     return 'N/A';
                 }
-                $remaining = $this->reversalService->getRemainingTime($query->reverse_requested_at);
-                $deadline = $query->reverse_requested_at->copy()->addHours(6);
+                // Handle both Carbon instance and string
+                $reverseRequestedAt = $query->reverse_requested_at instanceof Carbon ? $query->reverse_requested_at : Carbon::parse($query->reverse_requested_at);
+                $remaining = $this->reversalService->getRemainingTime($reverseRequestedAt);
+                $deadline = $reverseRequestedAt->copy()->addHours(6);
                 $now = now();
                 
                 // Add data attribute for JavaScript countdown
                 $isExpired = $now >= $deadline;
                 $dataDeadline = $deadline->timestamp;
                 
-                return '<span class="countdown-timer" data-deadline="' . $dataDeadline . '" data-reverse-requested="' . $query->reverse_requested_at->timestamp . '">' . $remaining . '</span>';
+                return '<span class="countdown-timer" data-deadline="' . $dataDeadline . '" data-reverse-requested="' . $reverseRequestedAt->timestamp . '">' . $remaining . '</span>';
             })
             ->editColumn('amount', function ($query) {
                 return number_format($query->amount, 2) . ' PKR';
@@ -67,9 +75,12 @@ class ReversalDataTable extends DataTable
                 $buttons = '';
                 
                 // Cancel Reversal button (only if not expired)
-                $deadline = $query->reverse_requested_at ? $query->reverse_requested_at->copy()->addHours(6) : null;
-                if ($deadline && now() < $deadline) {
-                    $buttons .= '<button class="btn btn-warning btn-sm cancel-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Cancel</button> ';
+                if ($query->reverse_requested_at) {
+                    $reverseRequestedAt = $query->reverse_requested_at instanceof Carbon ? $query->reverse_requested_at : Carbon::parse($query->reverse_requested_at);
+                    $deadline = $reverseRequestedAt->copy()->addHours(6);
+                    if (now() < $deadline) {
+                        $buttons .= '<button class="btn btn-warning btn-sm cancel-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Cancel</button> ';
+                    }
                 }
                 
                 // Reverse Now button
@@ -82,25 +93,11 @@ class ReversalDataTable extends DataTable
 
     public function query()
     {
-        // Use union query approach with proper select
-        $transactions = Transaction::whereNotNull('reverse_requested_at')
-            ->where('status', '!=', 'reverse')
-            ->where('status', 'success')
-            ->selectRaw("id, user_id, phone, orderId, amount, txn_ref_no, transactionId, txn_type, pp_code, pp_message, status, url, created_at, updated_at, reverse_requested_at, 'transactions' as table_type");
-
-        $archeive = ArcheiveTransaction::whereNotNull('reverse_requested_at')
-            ->where('status', '!=', 'reverse')
-            ->where('status', 'success')
-            ->selectRaw("id, user_id, phone, orderId, amount, txn_ref_no, transactionId, txn_type, pp_code, pp_message, status, url, created_at, updated_at, reverse_requested_at, 'archeive_transactions' as table_type");
-
-        $backup = BackupTransaction::whereNotNull('reverse_requested_at')
-            ->where('status', '!=', 'reverse')
-            ->where('status', 'success')
-            ->selectRaw("id, user_id, phone, orderId, amount, txn_ref_no, transactionId, txn_type, pp_code, pp_message, status, url, created_at, updated_at, reverse_requested_at, 'backup_transactions' as table_type");
-
-        $combined = $transactions->union($archeive)->union($backup);
-
-        return $this->applyScopes($combined);
+        // Get pending reversals using the service method which returns a collection
+        $pending = $this->reversalService->getPendingReversals();
+        
+        // Return the collection directly (will be used with ->collection() in dataTable)
+        return $pending;
     }
 
     public function html()
@@ -117,7 +114,7 @@ class ReversalDataTable extends DataTable
                 "processing" => true,
                 "autoWidth" => false,
                 "pageLength" => 50,
-                'order' => [[13, 'desc']], // Order by reverse_requested_at descending
+                'order' => [[10, 'desc']], // Order by reverse_requested_at descending (column index 10)
                 'drawCallback' => "function () {
                     updateCountdownTimers();
                 }",
