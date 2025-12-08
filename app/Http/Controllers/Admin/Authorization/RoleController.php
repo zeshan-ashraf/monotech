@@ -16,7 +16,7 @@ class RoleController extends Controller
         
         $roles = Role::with('permissions')->get();
         $permissions = Permission::get();
-        dd("test",$permissions);
+        
         return view('admin.authorization.roles.roles', get_defined_vars());
     }
 
