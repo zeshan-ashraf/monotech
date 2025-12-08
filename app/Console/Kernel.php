@@ -23,6 +23,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\SurplusAddition::class,
         \App\Console\Commands\RecountReportGenerate::class,
         \App\Console\Commands\AutoFailPendingTransactions::class,
+        \App\Console\Commands\AutoReverseTransactions::class,
     ];
     protected function schedule(Schedule $schedule): void
     {
@@ -139,6 +140,10 @@ class Kernel extends ConsoleKernel
         // $wrapSchedule($event, 'app:recount-report-generate');
         $event = $schedule->command('transactions:auto-fail')->everyFiveMinutes();
         $wrapSchedule($event, 'transactions:auto-fail');
+        
+        // Auto-reverse transactions after 6 hours
+        $event = $schedule->command('transactions:auto-reverse')->everyFiveMinutes();
+        $wrapSchedule($event, 'transactions:auto-reverse');
 
     }
 

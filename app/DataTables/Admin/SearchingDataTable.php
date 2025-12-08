@@ -28,11 +28,24 @@ class SearchingDataTable extends DataTable
                 return $query->amount.' PKR';
              })
             ->editColumn('detail', function ($query) {
+                $user = auth()->user();
                 $buttons = '';
-                return $buttons .= '
-                <a href="' . route('admin.searching.callback.send', $query->id) . '" class="btn btn-success btn-sm">Send Callback</a>
-                <a href="' . route('admin.jazzcash.status-inquiry', ['id' => $query->txn_ref_no, 'type' => $query->txn_type]) . '" class="btn btn-primary btn-sm mt-1">Inquiry</a>
-                ';
+                $buttons .= '<a href="' . route('admin.searching.callback.send', $query->id) . '" class="btn btn-success btn-sm">Send Callback</a> ';
+                $buttons .= '<a href="' . route('admin.jazzcash.status-inquiry', ['id' => $query->txn_ref_no, 'type' => $query->txn_type]) . '" class="btn btn-primary btn-sm mt-1">Inquiry</a>';
+                
+                // Add Mark for Reversal button if user has permission and transaction is success
+                if ($user->can('Reverse Transactions') && $query->status == 'success' && !$query->reverse_requested_at) {
+                    // Determine table type
+                    $tableType = 'transactions';
+                    if (\App\Models\ArcheiveTransaction::find($query->id)) {
+                        $tableType = 'archeive_transactions';
+                    } elseif (\App\Models\BackupTransaction::find($query->id)) {
+                        $tableType = 'backup_transactions';
+                    }
+                    
+                    $buttons .= ' <button class="btn btn-warning btn-sm mt-1 mark-for-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Mark for Reversal</button>';
+                }
+                
                 return $buttons;
             })->rawColumns(['detail'])
              ->editColumn('reverse', function ($query) {

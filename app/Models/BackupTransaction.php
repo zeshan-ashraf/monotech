@@ -22,6 +22,7 @@ class BackupTransaction extends Model
         'status',
         'src',
         'url',
+        'reverse_requested_at',
     ];
     
     public $timestamps = true;

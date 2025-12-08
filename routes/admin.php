@@ -57,6 +57,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::post('change-status-reverse', [TransactionController::class,'changeStatusReverse'])->name('change_status_reverse');
     });
     
+    Route::as('transaction.reversal.')->prefix('transaction/reversal')->group(function () {
+        Route::get('/list', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'index'])->name('list');
+        Route::post('/mark', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'markForReversal'])->name('mark');
+        Route::post('/cancel', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'cancelReversal'])->name('cancel');
+        Route::post('/reverse-now', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'reverseNow'])->name('reverse_now');
+        Route::post('/bulk-reverse', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'bulkReverse'])->name('bulk_reverse');
+    });
+    
     Route::as('payout.')->prefix('payout')->group(function () {
         Route::get('/list', [PayoutController::class,'list'])->name('list');
         Route::get('/client/list', [PayoutController::class,'zigList'])->name('zig_list');

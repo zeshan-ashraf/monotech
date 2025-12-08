@@ -61,6 +61,12 @@
                         <i data-feather="dollar-sign"></i>Payin</a>
                 </li>
                 @endcan
+                @can('Reverse Transactions')
+                <li class="@if (url()->current() == route('admin.transaction.reversal.list')) active @endif nav-item"><a
+                        class="d-flex align-items-center" href="{{ route('admin.transaction.reversal.list') }}">
+                        <i data-feather="rotate-ccw"></i>Pending Reversals</a>
+                </li>
+                @endcan
                 @can('Payouts')
                 <li class="@if (url()->current() == route('admin.payout.list')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.payout.list') }}">

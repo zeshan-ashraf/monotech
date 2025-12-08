@@ -123,5 +123,36 @@
                 }
             });
         });
+        
+        // Mark for Reversal button handler
+        $(document).on('click', '.mark-for-reversal-btn', function() {
+            var id = $(this).data('id');
+            var tableType = $(this).data('table-type');
+            
+            if (!confirm('Are you sure you want to mark this transaction for reversal? A 6-hour countdown will start.')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '{{ route("admin.transaction.reversal.mark") }}',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    id: id,
+                    table_type: tableType
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (response.message || 'Failed to mark transaction for reversal'));
+                    }
+                },
+                error: function(xhr) {
+                    alert('Error: ' + (xhr.responseJSON?.message || 'Failed to mark transaction for reversal'));
+                }
+            });
+        });
     </script>
 @endpush
