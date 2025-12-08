@@ -13,10 +13,11 @@ class RoleController extends Controller
 
     public function index()
     {
+        
         $roles = Role::with('permissions')->get();
         $permissions = Permission::get();
-        dd($permissions);
-        return view('admin.authorization.roles.roles', compact('roles', 'permissions'));
+        dd("test",$permissions);
+        return view('admin.authorization.roles.roles', get_defined_vars());
     }
 
     public function create()
