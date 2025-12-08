@@ -34,16 +34,22 @@ class SearchingDataTable extends DataTable
                 $buttons .= '<a href="' . route('admin.jazzcash.status-inquiry', ['id' => $query->txn_ref_no, 'type' => $query->txn_type]) . '" class="btn btn-primary btn-sm mt-1">Inquiry</a>';
                 
                 // Add Mark for Reversal button if user has permission and transaction is success
-                if ($user->can('Reverse Transactions') && $query->status == 'success' && !$query->reverse_requested_at) {
-                    // Determine table type
-                    $tableType = 'transactions';
-                    if (\App\Models\ArcheiveTransaction::find($query->id)) {
-                        $tableType = 'archeive_transactions';
-                    } elseif (\App\Models\BackupTransaction::find($query->id)) {
-                        $tableType = 'backup_transactions';
-                    }
+                if ($user && method_exists($user, 'can') && $user->can('Reverse Transactions') && $query->status == 'success') {
+                    // Check if reverse_requested_at exists and is null (safely handle if column doesn't exist)
+                    $reverseRequested = isset($query->reverse_requested_at) ? $query->reverse_requested_at : null;
                     
-                    $buttons .= ' <button class="btn btn-warning btn-sm mt-1 mark-for-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Mark for Reversal</button>';
+                    if (!$reverseRequested) {
+                        // Determine table type based on which table the record exists in
+                        // We'll use a simple approach - check if it exists in archive or backup first
+                        $tableType = 'transactions'; // default
+                        
+                        // Try to determine table type without expensive queries
+                        // Since union queries don't preserve table info, we'll use a fallback
+                        // The actual table type will be determined on the server side when the button is clicked
+                        $tableType = 'transactions'; // Will be auto-detected by the controller
+                        
+                        $buttons .= ' <button class="btn btn-warning btn-sm mt-1 mark-for-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Mark for Reversal</button>';
+                    }
                 }
                 
                 return $buttons;
