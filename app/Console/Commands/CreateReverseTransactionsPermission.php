@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\DB;
 
 class CreateReverseTransactionsPermission extends Command
 {
@@ -12,17 +12,31 @@ class CreateReverseTransactionsPermission extends Command
 
     public function handle()
     {
-        $permission = Permission::firstOrCreate(
-            ['name' => 'Reverse Transactions', 'guard_name' => 'user'],
-            ['name' => 'Reverse Transactions', 'guard_name' => 'user']
-        );
+        try {
+            // Check if permission already exists
+            $exists = DB::table('permissions')
+                ->where('name', 'Reverse Transactions')
+                ->where('guard_name', 'user')
+                ->exists();
 
-        if ($permission->wasRecentlyCreated) {
+            if ($exists) {
+                $this->info('Permission "Reverse Transactions" already exists.');
+                return 0;
+            }
+
+            // Insert the new permission
+            DB::table('permissions')->insert([
+                'name' => 'Reverse Transactions',
+                'guard_name' => 'user',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             $this->info('Permission "Reverse Transactions" created successfully.');
-        } else {
-            $this->info('Permission "Reverse Transactions" already exists.');
+            return 0;
+        } catch (\Exception $e) {
+            $this->error('Error creating permission: ' . $e->getMessage());
+            return 1;
         }
-
-        return 0;
     }
 }
