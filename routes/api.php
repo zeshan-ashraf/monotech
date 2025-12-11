@@ -58,6 +58,7 @@ Route::post('/payin-status-check', [GeneralController::class , 'checkStatus']);
 Route::post('/payout-status-check', [GeneralController::class , 'checkPayoutStatus']);
 Route::get('/get-dashboard-data', [GeneralController::class , 'dashboardData']);
 Route::get('/get-payout-data', [GeneralController::class , 'payoutData']);
+Route::get('/get-settlements-data', [GeneralController::class , 'getSettlementData']);
 
 
 /*

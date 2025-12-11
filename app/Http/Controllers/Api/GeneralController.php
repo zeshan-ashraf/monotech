@@ -250,4 +250,14 @@ class GeneralController extends Controller
         ];
         
     }
+
+    public function getSettlementData()
+    {
+        $activeUserIds = User::where('active', 1)->pluck('id');
+        $data = Settlement::whereIn('user_id', $activeUserIds)
+            ->where('date', '>=', now()->subDays(10)->toDateString())
+            ->orderBy('date', 'desc')
+            ->get();
+        return $data; 
+    }
 }
