@@ -60,6 +60,7 @@ Route::get('/get-dashboard-data', [GeneralController::class , 'dashboardData']);
 Route::get('/get-payout-data', [GeneralController::class , 'payoutData']);
 Route::get('/get-settlements-data', [GeneralController::class , 'getSettlementData']);
 
+
 /*
 |--------------------------------------------------------------------------
 | API v1 Routes
