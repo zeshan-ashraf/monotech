@@ -255,10 +255,7 @@ class GeneralController extends Controller
     {
         $activeUserIds = User::where('user_role', 'Client')->where('active', 1)->pluck('id');
         $settlementData = Settlement::whereIn('user_id', $activeUserIds)
-            ->whereBetween('date', [
-                Carbon::today()->subDays(9)->format('Y-m-d'),
-                Carbon::today()->format('Y-m-d')
-            ])
+            ->whereDate('date', Carbon::today()->format('y-m-d'))
             ->get();
         $settingData=Setting::whereIn('user_id', $activeUserIds)->get();
         $surplusData=SurplusAmount::where('id', 1)->get();
