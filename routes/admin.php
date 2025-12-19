@@ -18,6 +18,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/zig-dashboard', [DashboardController::class, 'zigIndex'])->name('zig_dashboard');
     Route::get('/testing', [DashboardController::class, 'testing'])->name('testing');
+    Route::get('/add-data/{id}', [DashboardController::class, 'prevClientSettlementEntry'])->name('add.data');
     Route::get('/profile/form', [DashboardController::class, 'profile'])->name('profile');
     Route::post('/profile', [DashboardController::class, 'profileSave'])->name('profile.save');
     Route::get('/account/settings', [DashboardController::class, 'accountSetting'])->name('account.settings');
