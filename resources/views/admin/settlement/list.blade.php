@@ -59,7 +59,7 @@
                                                     <tbody class="border">
                                                         @foreach($items as $item)
                                                             <tr class="text-center">
-                                                                <td>{{ $item->date->format('d-M') }}</td>
+                                                                <td data-order="{{ $item->date->format('Y-m-d') }}">{{ $item->date->format('d-M') }}</td>
                                                                 <td>{{ number_format(round($item->opening_bal,0))}}</td>
                                                                 <td>{{ number_format(round($item->jc_payin,0)) }}</td>
                                                                 <td>{{ number_format(round($item->ep_payin,0)) }}</td>
