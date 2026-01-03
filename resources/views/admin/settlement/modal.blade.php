@@ -18,6 +18,14 @@
                     <label>USDT</label>
                     <input class="form-control title_box" name="usdt" value="0" required type="text">
                 </div>
+                <div class="col-md-12">
+                    <label>Previous Wallet Transfer</label>
+                    <input class="form-control title_box" name="wallet_transfer" value="{{$item->wallet_transfer ?? ""}}" required readonly type="text">
+                </div>
+                <div class="col-md-12">
+                    <label>Wallet Transfer</label>
+                    <input class="form-control title_box" name="wallet_transfer" value="0" required type="text">
+                </div>
             </div>
 
         </div>
