@@ -204,6 +204,7 @@
                                                         <th colspan="4">Payin</th>
                                                         <th colspan="3">Payout</th>
                                                         <th rowspan="2">USDT</th>
+                                                        <th rowspan="2">Wallet Transfer</th>
                                                         @endif
                                                         <th rowspan="2">Unsettled (Payable)</th>
                                                         <th colspan="3">Wallet</th>
@@ -249,6 +250,7 @@
                                                                 <td class="bg-red">{{ number_format($item['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($item['total_payout']) }}</td>
                                                                 <td>{{ number_format($item['prev_usdt']) }}</td>
+                                                                <td>{{ number_format($item['wallet_transfer']) }}</td>
                                                             @endif
                                                     
                                                             <td class="font-weight-bold text-red">{{ number_format($item['unsettled_amount']) }}</td>
@@ -320,6 +322,7 @@
                                                                 <td class="bg-red font-weight-bold">{{ number_format($totals['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($totals['total_payout']) }}</td>
                                                                 <td class="font-weight-bold">{{ number_format($totals['prev_usdt']) }}</td>
+                                                                <td class="font-weight-bold">{{ number_format($totals['wallet_transfer']) }}</td>
                                                             @endif
                                                         
                                                             <td class="font-weight-bold text-red">{{ number_format($totals['unsettled_amount']) }}</td>

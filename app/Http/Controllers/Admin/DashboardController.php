@@ -49,6 +49,7 @@ class DashboardController extends Controller
             // }
             $payoutSuccess= $epPayoutAmount + $jcPayoutAmount;
             $prevUsdt= $settlement->usdt;
+            $prevWalletTrans= $settlement->wallet_transfer;
             $payinFee=$client->payin_fee;
             $payoutFee=$client->payout_fee;
             //getUnsettlement
@@ -70,6 +71,7 @@ class DashboardController extends Controller
                 'ep_payout' => $epPayoutAmount,
                 'total_payout' => $payoutSuccess,
                 'prev_usdt' => $prevUsdt,
+                'wallet_transfer' => $prevWalletTrans,
                 'unsettled_amount' => $unsettletdAmount,
                 'unsettled_amount_balance' => $balance,
                 'assigned_amount' => Setting::where('user_id', $userId)->first(),
@@ -86,6 +88,7 @@ class DashboardController extends Controller
             'ep_payout' => 0,
             'total_payout' => 0,
             'prev_usdt' => 0,
+            'wallet_transfer' => 0,
             'unsettled_amount' => 0,
             'unsettled_amount_balance'=>0,
             'assigned_jc' => 0,
@@ -103,6 +106,7 @@ class DashboardController extends Controller
             $totals['ep_payout'] += $item['ep_payout'];
             $totals['total_payout'] += $item['total_payout'];
             $totals['prev_usdt'] += $item['prev_usdt'];
+            $totals['wallet_transfer'] += $item['wallet_transfer'];
             $totals['unsettled_amount'] += $item['unsettled_amount'];
             $totals['unsettled_amount_balance'] += $item['unsettled_amount_balance'];
             $totals['assigned_jc'] += $item['assigned_amount']->jazzcash ?? 0;
