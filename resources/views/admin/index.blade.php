@@ -279,7 +279,7 @@
                                                                     @endif
                                                                 </div>
                                                             </td>
-                                                            <td class="bg-warning">
+                                                            {{--<td class="bg-warning">
                                                                 <div class="form-check form-switch">
                                                                     <input 
                                                                         class="form-check-input toggle-switch" 
@@ -288,7 +288,7 @@
                                                                         data-type="auto"
                                                                         @if($item['setting']->auto == 1) checked @endif>
                                                                 </div>
-                                                            </td>
+                                                            </td>--}}
                                                             @endif
                                                             @if(auth()->user()->id == 18 || auth()->user()->id == 2 || auth()->user()->id == 4)
                                                             <td class="bg-warning">
