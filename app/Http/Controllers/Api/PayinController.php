@@ -336,7 +336,7 @@ class PayinController extends Controller
             ]);
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error: Daily limit exceeded.',
+                'message' => 'Error: Limit exceeded.',
             ], 400);
         }
         else{
