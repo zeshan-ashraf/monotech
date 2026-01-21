@@ -72,9 +72,9 @@ class PaymentService
         $user = User::where('email', $request->client_email)->first();
         $subStore="";
         if($user->email == "okpaysev@gmail.com"){
-            $subStore="Young With Yoga";
+            $subStore="Move My Furniture";
         }else{
-            $subStore="Code Base Academy";
+            $subStore="Digi Desk";
         }
 
 		$post_data = array(
@@ -104,6 +104,8 @@ class PaymentService
             "pp_MerchantID" => $this->merchantId,
             "pp_Password" => $this->password,
             "pp_ReturnURL" => $this->return_url,
+            "pp_SubMerchantID" => "",
+            "pp_SubMerchantName" => $subStore,
             "pp_SecureHash" => "",
             "pp_TxnCurrency" => $this->currency_code,
             "pp_TxnDateTime" => $pp_TxnDateTime,
