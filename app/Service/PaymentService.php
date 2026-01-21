@@ -72,9 +72,9 @@ class PaymentService
         $user = User::where('email', $request->client_email)->first();
         $subStore="";
         if($user->email == "okpaysev@gmail.com"){
-            $subStore="Move My Furniture";
+            $subStore="Queen Jewelry";
         }else{
-            $subStore="Digi Desk";
+            $subStore="Syhatyaab";
         }
 
 		$post_data = array(
