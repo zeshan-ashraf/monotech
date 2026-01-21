@@ -69,6 +69,14 @@ class PaymentService
 		$pp_TxnDateTime = $DateTime->format('YmdHis');
 		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
 
+        $user = User::where('email', $request->client_email)->first();
+        $subStore="";
+        if($user->email == "okpaysev@gmail.com"){
+            $subStore="Young With Yoga";
+        }else{
+            $subStore="Code Base Academy";
+        }
+
 		$post_data = array(
             "pp_Amount" => (string)$pp_Amount,
             "pp_BillReference" => "billRef",
@@ -77,6 +85,8 @@ class PaymentService
             "pp_MerchantID" => $this->merchantId,
             "pp_Password" => $this->password,
             "pp_ReturnURL" => $this->return_url,
+            "pp_SubMerchantID" => "",
+            "pp_SubMerchantName" => $subStore,
             "pp_SecureHash" => "",
             "pp_TxnCurrency" => $this->currency_code,
             "pp_TxnDateTime" => $pp_TxnDateTime,
