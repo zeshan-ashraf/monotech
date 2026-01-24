@@ -36,14 +36,14 @@ class TestingController extends Controller
                 ->withInput();
         }
 
-        $user = User::where('email', $request->client_email)->first();
+        // $user = User::where('email', $request->client_email)->first();
 
-        if (
-            ($request->payment_method == "jazzcash" && $user->jc_api == 0) ||
-            ($request->payment_method == "easypaisa" && $user->ep_api == 0)
-        ) {
-            return redirect()->back()->with('error', 'API suspended by administrator.');
-        }
+        // if (
+        //     ($request->payment_method == "jazzcash" && $user->jc_api == 0) ||
+        //     ($request->payment_method == "easypaisa" && $user->ep_api == 0)
+        // ) {
+        //     return redirect()->back()->with('error', 'API suspended by administrator.');
+        // }
 
         try {
             list($post_data, $type, $url) = $this->service->process($request);
