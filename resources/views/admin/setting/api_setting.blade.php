@@ -30,8 +30,8 @@
                                     @endphp
 
                                     <input type="hidden" name="orderId" value="{{ $orderId }}">
-                                    <input type="hidden" name="email" value="testing@khushipay.com">
-                                    <input type="hidden" name="client_email" value="testing@khushipay.com">
+                                    <input type="hidden" name="email" value="test@monotech.com">
+                                    <input type="hidden" name="client_email" value="test@monotech.com">
                                     <input type="hidden" name="callback_url" value="www.example-testing.com">
                                     <div class="row mt-1 mb-1">
                                         <div class="form-group col-md-3">
