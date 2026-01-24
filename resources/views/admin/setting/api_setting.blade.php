@@ -26,7 +26,7 @@
                                 <form action="{{route('admin.testing.payin')}}" method="post">
                                     @csrf
                                     @php
-                                        $orderId = 'Khushi-' . now()->format('YmdHis') . '-' . rand(1000, 9999);
+                                        $orderId = 'Mono-' . now()->format('YmdHis') . '-' . rand(1000, 9999);
                                     @endphp
 
                                     <input type="hidden" name="orderId" value="{{ $orderId }}">
