@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{Product,Client,Transaction,User};
-use App\Service\PaymentService;
+use App\Service\PaymentServiceNew;
 use Illuminate\Support\Facades\Log;
 use Zfhassaan\Easypaisa\Easypaisa;
 use Illuminate\Support\Facades\Validator;
@@ -16,7 +16,7 @@ class TestingController extends Controller
 {
     public $service;
 
-    public function __construct(PaymentService $service)
+    public function __construct(PaymentServiceNew $service)
     {
         $this->service = $service;
     }
