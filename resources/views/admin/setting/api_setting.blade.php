@@ -20,6 +20,49 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header border-bottom d-flex justify-content-between">
+                                <h4 class="card-title text-capitalize">Test Payin</h4>
+                            </div>
+                            <div class="card-body p-1">
+                                <form action="{{route('admin.testing.payin')}}" method="post">
+                                    @csrf
+                                    @php
+                                        $orderId = 'Khushi-' . now()->format('YmdHis') . '-' . rand(1000, 9999);
+                                    @endphp
+
+                                    <input type="hidden" name="orderId" value="{{ $orderId }}">
+                                    <input type="hidden" name="email" value="testing@khushipay.com">
+                                    <input type="hidden" name="client_email" value="testing@khushipay.com">
+                                    <input type="hidden" name="callback_url" value="www.example-testing.com">
+                                    <div class="row mt-1 mb-1">
+                                        <div class="form-group col-md-3">
+                                            <label>Payment Method</label>
+                                            <select name="payment_method" id="payment_method" class="form-control" required>
+                                                <option value="" disabled selected>Select One ..</option>
+                                                <option value="easypaisa">Easypaisa</option>
+                                                <option value="jazzcash">Jazzcash</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Phone No</label>
+                                            <input class="form-control" name="phone" placeholder="03XXXXXXXXX" type="input" required>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label>Amount</label>
+                                            <input class="form-control" name="amount" type="number" min="1" required>
+                                        </div>
+                                        <div class="form-group col-md-3 d-flex align-items-end">
+                                            <button class="btn btn-primary" type="submit">Submit</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header border-bottom d-flex justify-content-between">
                                 <h4 class="card-title text-capitalize">Api Setting</h4>
                             </div>
                             <div class="card-body p-0">
