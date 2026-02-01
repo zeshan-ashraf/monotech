@@ -63,7 +63,7 @@ class JazzCashCheckTransactionStatus extends Command
                         $surplus = SurplusAmount::find(1);
                         $setting = Setting::where('user_id', $item->user_id)->first();
                     
-                        if ($setting && $surplus) {
+                        if ($setting && $surplus && $setting->auto ==1) {
                             $setting->jazzcash += $amount;
                             $setting->payout_balance += $amount;
                             $setting->save();

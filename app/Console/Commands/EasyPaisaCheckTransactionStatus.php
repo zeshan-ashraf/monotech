@@ -80,16 +80,16 @@ class EasyPaisaCheckTransactionStatus extends Command
                             
                                 $surplus = SurplusAmount::find(1);
                                 $setting = Setting::where('user_id', $item->user_id)->first();
-                            if($user->id == 2 || $user->id == 18){
-                                if ($setting && $surplus) {
-                                    $setting->easypaisa += $amount;
-                                    $setting->payout_balance += $amount;
-                                    $setting->save();
-                            
-                                    $surplus->easypaisa -= $amount;
-                                    $surplus->save();
+                                if($user->id == 2 || $user->id == 18  && $setting->auto ==1){
+                                    if ($setting && $surplus) {
+                                        $setting->easypaisa += $amount;
+                                        $setting->payout_balance += $amount;
+                                        $setting->save();
+                                
+                                        $surplus->easypaisa -= $amount;
+                                        $surplus->save();
+                                    }
                                 }
-                            }
                             }
                             $response = Http::timeout(60)->post($url, $data);
                         } elseif ($result['transactionStatus'] == 'FAILED') {
