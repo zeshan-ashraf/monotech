@@ -26,7 +26,8 @@
                                                 <th>Name</th>
                                                 <th>Overall JC Payin Fee</th>
                                                 <th>Overall EP Payin Fee</th>
-                                                <th>Overall Payout Fee</th>
+                                                <th>Overall JC Payout Fee</th>
+                                                <th>Overall EP Payout Fee</th>
                                                 <th>Per Transaction Payin Fee</th>
                                                 <th>Per Transaction Payout Fee</th>
                                                 <th>Action</th>
@@ -40,6 +41,7 @@
                                                 <td>{{$item->payin_fee}}</td>
                                                 <td>{{$item->payin_ep_fee}}</td>
                                                 <td>{{$item->payout_fee}}</td>
+                                                <td>{{$item->payout_ep_fee}}</td>
                                                 <td>{{$item->per_payin_fee}}</td>
                                                 <td>{{$item->per_payout_fee}}</td>
                                                 <td>

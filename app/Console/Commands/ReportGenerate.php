@@ -177,7 +177,7 @@ class ReportGenerate extends Command
                 $payinFeeJC = $user->payin_fee;
                 $payinFeeEP = $user->payin_ep_fee;
                 $PayoutFeeJC = $user->payout_fee;
-                $PayoutFeeEP = $user->payout_fee;
+                $PayoutFeeEP = $user->payout_ep_fee;
             
                 // Calculate balances
                 // if($user->id == 2 || $user->id == 18){
