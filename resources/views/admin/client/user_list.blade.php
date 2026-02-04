@@ -24,10 +24,10 @@
                                             <tr>
                                                 <th>#</th>
                                                 <th>Name</th>
-                                                <th>Overall JC Payin Fee</th>
-                                                <th>Overall EP Payin Fee</th>
-                                                <th>Overall JC Payout Fee</th>
-                                                <th>Overall EP Payout Fee</th>
+                                                <th>JC Payin Fee</th>
+                                                <th>EP Payin Fee</th>
+                                                <th>JC Payout Fee</th>
+                                                <th>EP Payout Fee</th>
                                                 <th>Per Transaction Payin Fee</th>
                                                 <th>Per Transaction Payout Fee</th>
                                                 <th>Action</th>
