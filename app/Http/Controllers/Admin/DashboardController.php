@@ -25,9 +25,11 @@ class DashboardController extends Controller
         $today=today()->format('d-m-Y');
         $clients = User::where('user_role', 'Client')->where('active',1)->get();
         
-        $month = Carbon::now()->month;
+        $now = Carbon::now();
+
         $totalMonthlyAmount = DB::table('settlements')
-            ->whereMonth('created_at', $month)
+            ->whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $now->year)
             ->sum('ep_payin');
         $data = [];
         
