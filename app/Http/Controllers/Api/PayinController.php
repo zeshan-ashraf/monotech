@@ -12,6 +12,7 @@ use Zfhassaan\Easypaisa\Easypaisa;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
 use DB;
+use App\Services\PhoneVerificationService;
 use Ramsey\Uuid\Uuid;
 
 class PayinController extends Controller
@@ -417,6 +418,16 @@ class PayinController extends Controller
                                             'transaction_id' => $transaction->txn_ref_no,
                                             'total_execution_time' => microtime(true) - $startTime
                                         ]);
+                                        try {
+                                            app(PhoneVerificationService::class)->markVerified((string) $request->phone);
+                                        } catch (\Throwable $e) {
+                                            $this->logger->info('Failed to mark phone verified after success', [
+                                                'request_id' => $requestId,
+                                                'payment_method' => $paymentMethod,
+                                                'phone' => (string) $request->phone,
+                                                'error' => $e->getMessage(),
+                                            ]);
+                                        }
                                         return response()->json([
                                             'status' => $transaction->status,
                                             'transaction_id' => $transaction->txn_ref_no,

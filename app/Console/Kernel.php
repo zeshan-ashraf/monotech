@@ -24,6 +24,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\RecountReportGenerate::class,
         \App\Console\Commands\AutoFailPendingTransactions::class,
         \App\Console\Commands\AutoReverseTransactions::class,
+		\App\Console\Commands\PopulateVerifiedNumbers::class,
     ];
     protected function schedule(Schedule $schedule): void
     {
