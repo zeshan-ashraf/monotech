@@ -19,8 +19,12 @@
                     <input class="form-control title_box" name="payin_ep_fee" value="{{$item->payin_ep_fee ?? ""}}" required type="text">
                 </div>
                 <div class="col-md-12">
-                    <label>Payout Fee</label>
+                    <label>Payout Jc Fee</label>
                     <input class="form-control title_box" name="payout_fee" value="{{$item->payout_fee ?? ""}}" required type="text">
+                </div>
+                <div class="col-md-12">
+                    <label>Payout EP Fee</label>
+                    <input class="form-control title_box" name="payout_ep_fee" value="{{$item->payout_ep_fee ?? ""}}" required type="text">
                 </div>
                 <div class="col-md-12">
                     <label>Per Payin Fee</label>

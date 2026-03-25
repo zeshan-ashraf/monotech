@@ -11,9 +11,8 @@ use DateTimeZone;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Database\QueryException;
 
-class PaymentService
+class PaymentServiceNew
 {
     protected $merchantId;
     protected $version;
@@ -69,14 +68,6 @@ class PaymentService
 		$pp_TxnDateTime = $DateTime->format('YmdHis');
 		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
 
-        $user = User::where('email', $request->client_email)->first();
-        $subStore="";
-        if($user->email == "okpaysev@gmail.com"){
-            $subStore="Queen Jewelry";
-        }else{
-            $subStore="Syhatyaab";
-        }
-
 		$post_data = array(
             "pp_Amount" => (string)$pp_Amount,
             "pp_BillReference" => "billRef",
@@ -85,36 +76,15 @@ class PaymentService
             "pp_MerchantID" => $this->merchantId,
             "pp_Password" => $this->password,
             "pp_ReturnURL" => $this->return_url,
-            "pp_SubMerchantID" => "",
-            "pp_SubMerchantName" => $subStore,
-            "pp_SecureHash" => "",
-            "pp_TxnCurrency" => $this->currency_code,
-            "pp_TxnDateTime" => $pp_TxnDateTime,
-            "pp_TxnExpiryDateTime" => date('YmdHis', strtotime('+1 Days')),
-            "pp_TxnRefNo" => $pp_TxnRefNo,
-            "pp_TxnType" =>"MWALLET",
-            "pp_Version" => $this->version,
-            "ppmpf_1" => $request->phone,
-        );
-        $this->logger->debug('+++++++++++++++++++++++PaymentService: JazzCash secure hash parameters', [
-            "pp_Amount" => (string)$pp_Amount,
-            "pp_BillReference" => "billRef",
-            "pp_Description" => "Description of transaction",
-            "pp_Language" => $this->language,
-            "pp_MerchantID" => $this->merchantId,
-            "pp_Password" => $this->password,
-            "pp_ReturnURL" => $this->return_url,
-            "pp_SubMerchantID" => "",
-            "pp_SubMerchantName" => $subStore,
             "pp_SecureHash" => "",
             "pp_TxnCurrency" => $this->currency_code,
             "pp_TxnDateTime" => $pp_TxnDateTime,
             "pp_TxnExpiryDateTime" => date('YmdHis', strtotime('+8 Days')),
             "pp_TxnRefNo" => $pp_TxnRefNo,
-            "pp_TxnType" =>"MWALLET",
+            "pp_TxnType" => "MWALLET",
             "pp_Version" => $this->version,
             "ppmpf_1" => $request->phone,
-        ]);
+        );
 		$pp_SecureHash = $this->jazzcashSecureHash($post_data);
         $post_data['pp_SecureHash'] = $pp_SecureHash;
         
@@ -212,37 +182,14 @@ class PaymentService
 			'url' => $request->callback_url
 		);
           
-		try {
-			$transaction = Transaction::create($values);
-			
-			$this->logger->info('PaymentService: Order initial process completed', [
-				'transaction_id' => $transaction->id,
-				'execution_time' => microtime(true) - $startTime
-			]);
+		$transaction = Transaction::create($values);
 
-			return true;
-		} catch (QueryException $e) {
-			// Handle duplicate key error (MySQL error code 1062)
-			if ($e->getCode() == 1062) {
-				$this->logger->warning('PaymentService: Duplicate orderId detected', [
-					'orderId' => $request->orderId,
-					'error_code' => $e->getCode(),
-					'error_message' => $e->getMessage(),
-					'execution_time' => microtime(true) - $startTime
-				]);
-				
-				throw new \Exception('Order ID already exists. Please use a different order ID.', 409);
-			}
-			
-			// Re-throw other database exceptions
-			$this->logger->error('PaymentService: Database error during duplicate orderId transaction creation', [
-				'error_code' => $e->getCode(),
-				'error_message' => $e->getMessage(),
-				'execution_time' => microtime(true) - $startTime
-			]);
-			
-			throw $e;
-		}
+        $this->logger->info('PaymentService: Order initial process completed', [
+            'transaction_id' => $transaction->id,
+            'execution_time' => microtime(true) - $startTime
+        ]);
+
+        return true;
     }
 
     public function orderFinalProcess($request, $RefNum, $type)
@@ -268,7 +215,7 @@ class PaymentService
                         $setting = Setting::where('user_id', $transaction->user_id)->first();
                         $surplus = SurplusAmount::find(1);
                     
-                        if ($setting && $surplus && $setting->auto ==1) {
+                        if ($setting && $surplus) {
                             $setting->jazzcash += $amount;
                             $setting->payout_balance += $amount;
                             $setting->save();
@@ -292,15 +239,14 @@ class PaymentService
                     
                         $setting = Setting::where('user_id', $transaction->user_id)->first();
                         $surplus = SurplusAmount::find(1);
-                        if($user->id == 2 || $user->id == 18){
-                            if ($setting && $surplus) {
-                                $setting->easypaisa += $amount;
-                                $setting->payout_balance += $amount;
-                                $setting->save();
-                        
-                                $surplus->easypaisa -= $amount;
-                                $surplus->save();
-                            }
+                    
+                        if ($setting && $surplus) {
+                            $setting->easypaisa += $amount;
+                            $setting->payout_balance += $amount;
+                            $setting->save();
+                    
+                            $surplus->easypaisa -= $amount;
+                            $surplus->save();
                         }
                     }
 			    } else {

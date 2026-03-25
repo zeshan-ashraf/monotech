@@ -157,12 +157,12 @@
                                                         <th colspan="@if (auth()->user()->user_role == "Super Admin") 12 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
                                                         <th>JC</th> 
                                                         <th>EP</th>
-                                                        <th colspan="3">Action</th>
+                                                        <th colspan="4">Action</th>
                                                     </tr>
                                                     <tr class="bg-warning">
                                                         <th>{{number_format(round($surplusAmount->jazzcash,0))}}</th>
                                                         <th>{{number_format(round($surplusAmount->easypaisa,0))}}</th>
-                                                        <th colspan="3"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
+                                                        <th colspan="4"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
                                                     </tr>
                                                     @endif
                                                     <tr>
@@ -204,6 +204,7 @@
                                                         <th colspan="4">Payin</th>
                                                         <th colspan="3">Payout</th>
                                                         <th rowspan="2">USDT</th>
+                                                        <th rowspan="2">Wallet Transfer</th>
                                                         @endif
                                                         <th rowspan="2">Unsettled (Payable)</th>
                                                         <th colspan="3">Wallet</th>
@@ -249,6 +250,7 @@
                                                                 <td class="bg-red">{{ number_format($item['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($item['total_payout']) }}</td>
                                                                 <td>{{ number_format($item['prev_usdt']) }}</td>
+                                                                <td>{{ number_format($item['wallet_transfer']) }}</td>
                                                             @endif
                                                     
                                                             <td class="font-weight-bold text-red">{{ number_format($item['unsettled_amount']) }}</td>
@@ -262,19 +264,11 @@
                                                             @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                             <td class="bg-warning">
                                                                 <div class="d-flex justify-content-start">
-                                                                    @if($item['setting']->auto == 0)
                                                                         <a class="dropdown-item btn btn-primary w-auto open_modal me-1" 
                                                                            data-url="{{ route('admin.setting.modal') }}" 
                                                                            data-id="{{ $user->id }}">
                                                                             <i class="fa fa-edit"></i>
                                                                         </a>
-                                                                    @else
-                                                                        <a class="dropdown-item btn btn-success w-auto open_modal me-1" 
-                                                                           data-url="{{ route('admin.setting.third_modal') }}" 
-                                                                           data-id="{{ $user->id }}">
-                                                                            <i class="fa fa-edit"></i>
-                                                                        </a>
-                                                                    @endif
                                                                 </div>
                                                             </td>
                                                             <td class="bg-warning">
@@ -320,6 +314,7 @@
                                                                 <td class="bg-red font-weight-bold">{{ number_format($totals['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($totals['total_payout']) }}</td>
                                                                 <td class="font-weight-bold">{{ number_format($totals['prev_usdt']) }}</td>
+                                                                <td class="font-weight-bold">{{ number_format($totals['wallet_transfer']) }}</td>
                                                             @endif
                                                         
                                                             <td class="font-weight-bold text-red">{{ number_format($totals['unsettled_amount']) }}</td>

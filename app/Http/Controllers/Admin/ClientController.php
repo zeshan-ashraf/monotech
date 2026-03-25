@@ -90,7 +90,8 @@ class ClientController extends Controller
         $request->validate([
             'payin_fee'=>'required',
             'payin_ep_fee'=>'required',
-            'payout_fee'=>'required', 
+            'payout_fee'=>'required',
+            'payout_ep_fee'=>'required',
             'per_payin_fee'=>'required',
             'per_payout_fee'=>'required',
         ]);    

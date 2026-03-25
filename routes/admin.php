@@ -12,12 +12,14 @@ use App\Http\Controllers\Admin\SearchingController;
 use App\Http\Controllers\Admin\ArchiveController;
 use App\Http\Controllers\Admin\ArchivePayoutController;
 use App\Http\Controllers\Admin\BackupTransactionController;
+use App\Http\Controllers\Admin\TestingController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/zig-dashboard', [DashboardController::class, 'zigIndex'])->name('zig_dashboard');
     Route::get('/testing', [DashboardController::class, 'testing'])->name('testing');
+    Route::get('/add-data/{id}', [DashboardController::class, 'prevClientSettlementEntry'])->name('add.data');
     Route::get('/profile/form', [DashboardController::class, 'profile'])->name('profile');
     Route::post('/profile', [DashboardController::class, 'profileSave'])->name('profile.save');
     Route::get('/account/settings', [DashboardController::class, 'accountSetting'])->name('account.settings');
@@ -117,6 +119,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         // Common settlement actions
         Route::post('/store', [SettlementController::class,'store'])->name('store');
         Route::get('/modal/{id?}', [SettlementController::class,'modal'])->name('modal');
+    });
+    Route::as('testing.')->prefix('testing')->group(function () {
+        Route::post('/payin-test', [TestingController::class,'payinTest'])->name('payin');
     });
     Route::get('/check-status/{id?}/{type?}',[TransactionController::class, 'statusInquiry'])->name('jazzcash.status-inquiry');
     Route::get('/archive/list', [ArchiveController::class, 'list'])->name('archive.list');

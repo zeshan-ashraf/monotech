@@ -41,6 +41,7 @@
                                                             <th colspan="3">Payout</th>
                                                             <th rowspan="2">Payout Fee</th>
                                                             <th rowspan="2">USDT</th>
+                                                            <th rowspan="2">Wallet Transfer</th>
                                                             <th rowspan="2">Settled</th>
                                                             <th rowspan="2">Closing Bal/Unsettled</th>
                                                             @if(auth()->user()->user_role == "Super Admin" && $loop->iteration == 1)
@@ -59,7 +60,7 @@
                                                     <tbody class="border">
                                                         @foreach($items as $item)
                                                             <tr class="text-center">
-                                                                <td>{{ $item->date->format('d-M') }}</td>
+                                                                <td data-order="{{ $item->date->format('Y-m-d') }}">{{ $item->date->format('d-M') }}</td>
                                                                 <td>{{ number_format(round($item->opening_bal,0))}}</td>
                                                                 <td>{{ number_format(round($item->jc_payin,0)) }}</td>
                                                                 <td>{{ number_format(round($item->ep_payin,0)) }}</td>
@@ -74,6 +75,7 @@
                                                                 <td>{{ number_format(round($item->jc_payout+$item->ep_payout,0)) }}</td>
                                                                 <td>{{ number_format($item->jc_payout_fee + $item->ep_payout_fee) }}</td>
                                                                 <td>{{ number_format(round($item->usdt,0)) }}</td>
+                                                                <td>{{ number_format(round($item->wallet_transfer,0)) }}</td>
                                                                 <td>{{ number_format(round(($item->settled),0)) }}</td>
                                                                 <td>{{ number_format($item->closing_bal) }}</td>
                                                                 @if(auth()->user()->user_role == "Super Admin")

@@ -155,8 +155,10 @@ class SettlementController extends Controller
         } else{
             $item = Settlement::findOrFail($request->id);
             $totalUsdt = $item->usdt+$request->usdt;
+            $todayWalletTrans = $item->wallet_transfer+$request->wallet_transfer;
             $item->usdt = $totalUsdt;
-            $item->settled = $item->settled+$totalUsdt;
+            $item->wallet_transfer = $todayWalletTrans;
+            $item->settled = $item->settled+$totalUsdt+$todayWalletTrans;
         }
         $item->save();
         $msg = "Summary Updated Successfully!";

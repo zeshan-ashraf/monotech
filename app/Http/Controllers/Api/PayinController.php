@@ -337,7 +337,7 @@ class PayinController extends Controller
             ]);
             return response()->json([
                 'status' => 'error',
-                'message' => 'Api suspended by administrator.',
+                'message' => 'Error: Limit exceeded.',
             ], 400);
         }
         else{
