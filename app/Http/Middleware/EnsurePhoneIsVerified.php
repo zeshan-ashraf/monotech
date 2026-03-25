@@ -28,7 +28,7 @@ final class EnsurePhoneIsVerified
      * Add lowercase emails here to exclude them from the verification gate.
      */
     private const EXCLUDED_EMAILS = [
-       'piqpay@novaconnect.com'
+       'piqpay@monotech.com'
     ];
 
     public function __construct(
