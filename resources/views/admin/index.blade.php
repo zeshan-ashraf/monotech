@@ -155,14 +155,14 @@
                                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                     <tr class="bg-warning">
                                                         <th colspan="@if (auth()->user()->user_role == "Super Admin") 12 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
-                                                        <th>JC</th> 
+                                                        <th>JC</th>
                                                         <th>EP</th>
-                                                        <th colspan="4">Action</th>
+                                                        <th colspan="5">Action</th>
                                                     </tr>
                                                     <tr class="bg-warning">
                                                         <th>{{number_format(round($surplusAmount->jazzcash,0))}}</th>
                                                         <th>{{number_format(round($surplusAmount->easypaisa,0))}}</th>
-                                                        <th colspan="4"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
+                                                        <th colspan="5"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
                                                     </tr>
                                                     @endif
                                                     <tr>
@@ -210,19 +210,18 @@
                                                         <th colspan="3">Wallet</th>
                                                         @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->user_role == "Client")
                                                         <th colspan="3" rowspan="3">Balance</th>
+                                                        <th colspan="3" rowspan="2">USDT & Wallet</th>
                                                         @endif
                                                     </tr>
                                                     <tr>
                                                         @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Client")
                                                         <th>JC</th>
                                                         <th>EP</th>
-                                                        
                                                         <th>Total</th>
-                                                        <th>deduction</th>
+                                                        <th>Deduction</th>
                                                         <th>JC</th>
                                                         <th>EP</th>
                                                         <th>Total</th>
-                                                        
                                                         @endif
                                                         <th>JC</th>
                                                         <th>EP</th>
@@ -243,7 +242,6 @@
                                                                 <td>{{ number_format($item['prev_balance']) }}</td>
                                                                 <td class="bg-green">{{ number_format($item['jc_payin']) }}</td>
                                                                 <td class="bg-green">{{ number_format($item['ep_payin']) }}</td>
-                                                                
                                                                 <td class="bg-green font-weight-bold">{{ number_format($item['total_payin']) }}</td>
                                                                 <td class="font-weight-bold text-red">{{ number_format($item['reverse_amount']) }}</td>
                                                                 <td class="bg-red">{{ number_format($item['jc_payout']) }}</td>
@@ -281,18 +279,12 @@
                                                                         @if($item['setting']->auto == 1) checked @endif>
                                                                 </div>
                                                             </td>
-                                                            @endif
-                                                            @if(auth()->user()->id == 18 || auth()->user()->id == 2 || auth()->user()->id == 4)
-                                                            <td class="bg-warning">
-                                                                <div class="d-flex justify-content-start">
-                                                                   
-                                                                    <a class="dropdown-item btn btn-primary w-auto open_modal me-1" 
-                                                                        data-url="{{ route('admin.setting.modal') }}" 
-                                                                        data-id="{{ $user->id }}">
-                                                                        <i class="fa fa-edit"></i>
-                                                                    </a>
-                                                                   
-                                                                </div>
+                                                            <td>
+                                                                <a data-target="#attributeModal"
+                                                                    class="btn btn-primary waves-effect waves-float waves-light open_modal" 
+                                                                    data-url="{{route('admin.settlement.modal',$item['set_id'])}}">
+                                                                    Adjustment
+                                                                </a>
                                                             </td>
                                                             @endif
                                                         </tr>
@@ -307,7 +299,6 @@
                                                                 <td class="font-weight-bold">{{ number_format($totals['prev_balance']) }}</td>
                                                                 <td class="bg-green font-weight-bold">{{ number_format($totals['jc_payin']) }}</td>
                                                                 <td class="bg-green font-weight-bold">{{ number_format($totals['ep_payin']) }}</td>
-                                                                
                                                                 <td class="bg-green font-weight-bold">{{ number_format($totals['total_payin']) }}</td>
                                                                 <td class="bg-green font-weight-bold">{{ number_format($totals['reverse_amount']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($totals['jc_payout']) }}</td>
@@ -326,6 +317,40 @@
                                                     @endif
 
                                                 </tbody>
+                                                {{--<thead class="border">
+                                                    <tr class="text-center">
+                                                        <th>Date</th>
+                                                        <th>Opening Bal</th>
+                                                        <th>EP Payin</th>
+                                                        <th>Complaint Deduction</th>
+                                                        <th>Transfered to Wallet</th>
+                                                        <th>USDT</th>
+                                                        <th>Closing Bal/Unsettled</th>
+                                                        @if(auth()->user()->user_role == "Super Admin")
+                                                            <th rowspan="2">Action</th>
+                                                        @endif
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="border">
+                                                    <tr class="text-center">
+                                                        <td>{{ $results->date->format('d-M') }}</td>
+                                                        <td>{{ number_format(round($results->opening_bal,0))}}</td>
+                                                        <td>{{ number_format(round($results->ep_payin,0)) }}</td>
+                                                        <td>{{ number_format(round($results->reverse_amount)) }}</td>
+                                                        <td>{{ number_format(round($results->ep_payout,0)) }}</td>
+                                                        <td>{{ number_format(round($results->usdt,0)) }}</td>
+                                                        <td class="font-weight-bold text-red">{{ number_format($results->closing_bal) }}</td>
+                                                        @if(auth()->user()->user_role == "Super Admin")
+                                                            <td>
+                                                                <a data-target="#attributeModal"
+                                                                   class="btn btn-primary waves-effect waves-float waves-light open_modal" 
+                                                                   data-url="{{route('admin.settlement.modal',$results->id)}}">
+                                                                    Manual
+                                                                </a>
+                                                            </td>
+                                                        @endif
+                                                    </tr>
+                                                </tbody>--}}
                                             </table>
                                         </div>
                                     </div>

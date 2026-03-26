@@ -78,6 +78,7 @@ class DashboardController extends Controller
                 'unsettled_amount_balance' => $balance,
                 'assigned_amount' => Setting::where('user_id', $userId)->first(),
                 'setting' => Setting::where('user_id', $userId)->first(),
+                'set_id'=> $settlement->id,
             ];
         }
         $totals = [
