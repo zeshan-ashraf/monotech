@@ -280,7 +280,28 @@ class SettingController extends Controller
         $list = User::where('user_role','client')->where('active',1)->get();
         $list2 = ScheduleSetting::where('txns_type','jazzcash')->get();
         $list3 = ScheduleSetting::where('txns_type','easypaisa')->get();
+        $verificationUsers = User::where('user_role', 'client')
+            ->select('id', 'name', 'email', 'new_user_verification')
+            ->orderBy('name')
+            ->get();
         return view("admin.setting.api_setting",get_defined_vars());
+    }
+
+    public function toggleNewUserVerification(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+            'status' => 'required|in:0,1',
+        ]);
+
+        $user = User::findOrFail($validated['user_id']);
+        $user->new_user_verification = (int) $validated['status'];
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'New user verification updated successfully.',
+        ]);
     }
     public function apiSuspendSetting(Request $request)
     {

@@ -123,6 +123,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     Route::as('testing.')->prefix('testing')->group(function () {
         Route::post('/payin-test', [TestingController::class,'payinTest'])->name('payin');
     });
+    Route::post('/user/toggle-verification', [SettingController::class, 'toggleNewUserVerification'])->name('user.toggle_verification');
     Route::get('/check-status/{id?}/{type?}',[TransactionController::class, 'statusInquiry'])->name('jazzcash.status-inquiry');
     Route::get('/archive/list', [ArchiveController::class, 'list'])->name('archive.list');
     Route::get('/archive/zig_list', [ArchiveController::class, 'zigList'])->name('archive.zig_list');
