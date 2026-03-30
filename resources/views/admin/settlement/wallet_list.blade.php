@@ -25,7 +25,6 @@
                                         <table class="table table-hover table-bordered m-b-0 datatables" cellspacing="0" width="100%">
                                             <thead class="table-dark border">
                                                 <tr class="text-center">
-                                                    <th>#</th>
                                                     <th>Date</th>
                                                     <th>Time</th>
                                                     <th>Client Name</th>
@@ -35,7 +34,6 @@
                                             <tbody class="border">
                                                 @foreach($list as $item)
                                                     <tr class="text-center">
-                                                        <td>{{ $loop->iteration }}</td>
                                                         <td>{{ $item->created_at->format('d-M-Y') }}</td>
                                                         <td>{{ $item->created_at->format('h:i A') }}</td>
                                                         <td>{{ $item->user->name }}</td>
