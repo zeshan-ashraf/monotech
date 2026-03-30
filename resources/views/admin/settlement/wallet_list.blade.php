@@ -21,48 +21,30 @@
                             </div>
                             <div class="card-body p-1">
                                 <div class="material-datatables">
-                                        @foreach($list as $item)
-                                            <div class="table-responsive">
-                                                <table class="table table-hover table-bordered m-b-0 datatables" cellspacing="0" width="100%">
-                                                    <thead class="table-dark border">
-                                                        <tr class="text-center">
-                                                            <th>#</th>
-                                                            <th>Date</th>
-                                                            <th>Time</th>
-                                                            <th>Client Name</th>
-                                                            <th>Wallet Transfer Amount</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody class="border">
-                                                        @foreach($items as $item)
-                                                            <tr class="text-center">
-                                                                <td>{{ $loop->iteration }}</td>
-                                                                <td>{{ $item->created_at->format('d-M-Y') }}</td>
-                                                                <td>{{ $item->created_at->format('h:i A') }}</td>
-                                                                <td>{{ $item->user->name }}</td>
-                                                                <td>{{ number_format(round($item->trans_amount, 0)) }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <p style="
-                                            padding: 20px 0; 
-                                            text-align: center; 
-                                            font-size: 20px; 
-                                            font-weight: bold; 
-                                            color: #FF5733; 
-                                            background-color: #f9f9f9; 
-                                            border: 2px solid #FF5733; 
-                                            border-radius: 10px; 
-                                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
-                                            font-family: 'Arial', sans-serif; 
-                                            margin: 20px 0;">
-                                            No record found
-                                        </p>
-                                    @endif
+                                    <div class="table-responsive">
+                                        <table class="table table-hover table-bordered m-b-0 datatables" cellspacing="0" width="100%">
+                                            <thead class="table-dark border">
+                                                <tr class="text-center">
+                                                    <th>#</th>
+                                                    <th>Date</th>
+                                                    <th>Time</th>
+                                                    <th>Client Name</th>
+                                                    <th>Wallet Transfer Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="border">
+                                                @foreach($items as $item)
+                                                    <tr class="text-center">
+                                                        <td>{{ $loop->iteration }}</td>
+                                                        <td>{{ $item->created_at->format('d-M-Y') }}</td>
+                                                        <td>{{ $item->created_at->format('h:i A') }}</td>
+                                                        <td>{{ $item->user->name }}</td>
+                                                        <td>{{ number_format(round($item->trans_amount, 0)) }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
