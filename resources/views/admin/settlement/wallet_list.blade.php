@@ -1,5 +1,5 @@
 @extends('admin.layout.app')
-@section('title','Settlement')
+@section('title','Wallet History')
 @push('css')
 <link rel="stylesheet" href="{{ asset('admin/assets/dashboard/css/dataTables.bootstrap4.min.css') }}" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap4.min.css" />
