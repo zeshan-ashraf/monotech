@@ -33,7 +33,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody class="border">
-                                                @foreach($items as $item)
+                                                @foreach($list as $item)
                                                     <tr class="text-center">
                                                         <td>{{ $loop->iteration }}</td>
                                                         <td>{{ $item->created_at->format('d-M-Y') }}</td>
