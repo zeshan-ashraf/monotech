@@ -39,32 +39,48 @@
                                     <div class="toolbar w-100">
                                         <form method="GET" action="{{route('admin.searching.list')}}">
                                             <input type="hidden" name="params" value="true">
-                                            <div class="row">
-                                                <div class="col-md-3">
+                                            <div class="row g-1 align-items-end">
+                                                <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
                                                         <label>Phone</label>
-                                                        <input type="text" name="phone" id="fp-range"
-                                                            class="form-control flatpickr-range  flatpickr-input"
+                                                        <input type="text" name="phone"
+                                                            class="form-control"
                                                             value="{{request()->phone}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
                                                         <label>Transaction Id</label>
-                                                        <input type="text" name="transaction_Id" id="fp-range"
-                                                            class="form-control flatpickr-range  flatpickr-input"
+                                                        <input type="text" name="transaction_Id"
+                                                            class="form-control"
                                                             value="{{request()->transaction_Id}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
                                                         <label>Order Id</label>
-                                                        <input type="text" name="order_id" id="fp-range"
-                                                            class="form-control flatpickr-range  flatpickr-input"
+                                                        <input type="text" name="order_id"
+                                                            class="form-control"
                                                             value="{{request()->order_id}}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3 mt-2">
+                                                <div class="col-lg-2 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Date</label>
+                                                        <input type="date" name="start_date"
+                                                            class="form-control"
+                                                            value="{{ request()->start_date }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-2 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Amount</label>
+                                                        <input type="number" step="0.01" min="0" name="amount_min"
+                                                            class="form-control"
+                                                            value="{{ request()->amount_min }}" autocomplete="off">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-2 col-md-4">
                                                     <button type="submit" class="btn btn-outline-primary waves-effect">
                                                         <i data-feather='search'></i>
                                                     </button>

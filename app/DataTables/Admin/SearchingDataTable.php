@@ -3,6 +3,7 @@
 namespace App\DataTables\Admin;
 
 use App\Models\{User,Transaction,ArcheiveTransaction,BackupTransaction};
+use Carbon\Carbon;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Services\DataTable;
 
@@ -71,6 +72,9 @@ class SearchingDataTable extends DataTable
 
     public function query()
     {
+        $startDate = request()->start_date ? Carbon::parse(request()->start_date)->toDateString() : null;
+        $amount = request()->filled('amount_min') ? (float) request()->amount_min : null;
+
         $transactionQuery = Transaction::query()
             ->when(request()->transaction_Id, function ($q) {
                 $q->where('transactionId', 'like', '%' . request()->transaction_Id . '%');
@@ -80,6 +84,12 @@ class SearchingDataTable extends DataTable
             })
             ->when(request()->order_id, function ($q) {
                 $q->where('orderId', 'like', '%' . request()->order_id . '%');
+            })
+            ->when($startDate, function ($q) use ($startDate) {
+                $q->whereDate('created_at', '=', $startDate);
+            })
+            ->when(!is_null($amount), function ($q) use ($amount) {
+                $q->where('amount', '=', $amount);
             });
     
         $archiveTransactionQuery = ArcheiveTransaction::query()
@@ -91,6 +101,12 @@ class SearchingDataTable extends DataTable
             })
             ->when(request()->order_id, function ($q) {
                 $q->where('orderId', 'like', '%' . request()->order_id . '%');
+            })
+            ->when($startDate, function ($q) use ($startDate) {
+                $q->whereDate('created_at', '=', $startDate);
+            })
+            ->when(!is_null($amount), function ($q) use ($amount) {
+                $q->where('amount', '=', $amount);
             });
         $backupTransactionQuery = BackupTransaction::query()
             ->when(request()->transaction_Id, function ($q) {
@@ -101,6 +117,12 @@ class SearchingDataTable extends DataTable
             })
             ->when(request()->order_id, function ($q) {
                 $q->where('orderId', 'like', '%' . request()->order_id . '%');
+            })
+            ->when($startDate, function ($q) use ($startDate) {
+                $q->whereDate('created_at', '=', $startDate);
+            })
+            ->when(!is_null($amount), function ($q) use ($amount) {
+                $q->where('amount', '=', $amount);
             });
     
         $combinedQuery = $transactionQuery
