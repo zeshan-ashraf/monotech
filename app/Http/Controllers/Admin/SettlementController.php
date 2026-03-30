@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Transaction,Payout,Settlement,User};
+use App\Models\{Transaction,Payout,Settlement,User,WalletTransfer};
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -161,7 +161,18 @@ class SettlementController extends Controller
             $item->settled = $item->settled+$totalUsdt+$todayWalletTrans;
         }
         $item->save();
+
+        WalletTransfer::create([
+            'user_id'=>$item->user_id,
+            'trans_amount'=>$request->wallet_transfer,
+        ]);
+
         $msg = "Summary Updated Successfully!";
         return redirect()->back()->with('message',$msg);
+    }
+    public function showWalletTrans()
+    {
+        $list=WalletTransfer::orderBy('created_at', 'DESC')->get();
+        return view('admin.settlement.wallet_list',get_defined_vars());
     }
 }
