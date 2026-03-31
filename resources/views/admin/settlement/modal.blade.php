@@ -28,7 +28,7 @@
                 </div>
                 <div class="col-md-12">
                     <label>Select Store</label>
-                    <select name="store_name" id="" class="form-control">
+                    <select name="store_name" id="" class="form-control" required>
                         <option value="" disabled selected>Select Any..</option>
                         <option value="Khushi Connect">Khushi Connect</option>
                         <option value="Nova Connect">Nova Connect</option>
