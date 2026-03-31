@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Models\{Transaction,ArcheiveTransaction,BackupTransaction,Payout,ArcheivePayout,Summary,Setting,Settlement,User,SurplusAmount};
+use App\Models\{Transaction,ArcheiveTransaction,BackupTransaction,Payout,ArcheivePayout,Summary,Setting,Settlement,User,SurplusAmount,WalletTransfer};
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -265,5 +265,32 @@ class GeneralController extends Controller
             'settings'    => $settingData,
             'surplus'     => $surplusData,
         ];
+    }
+    public function addWalletAmount(Request $request)
+    {
+        if($request->user_id == "4"){
+            $userId = 2;
+        }
+        // else{
+
+        // }
+        $trans_amount=$request->trans_amount * -1;
+
+        WalletTransfer::create([
+            'date'        => $request->date,
+            'time'        => $request->time,
+            'user_id'     => $userId,
+            'req_id'      => $request->req_id,
+            'store_name'  => $request->from_store_name,
+            'trans_amount'=> $trans_amount,
+        ]);
+
+        $summary=Settlement::where('user_id',$userId)->whereDate('date', Carbon::today()->format('y-m-d'))->first();
+        $summary->update([
+            'wallet_transfer' => $summary->wallet_transfer + ($trans_amount),
+            'settled' => $summary->settled + ($trans_amount),
+        ]);
+
+        return response()->json(['status' => 'success']);
     }
 }
