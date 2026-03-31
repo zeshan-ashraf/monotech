@@ -168,6 +168,7 @@ class SettlementController extends Controller
                 'user_id'     => $item->user_id,
                 'req_id'      => $req_id,
                 'store_name'  => $request->store_name,
+                'from_store_name' => "Monotech",
                 'trans_amount'=> $request->wallet_transfer,
             ]);
     
