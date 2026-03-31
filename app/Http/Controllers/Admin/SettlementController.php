@@ -177,7 +177,7 @@ class SettlementController extends Controller
             ]);
     
             $result = $response->json();
-dd($result);
+
             if ($result['status'] == 'success') {
 
                 WalletTransfer::create([
