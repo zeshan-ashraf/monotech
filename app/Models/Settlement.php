@@ -30,6 +30,7 @@ class Settlement extends Model
         'closing_bal',
         'pnl_amount',
         'total_pnl_amount',
+        'wallet_transfer',
     ];
     
     protected $casts = [
