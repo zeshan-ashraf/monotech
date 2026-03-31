@@ -277,6 +277,7 @@ class PayinController extends Controller
             'client_email' => 'required|email',
             'payment_method' => 'required|in:jazzcash,easypaisa',
             'amount' => 'required|numeric|min:1',
+            'orderId'=> 'required|unique:transactions,orderId',
         ]);
     
         if ($validator->fails()) {
