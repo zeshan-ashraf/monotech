@@ -174,16 +174,18 @@ class SettlementController extends Controller
     
             $result = $response->json();
 
-            dd($result);
+            if ($result['status'] == 'success') {
 
-            WalletTransfer::create([
-                'date'        => now()->format('Y-m-d'),
-                'time'        => now()->format('H:i:s'),
-                'user_id'     => $item->user_id,
-                'req_id'      => 'REQ-' . now()->format('YmdHis') . '-' . Str::random(6),
-                'store_name'  => $request->store_name,
-                'trans_amount'=> $request->wallet_transfer,
-            ]);
+                WalletTransfer::create([
+                    'date'        => now()->format('Y-m-d'),
+                    'time'        => now()->format('H:i:s'),
+                    'user_id'     => $item->user_id,
+                    'req_id'      => 'REQ-' . now()->format('YmdHis') . '-' . Str::random(6),
+                    'store_name'  => $request->store_name,
+                    'trans_amount'=> $request->wallet_transfer,
+                ]);
+
+            }
         }
         if(auth()->user()->id == 16){
             $item = Settlement::findOrFail($request->id);
