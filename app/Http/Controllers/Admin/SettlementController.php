@@ -157,6 +157,7 @@ class SettlementController extends Controller
                 'store_name'=>'required',
                 'wallet_transfer'=>'required',
             ]);
+            dd("h");
             $date = now()->format('Y-m-d');
             $time = now()->format('H:i:s');
             $req_id = 'REQ-' . now()->format('YmdHis') . '-' . Str::random(6);
