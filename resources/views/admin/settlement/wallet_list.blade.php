@@ -36,6 +36,7 @@
                                                         <td>{{ $item->created_at->format('d-M-Y') }}</td>
                                                         <td>{{ $item->created_at->format('h:i A') }}</td>
                                                         <td>{{ $item->user->name }}</td>
+                                                        <td>{{ $item->store_name }}</td>
                                                         <td>{{ number_format(round($item->trans_amount, 0)) }}</td>
                                                     </tr>
                                                 @endforeach

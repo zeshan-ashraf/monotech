@@ -163,8 +163,12 @@ class SettlementController extends Controller
         $item->save();
 
         WalletTransfer::create([
-            'user_id'=>$item->user_id,
-            'trans_amount'=>$request->wallet_transfer,
+            'date'        => now()->format('Y-m-d'),
+            'time'        => now()->format('H:i:s'),
+            'user_id'     => $item->user_id,
+            'req_id'      => $item->req_id,
+            'store_name'  => $item->store_name,
+            'trans_amount'=> $request->wallet_transfer,
         ]);
 
         $msg = "Summary Updated Successfully!";

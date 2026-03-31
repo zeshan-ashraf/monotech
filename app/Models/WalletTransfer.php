@@ -11,7 +11,8 @@ class WalletTransfer extends Model
 
     protected $fillable = [
         'user_id',
-        'trans_amount'
+        'trans_amount',
+        'store_name',
     ];
 
     public function user()

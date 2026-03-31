@@ -26,6 +26,15 @@
                     <label>Wallet Transfer</label>
                     <input class="form-control title_box" name="wallet_transfer" value="0" required type="text">
                 </div>
+                <div class="col-md-12">
+                    <label>Select Store</label>
+                    <select name="store_name" id="" class="form-control">
+                        <option value="" disabled selected>Select Any..</option>
+                        <option value="Khushi Connect">Khushi Connect</option>
+                        <option value="Nova Connect">Nova Connect</option>
+                    </select>
+                    <input class=" title_box" name="wallet_transfer" value="0" required type="text">
+                </div>
             </div>
 
         </div>
