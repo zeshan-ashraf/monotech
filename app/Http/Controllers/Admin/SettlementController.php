@@ -166,7 +166,7 @@ class SettlementController extends Controller
             'date'        => now()->format('Y-m-d'),
             'time'        => now()->format('H:i:s'),
             'user_id'     => $item->user_id,
-            'req_id'      => $item->req_id,
+            'req_id'      => 'REQ-' . now()->format('YmdHis') . rand(100, 999),
             'store_name'  => $item->store_name,
             'trans_amount'=> $request->wallet_transfer,
         ]);
