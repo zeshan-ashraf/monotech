@@ -157,10 +157,10 @@ class SettlementController extends Controller
                 'store_name'=>'required',
                 'wallet_transfer'=>'required',
             ]);
-            dd("h");
             $date = now()->format('Y-m-d');
             $time = now()->format('H:i:s');
             $req_id = 'REQ-' . now()->format('YmdHis') . '-' . Str::random(6);
+            
             if($request->store_name == "Khushi Connect"){
                 $url = 'https://khushiconnect.com/api/add-wallet-transfer-amount';
             }else{
@@ -177,7 +177,7 @@ class SettlementController extends Controller
             ]);
     
             $result = $response->json();
-
+dd($result);
             if ($result['status'] == 'success') {
 
                 WalletTransfer::create([
