@@ -28,8 +28,10 @@ class DashboardController extends Controller
         $now = Carbon::now();
 
         $totalMonthlyAmount = DB::table('settlements')
-            ->whereMonth('created_at', $now->month)
-            ->whereYear('created_at', $now->year)
+            ->whereBetween('created_at', [
+                $now->copy()->startOfMonth()->subHours(5),
+                $now->copy()->endOfMonth()->subHours(5)
+            ])
             ->sum('ep_payin');
         $data = [];
         
