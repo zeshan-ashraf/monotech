@@ -268,12 +268,18 @@ class GeneralController extends Controller
     }
     public function addWalletAmount(Request $request)
     {
-        if($request->user_id == "4"){
-            $userId = 2;
-        }
+        // if($request->user_id == "4"){
+        //     $userId = 2;
+        // }
         // else{
 
         // }
+
+        if ($request->from_store_name == "Khushi Connect") {
+            $userId = $request->user_id == "4" ? 2 : ($request->user_id == "7" ? 36 : null);
+        } else {
+            $userId = $request->user_id == "19" ? 2 : ($request->user_id == "36" ? 4 : null);
+        }
         $trans_amount=$request->trans_amount * -1;
 
         WalletTransfer::create([
