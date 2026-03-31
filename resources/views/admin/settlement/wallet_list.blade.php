@@ -68,10 +68,14 @@
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap4.min.js"></script>
     <script>
         $(document).ready(function() {
-            $.fn.dataTable.moment('DD-MMM');
+            $.fn.dataTable.moment('DD-MMM-YYYY');
+            $.fn.dataTable.moment('hh:mm A');
             $('.datatables').DataTable({
                 dom: 'Bfrtip', 
-                order: [[0, 'desc']],
+                order: [
+                    [0, 'desc'], // Date DESC
+                    [1, 'desc']  // Time DESC
+                ],
                 pageLength: 50,
                 buttons: [
                     {
