@@ -10,6 +10,9 @@ class WalletTransfer extends Model
     use HasFactory;
 
     protected $fillable = [
+        'date',
+        'time',
+        'req_id',
         'user_id',
         'trans_amount',
         'store_name',
