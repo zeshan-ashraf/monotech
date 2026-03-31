@@ -33,7 +33,6 @@
                         <option value="Khushi Connect">Khushi Connect</option>
                         <option value="Nova Connect">Nova Connect</option>
                     </select>
-                    <input class=" title_box" name="wallet_transfer" value="0" required type="text">
                 </div>
             </div>
 
