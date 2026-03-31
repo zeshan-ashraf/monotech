@@ -29,7 +29,7 @@
                 <div class="col-md-12">
                     <label>Select Store</label>
                     <select name="store_name" id="" class="form-control" required>
-                        <option value="" disabled selected>Select Any..</option>
+                        <option value="" disabled="" selected="">Select Any..</option>
                         <option value="KhushiConnect">Khushi Connect</option>
                         <option value="NovaConnect">Nova Connect</option>
                     </select>
