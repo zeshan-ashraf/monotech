@@ -27,6 +27,7 @@
                                                     <th>Date</th>
                                                     <th>Time</th>
                                                     <th>Client Name</th>
+                                                    <th>Store Name</th>
                                                     <th>Wallet Transfer Amount</th>
                                                 </tr>
                                             </thead>
