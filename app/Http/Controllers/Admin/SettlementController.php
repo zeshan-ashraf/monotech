@@ -152,7 +152,7 @@ class SettlementController extends Controller
         ]);
 
         $item = Settlement::findOrFail($request->id);
-        if($request->wallet_transfer > 0){
+        if($request->wallet_transfer > 0 && $request->store_name != "None"){
             $request->validate([
                 'store_name'=>'required',
                 'wallet_transfer'=>'required',
@@ -190,6 +190,16 @@ class SettlementController extends Controller
                 ]);
 
             }
+        }
+        if($request->store_name == "None"){
+            WalletTransfer::create([
+                'date'        => now()->format('Y-m-d'),
+                'time'        => now()->format('H:i:s'),
+                'user_id'     => $item->user_id,
+                'req_id'      => 'REQ-' . now()->format('YmdHis') . '-' . Str::random(6),
+                'store_name'  => $request->store_name,
+                'trans_amount'=> $request->wallet_transfer,
+            ]);
         }
         if(auth()->user()->id == 16){
             $item = Settlement::findOrFail($request->id);

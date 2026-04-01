@@ -32,6 +32,7 @@
                         <option value="" disabled="" selected="">Select Any..</option>
                         <option value="Khushi Connect">Khushi Connect</option>
                         <option value="Nova Connect">Nova Connect</option>
+                        <option value="None">None</option>
                     </select>
                 </div>
             </div>
