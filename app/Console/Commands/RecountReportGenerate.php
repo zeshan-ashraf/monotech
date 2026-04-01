@@ -29,6 +29,7 @@ class RecountReportGenerate extends Command
     public function handle()
     {
         $users=User::where('user_role','Client')->where('active',1)->get();
+        $transactionReverseHalf = 0;
         foreach ($users as $user) {
             $sumamry= Settlement::where('user_id',$user->id)->whereDate('date', Carbon::today()->subDay(1)->format('y-m-d'))->first();
             if($sumamry){
