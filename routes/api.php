@@ -43,16 +43,16 @@ Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProc
     ->middleware(['payment.validate', 'check.blocked.numbers']);
 
 
- Route::as('payout.')->prefix('payout')->group(function () {
+ /*Route::as('payout.')->prefix('payout')->group(function () {
 	     //Route without whitelist.ip middleware
      Route::post('/checkout', [PayoutController::class, 'checkout']);
- });
+ });*/
 
-//Route::as('payout.')->prefix('payout')->group(function () {
-//    Route::middleware('whitelist.ip')->group(function () {
- //       Route::post('/checkout',[PayoutController::class, 'checkout']);
-//    });
-//});
+Route::as('payout.')->prefix('payout')->group(function () {
+    Route::middleware('whitelist.ip')->group(function () {
+        Route::post('/checkout',[PayoutController::class, 'checkout']);
+    });
+});
 
 
 Route::post('/payin-status-check', [GeneralController::class , 'checkStatus']);
