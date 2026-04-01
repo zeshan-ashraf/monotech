@@ -33,7 +33,6 @@ class ReportGenerate extends Command
     {
         $users=User::where('user_role','Client')->where('active',1)->get();
         $transactionReverseHalf = 0;
-        $today = Carbon::today();
         foreach ($users as $user) {
             $sumamry= Settlement::where('user_id',$user->id)->whereDate('date', Carbon::today()->format('y-m-d'))->first();
             if($sumamry){
