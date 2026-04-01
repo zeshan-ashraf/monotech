@@ -259,7 +259,7 @@
                                                             @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == $user->id)
                                                             <td class="bg-warning">{{ number_format(round($item['unsettled_amount_balance'], 0)) }}</td>
                                                             @endif
-                                                            @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
+                                                            @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" auth()->user()->id == 4)
                                                             <td class="bg-warning">
                                                                 <div class="d-flex justify-content-start">
                                                                         <a class="dropdown-item btn btn-primary w-auto open_modal me-1" 
@@ -269,6 +269,8 @@
                                                                         </a>
                                                                 </div>
                                                             </td>
+                                                            @endif
+                                                            @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                             <td class="bg-warning">
                                                                 <div class="form-check form-switch">
                                                                     <input 

@@ -148,7 +148,7 @@ class SettingController extends Controller
     public function saveSetting(Request $request)
     {
         $userid = auth()->user()->id;
-        $targetUserId = ($userid == 18) ? $userid : $request->id;
+        $targetUserId = ($userid == 4) ? $userid : $request->id;
         
         // Calculate unsettled_amount_balance
         $prevBal = Settlement::where('user_id', $targetUserId)->whereDate('date', today()->subDay())->value('closing_bal') ?? 0;
@@ -225,29 +225,16 @@ class SettingController extends Controller
             }
         }
         
-        if($userid == 18){// copay
-            $setting = $currentSetting;
-            $setting->easypaisa += $submittedEasypaisa;
-            $setting->jazzcash += $submittedJazzcash;
-            $setting->payout_balance = $setting->easypaisa + $setting->jazzcash;
-            $setting->save();
-            
-            $surplus = SurplusAmount::where('id','1')->first();
-            $surplus->jazzcash -= $submittedJazzcash;
-            $surplus->easypaisa -= $submittedEasypaisa;
-            $surplus->save();
-        } else {
-            $setting = $currentSetting;
-            $setting->easypaisa += $submittedEasypaisa;
-            $setting->jazzcash += $submittedJazzcash;
-            $setting->payout_balance = $setting->easypaisa + $setting->jazzcash;
-            $setting->save();
-            
-            $surplus = SurplusAmount::where('id','1')->first();
-            $surplus->jazzcash -= $submittedJazzcash;
-            $surplus->easypaisa -= $submittedEasypaisa;
-            $surplus->save();
-        }
+        $setting = $currentSetting;
+        $setting->easypaisa += $submittedEasypaisa;
+        $setting->jazzcash += $submittedJazzcash;
+        $setting->payout_balance = $setting->easypaisa + $setting->jazzcash;
+        $setting->save();
+        
+        $surplus = SurplusAmount::where('id','1')->first();
+        $surplus->jazzcash -= $submittedJazzcash;
+        $surplus->easypaisa -= $submittedEasypaisa;
+        $surplus->save();
         
         $successMsg = 'Amount assigned successfully.';
         if ($request->ajax()) {
