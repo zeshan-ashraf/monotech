@@ -50,10 +50,15 @@ final class EnsurePhoneIsVerified
         $email = $userModel ? (string) $userModel->email : (string) $request->input('client_email', '');
         $normalizedEmail = strtolower(trim($email));
 
-        $excluded = array_map(static fn (string $e): string => strtolower(trim($e)), self::EXCLUDED_EMAILS);
+          /*$excluded = array_map(static fn (string $e): string => strtolower(trim($e)), self::EXCLUDED_EMAILS);
         if ($normalizedEmail !== '' && in_array($normalizedEmail, $excluded, true)) {
             return $next($request);
+        }*/
+
+        if ($userModel && !$userModel->new_user_verification) {
+            return $next($request);
         }
+
 
         $inputKey = (string) config('phone_verification.phone_input_key', 'phone');
         $rawPhone = (string) $request->input($inputKey, '');
