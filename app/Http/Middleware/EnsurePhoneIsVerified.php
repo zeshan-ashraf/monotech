@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use App\Services\PhoneVerificationService;
 use Closure;
 use Illuminate\Http\JsonResponse;
@@ -45,8 +46,18 @@ final class EnsurePhoneIsVerified
             return $next($request);
         }
 
-        // Optional bypass: allow specific users to skip phone verification.
+        // Resolve client user: PaymentValidationMiddleware sets user_model; otherwise match users.email to client_email.
         $userModel = $request->user_model;
+        if (!$userModel instanceof User) {
+            $clientEmail = $request->input('client_email');
+            if (is_string($clientEmail) && $clientEmail !== '') {
+                $userModel = User::query()->where('email', $clientEmail)->first();
+                if ($userModel instanceof User) {
+                    $request->merge(['user_model' => $userModel]);
+                }
+            }
+        }
+
         $email = $userModel ? (string) $userModel->email : (string) $request->input('client_email', '');
         $normalizedEmail = strtolower(trim($email));
 
@@ -55,14 +66,15 @@ final class EnsurePhoneIsVerified
             return $next($request);
         }*/
 
-        if ($userModel && !$userModel->new_user_verification) {
+        // OFF (0): do not apply new-user phone gate for this client.
+        if ($userModel instanceof User && $userModel->new_user_verification === false) {
             return $next($request);
         }
 
 
 
 
-        
+
         $inputKey = (string) config('phone_verification.phone_input_key', 'phone');
         $rawPhone = (string) $request->input($inputKey, '');
 

@@ -104,7 +104,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         // Unified route for all settlement types
         Route::get('/{type}/list', [SettlementController::class,'list'])->name('list');
         Route::get('/list', [SettlementController::class,'list'])->name('list'); // For backward compatibility with query parameters
-        Route::get('/wallet/transfer/history', [SettlementController::class,'showWalletTrans'])->name('wallet_transfer_list');
         
         // Legacy individual routes for backward compatibility
         Route::get('/ok/list', [SettlementController::class,'okList'])->name('ok');
