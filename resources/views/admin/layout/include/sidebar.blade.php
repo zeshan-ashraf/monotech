@@ -109,6 +109,10 @@
                                 @endforeach
                             </ul>
                         </li>
+                        <li class="@if (url()->current() == route('admin.settlement.wallet_transfer_list')) active @endif nav-item"><a
+                            class="d-flex align-items-center" href="{{ route('admin.settlement.wallet_transfer_list') }}">
+                                <i data-feather="rotate-ccw"></i>Wallet History</a>
+                        </li>
                     @elseif($sidebarSettlementUsers->contains('id', auth()->user()->id))
                         <li class="nav-item">
                             <a class="d-flex align-items-center" href="{{ route('admin.settlement.list', ['type' => auth()->user()->id]) }}">
@@ -117,10 +121,7 @@
                         </li>
                     @endif
 
-                    <li class="@if (url()->current() == route('admin.settlement.wallet_transfer_list')) active @endif nav-item"><a
-                           class="d-flex align-items-center" href="{{ route('admin.settlement.wallet_transfer_list') }}">
-                            <i data-feather="rotate-ccw"></i>Wallet History</a>
-                    </li>
+                    
                 @endcan
                 @can('Archive Transactions')
                     <li class="  nav-item">
