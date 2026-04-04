@@ -32,14 +32,17 @@ class ThrottlePhoneNumberMiddleware
         if (Cache::has($cacheKey)) {
             $seconds = Cache::get($cacheKey) - time();
             $wait = $seconds > 0 ? $seconds : 180;
-            //return response()->json([
-            //    'status' => 'error',
-            //    'message' => 'You must wait ' . $wait . ' seconds before trying again with this phone number.'
-            //], 429);
-            
-            $logger->info('You must wait ' . $wait . ' seconds before trying again with this phone number=' . $phone);
-            abort(429); // or abort(403);
 
+            $logger->info('Payin phone throttle: cooldown active', [
+                'phone' => $phone,
+                'retry_after_seconds' => $wait,
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Too many requests for this phone number. Please wait for the cooldown period before trying again.',
+                //'retry_after_seconds' => $wait,
+            ], 429);
         }
 
         // Store the phone in cache for 3 minutes (180 seconds)
