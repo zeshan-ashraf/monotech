@@ -20,6 +20,15 @@ class ThrottlePhoneNumberMiddleware
     public function handle(Request $request, Closure $next)
     {
         $logger = Log::channel('throttle_phone');
+
+        if ($this->isExcludedClientEmail($request)) {
+            $logger->info('Payin phone throttle skipped (excluded client_email)', [
+                'client_email' => $request->input('client_email'),
+            ]);
+
+            return $next($request);
+        }
+
         $phone = $request->input('phone');
         if (!$phone) {
             return response()->json([
@@ -50,4 +59,24 @@ class ThrottlePhoneNumberMiddleware
 
         return $next($request);
     }
-} 
+
+    /**
+     * Clients listed in config('throttle_phone.excluded_emails') bypass phone cooldown.
+     * Match is case-insensitive on request input `client_email`.
+     */
+    private function isExcludedClientEmail(Request $request): bool
+    {
+        $raw = $request->input('client_email');
+        if (! is_string($raw) || $raw === '') {
+            return false;
+        }
+
+        $email = strtolower(trim($raw));
+        $excluded = array_values(array_filter(array_map(
+            static fn ($e): string => strtolower(trim((string) $e)),
+            config('throttle_phone.excluded_emails', [])
+        )));
+
+        return $excluded !== [] && in_array($email, $excluded, true);
+    }
+}
