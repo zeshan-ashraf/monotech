@@ -4,11 +4,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Payin phone throttle — excluded client emails
+    | Payin — excluded client emails
     |--------------------------------------------------------------------------
     |
-    | Requests whose `client_email` matches one of these addresses (case-insensitive)
-    | skip the per-phone cooldown in ThrottlePhoneNumberMiddleware (no cache lock).
+    | Requests whose `client_email` matches one of these addresses (case-insensitive):
+    | - Skip per-phone cooldown in ThrottlePhoneNumberMiddleware (no cache lock).
+    | - Skip recent-transaction restriction in PayinController::checkRecentTransactionRestriction.
     |
     | Add or remove emails here as needed.
     |

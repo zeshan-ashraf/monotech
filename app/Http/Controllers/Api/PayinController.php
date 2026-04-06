@@ -206,6 +206,15 @@ class PayinController extends Controller
      */
     private function checkRecentTransactionRestriction(Request $request, string $requestId, float $startTime)
     {
+        if ($this->isClientEmailExcludedFromPayinRestrictions($request)) {
+            $this->logger->info('Recent transaction restriction skipped (excluded client_email)', [
+                'request_id' => $requestId,
+                'client_email' => $request->input('client_email'),
+            ]);
+
+            return null;
+        }
+
         $threeMinutesAgo = now()->subMinutes(3);
         $fiveMinutesAgo = now()->subMinutes(5);
         
@@ -259,6 +268,25 @@ class PayinController extends Controller
         }
         
         return null; // No restriction applied
+    }
+
+    /**
+     * Same list as ThrottlePhoneNumberMiddleware: config('throttle_phone.excluded_emails').
+     */
+    private function isClientEmailExcludedFromPayinRestrictions(Request $request): bool
+    {
+        $raw = $request->input('client_email');
+        if (! is_string($raw) || $raw === '') {
+            return false;
+        }
+
+        $email = strtolower(trim($raw));
+        $excluded = array_values(array_filter(array_map(
+            static fn ($e): string => strtolower(trim((string) $e)),
+            config('throttle_phone.excluded_emails', [])
+        )));
+
+        return $excluded !== [] && in_array($email, $excluded, true);
     }
 
     public function checkout(Request $request)
