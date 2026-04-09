@@ -563,12 +563,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Create charts
-    createSemiCircleChart("pkNSRChart", pkNSR, "#FF4500");
+    createSemiCircleChart("pkNJcSRChart", pkNJcSR, "#FF4500");
+    createSemiCircleChart("pkNEpSRChart", pkNEpSR, "#FF4500");
     createSemiCircleChart("okJcSRChart", okJcSR, "#FF4500");
     createSemiCircleChart("okEpSRChart", okEpSR, "#FF4500");
     createSemiCircleChart("piqJcSRChart", piqJcSR, "#FF4500");
     createSemiCircleChart("piqEpSRChart", piqEpSR, "#FF4500");
-    createSemiCircleChart("moneySRChart", moneySR, "#FF4500");
+    createSemiCircleChart("moneyJcSRChart", moneyJcSR, "#FF4500");
+    createSemiCircleChart("moneyEpSRChart", moneyEpSR, "#FF4500");
 });
 </script>
 
