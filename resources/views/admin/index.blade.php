@@ -446,7 +446,7 @@
                         <div class="col-md-3">
                             <div class="card shadow-lg card-graph">
                                 <div class="card-body">
-                                    <h5 class="card-title font-weight-bold">PIQ Pay JazzCash Success Rate</h5>
+                                    <h5 class="card-title font-weight-bold">PIQ JazzCash Success Rate</h5>
                                     <div id="piqJcSRChart" style="margin-top: -30px;"></div>
                                 </div>
                             </div>
@@ -455,7 +455,7 @@
                         <div class="col-md-3">
                             <div class="card card-graph-red">
                                 <div class="card-header">
-                                    <h5 class="card-title font-weight-bold">PIQ Pay JazzCash Pending Orders</h5>
+                                    <h5 class="card-title font-weight-bold">PIQ JazzCash Pending Orders</h5>
                                 </div>
                                 <div class="card-body" style="margin-top: -30px;">
                                     <div id="jazzCashChartPiq"></div>
@@ -465,7 +465,7 @@
                         <div class="col-md-3">
                             <div class="card shadow-lg card-graph">
                                 <div class="card-body">
-                                    <h5 class="card-title font-weight-bold">PIQ Pay Easypaisa Success Rate</h5>
+                                    <h5 class="card-title font-weight-bold">PIQ Easypaisa Success Rate</h5>
                                     <div id="piqEpSRChart" style="margin-top: -30px;"></div>
                                 </div>
                             </div>
@@ -474,7 +474,7 @@
                         <div class="col-md-3">
                             <div class="card card-graph-green">
                                 <div class="card-header text-center">
-                                    <h5 class="card-title font-weight-bold">PIQ Pay Easypaisa Pending Orders</h5>
+                                    <h5 class="card-title font-weight-bold">PIQ Easypaisa Pending Orders</h5>
                                 </div>
                                 <div class="card-body" style="margin-top: -30px;">
                                     <div id="easypaisaChartPiq"></div>
