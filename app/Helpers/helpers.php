@@ -72,23 +72,28 @@ function getUnsettlement($id){
     return $unSettledAmount;
 }
 
-function srCount($id){
+function srCount($id,$type){
     
+    $fiveMinutesAgo = Carbon::now()->subMinutes(5);
+
     $totalPayinSuccessCount = Transaction::where('user_id', $id)
-        ->whereDate('created_at', Carbon::today())
+        ->where('created_at', '>=', $fiveMinutesAgo)
         ->where('status', 'success')
+        ->where('txn_type', $type)
         ->count();
     
     $totalPayinFailedCount = Transaction::where('user_id', $id)
-        ->whereDate('created_at', Carbon::today())
+        ->where('created_at', '>=', $fiveMinutesAgo)
         ->where('status', 'failed')
+        ->where('txn_type', $type)
         ->count();
-
+    
     $totalPayinTransactionsCount = $totalPayinSuccessCount + $totalPayinFailedCount;
-
+    
     $payinSuccessRate = $totalPayinTransactionsCount > 0
         ? ($totalPayinSuccessCount / $totalPayinTransactionsCount) * 100
         : 0;
+    
     return $payinSuccessRate;
 }
 function payinJCFunc($id){
