@@ -529,10 +529,12 @@
 document.addEventListener("DOMContentLoaded", function () {
     var piqJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 4) {{ round(srCount(4,"jazzcash"), 2) }} @else 0 @endif;
     var piqEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 4) {{ round(srCount(4,"easypaisa"), 2) }} @else 0 @endif;
-    var pkNSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 5) {{ round(srCount(5), 2) }} @else 0 @endif;
+    var pkNJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 5) {{ round(srCount(5,"Jazzcash"), 2) }} @else 0 @endif;
+    var pkNEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 5) {{ round(srCount(5,"easypaisa"), 2) }} @else 0 @endif;
     var okJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 2) {{ round(srCount(2,"jazzcash"), 2) }} @else 0 @endif;
     var okEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 2) {{ round(srCount(2,"easypaisa"), 2) }} @else 0 @endif;
-    var moneySR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 14) {{ round(srCount(14), 2) }} @else 0 @endif;
+    var moneyJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 14) {{ round(srCount(14,"jazzcash"), 2) }} @else 0 @endif;
+    var moneyEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 14) {{ round(srCount(14,"easypaisa"), 2) }} @else 0 @endif;
 
     function createSemiCircleChart(containerId, value, color) {
         var options = {
