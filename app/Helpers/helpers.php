@@ -74,7 +74,7 @@ function getUnsettlement($id){
 
 function srCount($id,$type){
     
-    $fiveMinutesAgo = Carbon::now()->subMinutes(1);
+    $fiveMinutesAgo = Carbon::now()->subMinutes(5);
 
     $totalPayinSuccessCount = Transaction::where('user_id', $id)
         ->where('created_at', '>=', $fiveMinutesAgo)
