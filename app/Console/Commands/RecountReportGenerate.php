@@ -121,6 +121,8 @@ class RecountReportGenerate extends Command
             
                 $op_cln=($transactionSumJC + $transactionSumEP) * 0.015 + ($payoutSumJC + $payoutSumEP) * 0.0075 +  $transactionReverseHalf;
 
+                $rev_cln=($transactionSumJC * $payinFeeJC + $transactionSumEP * $payinFeeEP)  + ($payoutSumJC * $PayoutFeeJC + $payoutSumEP * $PayoutFeeEP) -  $op_cln;   
+
                 // Calculate balances
                 // if($user->id == 2 || $user->id == 18){
                     $payinBal = $closingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
@@ -146,6 +148,7 @@ class RecountReportGenerate extends Command
                     'jc_payout_fee' => $payoutSumJC * $PayoutFeeJC,
                     'ep_payout_fee' => $payoutSumEP * $PayoutFeeEP,
                     'op_cln' => $op_cln,
+                    'rev_cln' => $rev_cln,
                     'usdt' => $sumamry->usdt,
                     'wallet_transfer' => $sumamry->wallet_transfer,
                     'settled' => $settleAmount,

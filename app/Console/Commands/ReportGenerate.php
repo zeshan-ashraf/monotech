@@ -131,6 +131,8 @@ class ReportGenerate extends Command
 
                 $op_cln=($transactionSumJC + $transactionSumEP) * 0.015 + ($payoutSumJC + $payoutSumEP) * 0.0075 +  $transactionReverseHalf;
 
+                $rev_cln=($transactionSumJC * $payinFeeJC + $transactionSumEP * $payinFeeEP)  + ($payoutSumJC * $PayoutFeeJC + $payoutSumEP * $PayoutFeeEP) -  $op_cln;     
+                
                 $settleAmount = $payoutSumJC + $payoutSumEP + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) + $todayUsdt + $todayWalletTrans;
                 $pnl_amount=round($transactionSumJC * 0.01, 2);
                 $total_pnl_amount=$pnl_amount+$prev_pnl-$prev_usdt_pnl;
@@ -150,6 +152,7 @@ class ReportGenerate extends Command
                     'jc_payout_fee' => $payoutSumJC * $PayoutFeeJC,
                     'ep_payout_fee' => $payoutSumEP * $PayoutFeeEP,
                     'op_cln' => $op_cln,
+                    'rev_cln' => $rev_cln,
                     'usdt' => $sumamry->usdt,
                     'wallet_transfer' => $sumamry->wallet_transfer,
                     'settled' => $settleAmount,
@@ -175,6 +178,7 @@ class ReportGenerate extends Command
                     'jc_payout_fee' => '0',
                     'ep_payout_fee' => '0',
                     'op_cln' => '0',
+                    'rev_cln' => '0',
                     'usdt' => '0',
                     'wallet_transfer' => '0',
                     'settled' => '0',
