@@ -40,6 +40,7 @@
                                                             <th rowspan="2">Payin Bal</th>
                                                             <th colspan="3">Payout</th>
                                                             <th rowspan="2">Payout Fee</th>
+                                                            <th rowspan="2">OP</th>
                                                             <th rowspan="2">USDT</th>
                                                             <th rowspan="2">Wallet Transfer</th>
                                                             <th rowspan="2">Settled</th>
@@ -74,6 +75,7 @@
                                                                 <td>{{ number_format(round($item->ep_payout,0)) }}</td>
                                                                 <td>{{ number_format(round($item->jc_payout+$item->ep_payout,0)) }}</td>
                                                                 <td>{{ number_format($item->jc_payout_fee + $item->ep_payout_fee) }}</td>
+                                                                <td>{{ number_format($item->op_cln) }}</td>
                                                                 <td>{{ number_format(round($item->usdt,0)) }}</td>
                                                                 <td>{{ number_format(round($item->wallet_transfer,0)) }}</td>
                                                                 <td>{{ number_format(round(($item->settled),0)) }}</td>
