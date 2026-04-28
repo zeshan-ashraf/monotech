@@ -80,6 +80,9 @@
             .text-red{
                 color:red !important;
             }
+            .text-red{
+                color:red !important;
+            }
             .form-switch .form-check-input{
                     margin-left: 0 !important;
             }
@@ -157,12 +160,12 @@
                                                         <th colspan="@if (auth()->user()->user_role == "Super Admin") 12 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
                                                         <th>JC</th>
                                                         <th>EP</th>
-                                                        <th colspan="5">Action</th>
+                                                        <th colspan="6">Action</th>
                                                     </tr>
                                                     <tr class="bg-warning">
                                                         <th>{{number_format(round($surplusAmount->jazzcash,0))}}</th>
                                                         <th>{{number_format(round($surplusAmount->easypaisa,0))}}</th>
-                                                        <th colspan="5"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
+                                                        <th colspan="6"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
                                                     </tr>
                                                     @endif
                                                     <tr>
@@ -210,6 +213,9 @@
                                                         <th colspan="3">Wallet</th>
                                                         @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->user_role == "Client")
                                                         <th colspan="3" rowspan="3">Balance</th>
+                                                        @endif
+                                                        @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
+                                                        <th rowspan="2">REV</th>
                                                         <th colspan="3" rowspan="2">USDT & Wallet</th>
                                                         @endif
                                                     </tr>
@@ -281,6 +287,7 @@
                                                                         @if($item['setting']->auto == 1) checked @endif>
                                                                 </div>
                                                             </td>
+                                                            <td class="font-weight-bold text-green">{{ number_format($item['rev_cln']) }}</td>
                                                             <td>
                                                                 <a data-target="#attributeModal"
                                                                     class="btn btn-primary waves-effect waves-float waves-light open_modal" 
@@ -315,6 +322,7 @@
                                                             <td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_ep']) }}</td>
                                                             <td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_payout']) }}</td>
                                                             <td colspan="3" class="bg-warning font-weight-bold">{{ number_format($totals['unsettled_amount_balance']) }}</td>
+                                                            <td class="font-weight-bold text-green">{{ number_format($totals['total_rev_cln']) }}</td>
                                                         </tr>
                                                     @endif
 
