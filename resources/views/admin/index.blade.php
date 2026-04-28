@@ -83,6 +83,9 @@
             .text-red{
                 color:red !important;
             }
+            .text-green{
+                color:green !important;
+            }
             .form-switch .form-check-input{
                     margin-left: 0 !important;
             }
