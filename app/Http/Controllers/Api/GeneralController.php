@@ -299,4 +299,8 @@ class GeneralController extends Controller
 
         return response()->json(['status' => 'success']);
     }
+    public function getCocktailData(Request $request)
+    {
+        dd($request);
+    }
 }
