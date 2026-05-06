@@ -302,13 +302,14 @@ class GeneralController extends Controller
     }
     public function getCocktailData(Request $request)
     {
-        return response()->json("hello");
-
         $request->validate([
             'usdt'=>'required',
         ]);
+        $user=User::where('email',$request->client_email)->first();
+        
+        $item = Settlement::where('user_id',$user->id)->whereDate('date', Carbon::today()->format('y-m-d'))->first();
+        
 
-        $item = Settlement::findOrFail($request->id);
         if($request->wallet_transfer > 0 && $request->store_name != "None"){
             $request->validate([
                 'store_name'=>'required',
@@ -358,18 +359,15 @@ class GeneralController extends Controller
                 'trans_amount'=> $request->wallet_transfer,
             ]);
         }
-        if(auth()->user()->id == 16){
-            $item = Settlement::findOrFail($request->id);
-            $totalUsdt = $item->usdt_pnl_amount+$request->usdt;
-            $item->usdt_pnl_amount = $totalUsdt;
-        } else{
-            $item = Settlement::findOrFail($request->id);
-            $totalUsdt = $item->usdt+$request->usdt;
-            $todayWalletTrans = $item->wallet_transfer+$request->wallet_transfer;
-            $item->usdt = $totalUsdt;
-            $item->wallet_transfer = $todayWalletTrans;
-            $item->settled = $item->settled+$totalUsdt+$todayWalletTrans;
-        }
+
+        $totalUsdt = $item->usdt+$request->usdt;
+        $todayWalletTrans = $item->wallet_transfer+$request->wallet_transfer;
+        $item->usdt = $totalUsdt;
+        $item->wallet_transfer = $todayWalletTrans;
+        $item->settled = $item->settled+$totalUsdt+$todayWalletTrans;
+
         $item->save();
+
+        return response()->json(['status' => 'success']);
     }
 }
