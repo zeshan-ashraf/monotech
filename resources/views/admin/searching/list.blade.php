@@ -42,6 +42,14 @@
                                             <div class="row g-1 align-items-end">
                                                 <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
+                                                        <label>Order Id</label>
+                                                        <input type="text" name="order_id"
+                                                            class="form-control"
+                                                            value="{{request()->order_id}}" autocomplete="off">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-2 col-md-4">
+                                                    <div class="form-group">
                                                         <label>Phone</label>
                                                         <input type="text" name="phone"
                                                             class="form-control"
@@ -58,10 +66,10 @@
                                                 </div>
                                                 <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
-                                                        <label>Order Id</label>
-                                                        <input type="text" name="order_id"
+                                                        <label>Amount</label>
+                                                        <input type="number" step="0.01" min="0" name="amount_min"
                                                             class="form-control"
-                                                            value="{{request()->order_id}}" autocomplete="off">
+                                                            value="{{ request()->amount_min }}" autocomplete="off">
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-2 col-md-4">
@@ -72,14 +80,7 @@
                                                             value="{{ request()->start_date }}">
                                                     </div>
                                                 </div>
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
-                                                        <label>Amount</label>
-                                                        <input type="number" step="0.01" min="0" name="amount_min"
-                                                            class="form-control"
-                                                            value="{{ request()->amount_min }}" autocomplete="off">
-                                                    </div>
-                                                </div>
+                                                
                                                 <div class="col-lg-2 col-md-4">
                                                     <button type="submit" class="btn btn-outline-primary waves-effect">
                                                         <i data-feather='search'></i>
