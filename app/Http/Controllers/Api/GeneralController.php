@@ -10,6 +10,7 @@ use App\Models\{Transaction,ArcheiveTransaction,BackupTransaction,Payout,Archeiv
 use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class GeneralController extends Controller
 {
@@ -301,6 +302,74 @@ class GeneralController extends Controller
     }
     public function getCocktailData(Request $request)
     {
-        dd($request);
+        return response()->json("hello");
+
+        $request->validate([
+            'usdt'=>'required',
+        ]);
+
+        $item = Settlement::findOrFail($request->id);
+        if($request->wallet_transfer > 0 && $request->store_name != "None"){
+            $request->validate([
+                'store_name'=>'required',
+                'wallet_transfer'=>'required',
+            ]);
+            $date = now()->format('Y-m-d');
+            $time = now()->format('H:i:s');
+            $req_id = 'REQ-' . now()->format('YmdHis') . '-' . Str::random(6);
+            
+            if($request->store_name == "Khushi Connect"){
+                $url = 'https://khushiconnect.com/api/add-wallet-transfer-amount';
+            }else{
+                $url = 'https://novapay.pk/api/add-wallet-transfer-amount';
+            }
+            $response = Http::timeout(10)->post($url, [
+                'date'        => $date,
+                'time'        => $time,
+                'user_id'     => $item->user_id,
+                'req_id'      => $req_id,
+                'store_name'  => $request->store_name,
+                'from_store_name' => "Monotech",
+                'trans_amount'=> $request->wallet_transfer,
+            ]);
+    
+            $result = $response->json();
+
+            if ($result['status'] == 'success') {
+
+                WalletTransfer::create([
+                    'date'        => now()->format('Y-m-d'),
+                    'time'        => now()->format('H:i:s'),
+                    'user_id'     => $item->user_id,
+                    'req_id'      => 'REQ-' . now()->format('YmdHis') . '-' . Str::random(6),
+                    'store_name'  => $request->store_name,
+                    'trans_amount'=> $request->wallet_transfer,
+                ]);
+
+            }
+        }
+        if($request->store_name == "None"){
+            WalletTransfer::create([
+                'date'        => now()->format('Y-m-d'),
+                'time'        => now()->format('H:i:s'),
+                'user_id'     => $item->user_id,
+                'req_id'      => 'REQ-' . now()->format('YmdHis') . '-' . Str::random(6),
+                'store_name'  => $request->store_name,
+                'trans_amount'=> $request->wallet_transfer,
+            ]);
+        }
+        if(auth()->user()->id == 16){
+            $item = Settlement::findOrFail($request->id);
+            $totalUsdt = $item->usdt_pnl_amount+$request->usdt;
+            $item->usdt_pnl_amount = $totalUsdt;
+        } else{
+            $item = Settlement::findOrFail($request->id);
+            $totalUsdt = $item->usdt+$request->usdt;
+            $todayWalletTrans = $item->wallet_transfer+$request->wallet_transfer;
+            $item->usdt = $totalUsdt;
+            $item->wallet_transfer = $todayWalletTrans;
+            $item->settled = $item->settled+$totalUsdt+$todayWalletTrans;
+        }
+        $item->save();
     }
 }
