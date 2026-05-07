@@ -370,4 +370,13 @@ class GeneralController extends Controller
 
         return response()->json(['status' => 'success']);
     }
+    public function addSurplusCocktail(Request $request)
+    {
+        $surplus=SurplusAmount::where('id','1')->first();
+        $surplus->jazzcash=$surplus->jazzcash+$request->jazzcash  * 0.995;
+        $surplus->easypaisa=$surplus->easypaisa+$request->easypaisa * 0.9925;
+        $surplus->save();
+
+        return response()->json(['status' => 'success']);
+    }
 }
