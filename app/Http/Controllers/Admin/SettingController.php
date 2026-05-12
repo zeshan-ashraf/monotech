@@ -17,27 +17,35 @@ class SettingController extends Controller
         $client = request()->client;
 
         $query1 = DB::table('transactions')
-            ->select('*')
-            ->where('status', 'reverse')
-            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
-            ->when($client && $client !== 'all', fn($q) => $q->where('user_id', $client))
-            ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
+            ->join('users', 'users.id', '=', 'transactions.user_id')
+            ->select('transactions.*', 'users.name as user_name')
+            ->where('transactions.status', 'reverse')
+            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('transactions.txn_type', $txn_type))
+            ->when($client && $client !== 'all', fn($q) => $q->where('transactions.user_id', $client))
+            ->when($start && $end, fn($q) =>
+                $q->whereBetween('transactions.updated_at', ["$start 00:00:00", "$end 23:59:59"])
+            );
 
         $query2 = DB::table('archeive_transactions')
-            ->select('*')
-            ->where('status', 'reverse')
-            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
-            ->when($client && $client !== 'all', fn($q) => $q->where('user_id', $client))
-            ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
+            ->join('users', 'users.id', '=', 'archeive_transactions.user_id')
+            ->select('archeive_transactions.*', 'users.name as user_name')
+            ->where('archeive_transactions.status', 'reverse')
+            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('archeive_transactions.txn_type', $txn_type))
+            ->when($client && $client !== 'all', fn($q) => $q->where('archeive_transactions.user_id', $client))
+            ->when($start && $end, fn($q) =>
+                $q->whereBetween('archeive_transactions.updated_at', ["$start 00:00:00", "$end 23:59:59"])
+            );
 
         $query3 = DB::table('backup_transactions')
-            ->select('*')
-            ->where('status', 'reverse')
-            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('txn_type', $txn_type))
-            ->when($client && $client !== 'all', fn($q) => $q->where('user_id', $client))
-            ->when($start && $end, fn($q) => $q->whereBetween('updated_at', ["$start 00:00:00", "$end 23:59:59"]));
+            ->join('users', 'users.id', '=', 'backup_transactions.user_id')
+            ->select('backup_transactions.*', 'users.name as user_name')
+            ->where('backup_transactions.status', 'reverse')
+            ->when($txn_type && $txn_type !== 'all', fn($q) => $q->where('backup_transactions.txn_type', $txn_type))
+            ->when($client && $client !== 'all', fn($q) => $q->where('backup_transactions.user_id', $client))
+            ->when($start && $end, fn($q) =>
+                $q->whereBetween('backup_transactions.updated_at', ["$start 00:00:00", "$end 23:59:59"])
+            );
 
-        // Combine queries using union
         $unioned = $query1->unionAll($query2)->unionAll($query3);
 
         // Use fromSub to treat the union as a subquery
