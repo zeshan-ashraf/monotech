@@ -17,6 +17,7 @@ return [
 
     'excluded_emails' => [
         'piqpay@monotech.com',
+        'bigpay@monotech.com',
     ],
 
 ];

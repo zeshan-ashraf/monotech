@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Jobs\SendPayoutCallbackJob;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -79,11 +80,11 @@ class PayoutController extends Controller
                 'client_ip' => $request->ip(),
                 'client_email' => $request->client_email,
             ]);
-            $response = Http::timeout(60)->post($url, $call_data);
-            $this->logger->info('Callback response for duplicate order', [
+            SendPayoutCallbackJob::dispatch($url, $call_data, $requestId, 'duplicate_order');
+            $this->logger->info('Queued callback for duplicate order', [
                 'request_id' => $requestId,
-                'response_status' => $response->status(),
-                'response_body' => $response->json()
+                'callback_url' => $url,
+                'callback_data' => $call_data,
             ]);
             return response()->json([
                 'status' => 'error',
@@ -123,7 +124,7 @@ class PayoutController extends Controller
                         'message' => 'Your payout cannot be processed due to not enough balance , please try again.',
                         'status' => 'failed',
                     ];
-                    $response = Http::timeout(60)->post($url, $call_data);
+                    SendPayoutCallbackJob::dispatch($url, $call_data, $requestId, 'merchant_limit_breached');
                     return response()->json([
                         'status' => 'error',
                         'message' => 'Merchant assigned limit breached',
@@ -307,13 +308,13 @@ class PayoutController extends Controller
                         $setting->payout_balance -= $amount;
                         $setting->save();
                     }
-                    $response = Http::timeout(60)->post($url, $call_data); // increased timeout
+                    SendPayoutCallbackJob::dispatch($url, $call_data, $requestId, 'easypaisa_success');
     
-                    $this->logger->info('Callback response received', [
+                    $this->logger->info('Queued success callback', [
                         'request_id' => $requestId,
-                        'response_status' => $response->status(),
+                        'callback_url' => $url,
+                        'callback_data' => $call_data,
                         'total_api_execution_time' => microtime(true) - $apiStartTime,
-                        'response_body' => $response->json()
                     ]);
 
                     return response()->json([
@@ -340,11 +341,11 @@ class PayoutController extends Controller
                         'callback_url' => $url,
                         'callback_data' => $call_data
                     ]);
-                    $response = Http::timeout(60)->post($url, $call_data);
-                    $this->logger->info('Callback response received', [
+                    SendPayoutCallbackJob::dispatch($url, $call_data, $requestId, 'easypaisa_failed');
+                    $this->logger->info('Queued failure callback', [
                         'request_id' => $requestId,
-                        'response_status' => $response->status(),
-                        'response_body' => $response->json()
+                        'callback_url' => $url,
+                        'callback_data' => $call_data,
                     ]);
                     return response()->json([
                         'status' => 'error',
@@ -557,7 +558,9 @@ class PayoutController extends Controller
                         Log::debug('*******unable to update wallet');
                         
                     }
-                    $response = Http::timeout(60)->post($call_url, $call_data); // increased timeout
+                    //$response = Http::timeout(60)->post($call_url, $call_data); // increased timeout, for refrence what was implemented before 
+                    // implemented callback job instead of http request
+                    SendPayoutCallbackJob::dispatch($call_url, $call_data, $requestId, 'jazzcash_success');
                     
                     $this->logger->info('Callback response received', [
                         'request_id' => $requestId,
@@ -589,11 +592,11 @@ class PayoutController extends Controller
                         'callback_url' => $url,
                         'callback_data' => $call_data
                     ]);
-                    $response = Http::timeout(60)->post($url, $call_data);
-                    $this->logger->info('Callback response received', [
+                    SendPayoutCallbackJob::dispatch($url, $call_data, $requestId, 'jazzcash_failed');
+                    $this->logger->info('Queued failure callback', [
                         'request_id' => $requestId,
-                        'response_status' => $response->status(),
-                        'response_body' => $response->json()
+                        'callback_url' => $url,
+                        'callback_data' => $call_data,
                     ]);
                     return response()->json([
                         'status' => 'error',
