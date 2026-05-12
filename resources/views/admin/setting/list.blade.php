@@ -117,8 +117,8 @@
                                             @foreach($list as $item)
                                             <tr>
                                                 <td>{{$loop->iteration}}</td>
-                                                <td>{{$item->user_id}}</td>
                                                 <td>{{$item->orderId}}</td>
+                                                <td>{{$item->user_id}}</td>
                                                 <td>{{$item->phone}}</td>
                                                 <td>{{$item->transactionId}}</td>
                                                 <td>{{$item->txn_ref_no}}</td>
