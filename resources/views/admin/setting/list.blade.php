@@ -102,6 +102,7 @@
                                             <tr>
                                                 <th>#</th>
                                                 <th>Order Id</th>
+                                                <th>Client</th>
                                                 <th>Phone</th>
                                                 <th>Transaction Id</th>
                                                 <th>Transaction Ref No</th>
@@ -116,6 +117,7 @@
                                             @foreach($list as $item)
                                             <tr>
                                                 <td>{{$loop->iteration}}</td>
+                                                <td>{{$item->user->name}}</td>
                                                 <td>{{$item->orderId}}</td>
                                                 <td>{{$item->phone}}</td>
                                                 <td>{{$item->transactionId}}</td>
