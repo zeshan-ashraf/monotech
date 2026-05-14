@@ -10,6 +10,7 @@
         <input type="hidden" name="id" value="{{$item->id ?? ""}}">
         <div class="modal-body">
             <div class="row">
+                @if(auth()->user()->user_role == "Super Admin")
                 <div class="col-md-12">
                     <label>Previous USDT</label>
                     <input class="form-control title_box" name="previous_usdt" value="{{$item->usdt ?? ""}}" required readonly type="text">
@@ -18,6 +19,7 @@
                     <label>USDT</label>
                     <input class="form-control title_box" name="usdt" value="0" required type="text">
                 </div>
+                @endif
                 <div class="col-md-12">
                     <label>Previous Wallet Transfer</label>
                     <input class="form-control title_box" name="wallet_transfer" value="{{$item->wallet_transfer ?? ""}}" required readonly type="text">
