@@ -147,9 +147,9 @@ class SettlementController extends Controller
     }
     public function store(Request $request)
     {
-        $request->validate([
-            'usdt'=>'required',
-        ]);
+        // $request->validate([
+        //     'usdt'=>'required',
+        // ]);
 
         $item = Settlement::findOrFail($request->id);
         if($request->wallet_transfer > 0 && $request->store_name != "None"){

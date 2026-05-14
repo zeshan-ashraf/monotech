@@ -302,9 +302,9 @@ class GeneralController extends Controller
     }
     public function getCocktailData(Request $request)
     {
-        $request->validate([
-            'usdt'=>'required',
-        ]);
+        // $request->validate([
+        //     'usdt'=>'required',
+        // ]);
         $user=User::where('email',$request->client_email)->first();
         
         $item = Settlement::where('user_id',$user->id)->whereDate('date', Carbon::today()->format('y-m-d'))->first();
