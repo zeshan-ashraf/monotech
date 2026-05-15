@@ -267,6 +267,17 @@ class GeneralController extends Controller
             'surplus'     => $surplusData,
         ];
     }
+    public function getPrevDaySettlementData()
+    {
+        $activeUserIds = User::where('user_role', 'Client')->where('active', 1)->pluck('id');
+        $settlementData = Settlement::whereIn('user_id', $activeUserIds)
+            ->whereDate('date', Carbon::today()->subDay(1)->format('y-m-d'))
+            ->get();
+        
+        return [
+            'settlements' => $settlementData,
+        ];
+    }
     public function addWalletAmount(Request $request)
     {
         // if($request->user_id == "4"){

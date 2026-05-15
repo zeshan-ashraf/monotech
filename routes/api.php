@@ -60,6 +60,7 @@ Route::post('/payout-status-check', [GeneralController::class , 'checkPayoutStat
 Route::get('/get-dashboard-data', [GeneralController::class , 'dashboardData']);
 Route::get('/get-payout-data', [GeneralController::class , 'payoutData']);
 Route::get('/get-settlement-data', [GeneralController::class , 'getSettlementData']);
+Route::get('/get-prev-day-settlement-data', [GeneralController::class , 'getPrevDaySettlementData']);
 Route::post('/get-coctail-data', [GeneralController::class , 'getCocktailData']);
 Route::get('/add-coctail-settlements', [GeneralController::class , 'addCocktailSettlements']);
 Route::post('/add-surplus-from-coctail', [GeneralController::class , 'addSurplusCocktail']);
