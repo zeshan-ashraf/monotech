@@ -288,7 +288,7 @@ class GeneralController extends Controller
         // }
 
         if ($request->from_store_name == "Khushi Connect") {
-            $userId = $request->user_id == "4" ? 2 : ($request->user_id == "7" ? 36 : null);
+            $userId = $request->user_id == "4" ? 2 : ($request->user_id == "3" ? 4 : null);
         } else {
             $userId = $request->user_id == "19" ? 2 : ($request->user_id == "36" ? 4 : null);
         }
