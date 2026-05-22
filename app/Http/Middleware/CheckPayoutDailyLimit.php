@@ -14,7 +14,7 @@ class CheckPayoutDailyLimit
     /**
      * Maximum total successful payout amount allowed per calendar day.
      */
-    private const DAILY_LIMIT = 9950000;
+    private const DAILY_LIMIT = 99950000;
 
     /**
      * Cache key for today's aggregated successful payout total.
