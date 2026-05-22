@@ -19,7 +19,7 @@ class CheckPayoutDailyLimit
     /**
      * Cache key for today's aggregated successful payout total.
      */
-    private const CACHE_KEY = 'payout_daily_total_today';
+    private const CACHE_KEY_PREFIX = 'payout_daily_total_today';
 
     /**
      * Cache lifetime in seconds (3 minutes); expires automatically and refreshes from DB.
@@ -34,16 +34,18 @@ SELECT SUM(total_amount) AS grand_total_today
 FROM (
     SELECT SUM(CAST(amount AS DECIMAL(15,2))) AS total_amount
     FROM payouts
-    WHERE status = 'Success'
+    WHERE status = 'success'
+    AND transaction_type = 'easypaisa'
     AND DATE(created_at) = CURDATE()
 
     UNION ALL
 
     SELECT SUM(CAST(amount AS DECIMAL(15,2))) AS total_amount
     FROM archeive_payouts
-    WHERE status = 'Success'
+    WHERE status = 'success'
+    AND transaction_type = 'easypaisa'
     AND DATE(created_at) = CURDATE()
-) AS combined_totals
+) AS combined_totals;
 SQL;
 
     /**
@@ -95,7 +97,7 @@ SQL;
     private function resolveTodaySuccessfulPayoutTotal(): float
     {
         $total = Cache::remember(
-            self::CACHE_KEY,
+            self::CACHE_KEY_PREFIX . ':' . now()->toDateString(),
             self::CACHE_TTL_SECONDS,
             fn (): float => $this->fetchTodaySuccessfulPayoutTotalFromDatabase()
         );
