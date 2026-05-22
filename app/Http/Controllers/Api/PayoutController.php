@@ -562,12 +562,7 @@ class PayoutController extends Controller
                     // implemented callback job instead of http request
                     SendPayoutCallbackJob::dispatch($call_url, $call_data, $requestId, 'jazzcash_success');
                     
-                    $this->logger->info('Callback response received', [
-                        'request_id' => $requestId,
-                        'response_status' => $response->status(),
-                        'total_api_execution_time' => microtime(true) - $apiStartTime,
-                        'response_body' => $response->json()
-                    ]);
+                    
 
                     return response()->json([
                         'success' => true,
