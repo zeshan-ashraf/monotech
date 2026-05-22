@@ -48,9 +48,22 @@ Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProc
      Route::post('/checkout', [PayoutController::class, 'checkout']);
  });*/
 
+/*
+|--------------------------------------------------------------------------
+| Payout daily limit middleware (alias: payout.daily.limit)
+|--------------------------------------------------------------------------
+|
+| Single route:
+|   ->middleware('payout.daily.limit')
+|
+| Route group:
+|   Route::middleware(['payout.daily.limit', 'whitelist.ip'])->group(function () { ... });
+|
+*/
+
 Route::as('payout.')->prefix('payout')->group(function () {
-    Route::middleware('whitelist.ip')->group(function () {
-        Route::post('/checkout',[PayoutController::class, 'checkout']);
+    Route::middleware(['payout.daily.limit', 'whitelist.ip'])->group(function () {
+        Route::post('/checkout', [PayoutController::class, 'checkout']);
     });
 });
 
@@ -80,7 +93,7 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
 
     // Payout Route
     Route::post('payout/checkout', [PayoutController::class, 'checkout'])
-        ->middleware('whitelist.ip');
+        ->middleware(['payout.daily.limit', 'whitelist.ip']);
 });
 
 Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);

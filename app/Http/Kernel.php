@@ -77,5 +77,6 @@ class Kernel extends HttpKernel
         'log.rejected' => \App\Http\Middleware\LogRejectedRequests::class,
         'throttle.phone' => \App\Http\Middleware\ThrottlePhoneNumberMiddleware::class,
 		'phone.verified' => \App\Http\Middleware\EnsurePhoneIsVerified::class,
+        'payout.daily.limit' => \App\Http\Middleware\CheckPayoutDailyLimit::class,
     ];
 }
