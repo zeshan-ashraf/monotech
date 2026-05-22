@@ -159,10 +159,10 @@
                                 data-feather="settings"></i>Setting</a>
                     </li>
                 @endif
-                <li class="nav-item">
+                {{--<li class="nav-item">
                     <a class="d-flex align-items-center" href="#" onclick="logout();">
                         <i data-feather="log-out"></i>Logout</a>
-                </li>
+                </li>--}}
             @else
                 <li class="@if(url()->current() == route('admin.zig_dashboard')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.zig_dashboard') }}">
