@@ -11,7 +11,7 @@
 
 <!--start wrapper-->
 <div class="wrapper">
-   {{--@include('admin.layout.include.header')--}}
+   @include('admin.layout.include.header')
    @include('admin.layout.include.sidebar')
    @yield('content')
    @include('admin.layout.include.footer')
