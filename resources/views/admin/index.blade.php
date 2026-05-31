@@ -495,13 +495,13 @@
                     </div>
                 @endif
                 
-                @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 14)
-                    <div class="row d-none">
+                @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 23)
+                    <div class="row mt-1">
                         <div class="col-md-3">
                             <div class="card shadow-lg card-graph">
                                 <div class="card-body">
-                                    <h5 class="card-title font-weight-bold">Money Success Rate</h5>
-                                    <div id="moneySRChart" style="margin-top: -40px;"></div>
+                                    <h5 class="card-title font-weight-bold">Jack JazzCash Success Rate</h5>
+                                    <div id="jackJcSRChart" style="margin-top: -30px;"></div>
                                 </div>
                             </div>
                         </div>
@@ -509,22 +509,29 @@
                         <div class="col-md-3">
                             <div class="card card-graph-red">
                                 <div class="card-header">
-                                    <h5 class="card-title font-weight-bold">Money JazzCash Pending Orders</h5>
+                                    <h5 class="card-title font-weight-bold">Jack JazzCash Pending Orders</h5>
                                 </div>
-                                <div class="card-body" style="margin-top: -40px;">
-                                    <div id="jazzCashChartMoney"></div>
+                                <div class="card-body" style="margin-top: -30px;">
+                                    <div id="jazzCashChartJack"></div>
                                 </div>
                             </div>
                         </div>
-                    
+                        <div class="col-md-3">
+                            <div class="card shadow-lg card-graph">
+                                <div class="card-body">
+                                    <h5 class="card-title font-weight-bold">Jack Easypaisa Success Rate</h5>
+                                    <div id="jackEpSRChart" style="margin-top: -30px;"></div>
+                                </div>
+                            </div>
+                        </div>
                         <!-- Easypaisa Chart -->
                         <div class="col-md-3">
                             <div class="card card-graph-green">
                                 <div class="card-header text-center">
-                                    <h5 class="card-title font-weight-bold">Money Easypaisa Pending Orders</h5>
+                                    <h5 class="card-title font-weight-bold">Jack Easypaisa Pending Orders</h5>
                                 </div>
-                                <div class="card-body" style="margin-top: -40px;">
-                                    <div id="easypaisaChartMoney"></div>
+                                <div class="card-body" style="margin-top: -30px;">
+                                    <div id="easypaisaChartJack"></div>
                                 </div>
                             </div>
                         </div>
@@ -544,8 +551,8 @@ document.addEventListener("DOMContentLoaded", function () {
     var pkNEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 5) {{ round(srCount(5,"easypaisa"), 2) }} @else 0 @endif;
     var okJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 2) {{ round(srCount(2,"jazzcash"), 2) }} @else 0 @endif;
     var okEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 2) {{ round(srCount(2,"easypaisa"), 2) }} @else 0 @endif;
-    var moneyJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 14) {{ round(srCount(14,"jazzcash"), 2) }} @else 0 @endif;
-    var moneyEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 14) {{ round(srCount(14,"easypaisa"), 2) }} @else 0 @endif;
+    var jackJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 23) {{ round(srCount(23,"jazzcash"), 2) }} @else 0 @endif;
+    var jackEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 23) {{ round(srCount(23,"easypaisa"), 2) }} @else 0 @endif;
 
     function createSemiCircleChart(containerId, value, color) {
         var options = {
@@ -580,8 +587,8 @@ document.addEventListener("DOMContentLoaded", function () {
     createSemiCircleChart("okEpSRChart", okEpSR, "#FF4500");
     createSemiCircleChart("piqJcSRChart", piqJcSR, "#FF4500");
     createSemiCircleChart("piqEpSRChart", piqEpSR, "#FF4500");
-    createSemiCircleChart("moneyJcSRChart", moneyJcSR, "#FF4500");
-    createSemiCircleChart("moneyEpSRChart", moneyEpSR, "#FF4500");
+    createSemiCircleChart("jackJcSRChart", jackJcSR, "#FF4500");
+    createSemiCircleChart("jackEpSRChart", jackEpSR, "#FF4500");
 });
 </script>
 
@@ -637,10 +644,10 @@ document.addEventListener("DOMContentLoaded", function () {
         renderChart("#easypaisaChartPkN", {{ $epPkNPendingOrder }}, "EP Pending", "#28C76F");
         
         // JazzCash OK Pending
-        renderChart("#jazzCashChartMoney", {{ $jcMoneyPendingOrder }}, "JC Pending", "#FF5733");
+        renderChart("#jazzCashChartJack", {{ $jcJackPendingOrder }}, "JC Pending", "#FF5733");
 
         // Easypaisa OK Pending
-        renderChart("#easypaisaChartMoney", {{ $epMoneyPendingOrder }}, "EP Pending", "#28C76F");
+        renderChart("#easypaisaChartJack", {{ $epJackPendingOrder }}, "EP Pending", "#28C76F");
     });
 </script>
 <script>

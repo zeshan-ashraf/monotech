@@ -159,15 +159,15 @@ class DashboardController extends Controller
             ['txn_type', 'easypaisa']
         ])->count();
         
-        $jcMoneyPendingOrder = Transaction::where([
+        $jcJackPendingOrder = Transaction::where([
             ['status', 'pending'],
-            ['user_id', '14'],
+            ['user_id', '23'],
             ['txn_type', 'jazzcash']
         ])->count();
         
-        $epMoneyPendingOrder = Transaction::where([
+        $epJackPendingOrder = Transaction::where([
             ['status', 'pending'],
-            ['user_id', '14'],
+            ['user_id', '23'],
             ['txn_type', 'easypaisa']
         ])->count();
         
