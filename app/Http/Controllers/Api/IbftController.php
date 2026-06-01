@@ -100,52 +100,15 @@ class IbftController extends Controller
             ]);
             
             $response = curl_exec($curl);
-
-            if ($response === false) {
-                $this->dumpCurlDiagnostics('ibft_inquiry', $curl, $response, [
-                    'configured_url' => $transactionUrl,
-                ]);
-            }
-
-            $inquiryHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
             curl_close($curl);
-
-            $decodeData = json_decode($response, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                dd([
-                    'step' => 'ibft_inquiry_json_decode',
-                    'json_error' => json_last_error_msg(),
-                    'http_code' => $inquiryHttpCode,
-                    'raw_response' => $response,
-                ]);
-            }
-
-            if (! isset($decodeData['data'])) {
-                dd([
-                    'step' => 'ibft_inquiry_missing_data_key',
-                    'http_code' => $inquiryHttpCode,
-                    'decoded_response' => $decodeData,
-                    'raw_response' => $response,
-                ]);
-            }
-
-            $decrptionData = $this->decrytionFunc($decodeData['data']);
-            $data = json_decode($decrptionData, true);
-
-            if ($data['responseCode'] == 'G2P-T-0') {
-                $encryptionIbftData = $this->encryptionIbftFunc($data);
-                $transactionConfirmUrl = env('JAZZCASH_MATOIBFTCONFIRM_URL');
-
-                if (empty($transactionConfirmUrl)) {
-                    dd([
-                        'step' => 'ibft_confirm_env',
-                        'error' => 'JAZZCASH_MATOIBFTCONFIRM_URL is empty or not set in .env',
-                        'hint' => 'Run: php artisan config:clear after updating .env',
-                    ]);
-                }
-
-                $confirmPayload = json_encode(['data' => $encryptionIbftData]);
-
+            $decodeData=json_decode($response, true);
+            $decrptionData=$this->decrytionFunc($decodeData['data']);
+            $data=json_decode($decrptionData, true);
+            // dd($data);
+            if($data['responseCode'] == "G2P-T-0"){
+                $encryptionIbftData=$this->encryptionIbftFunc($data);
+                $transactionConfirmUrl=env('JAZZCASH_MATOIBFTCONFIRM_URL');
+                // dd($encryptionIbftData,$transactionConfirmUrl);
                 $curl_new = curl_init();
                 curl_setopt_array($curl_new, [
                     CURLOPT_URL => $transactionConfirmUrl,
@@ -156,59 +119,22 @@ class IbftController extends Controller
                     CURLOPT_FOLLOWLOCATION => true,
                     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                     CURLOPT_CUSTOMREQUEST => 'POST',
-                    CURLOPT_POSTFIELDS => $confirmPayload,
+                    CURLOPT_POSTFIELDS => json_encode([
+                        "data" => $encryptionIbftData,
+                    ]),
                     CURLOPT_HTTPHEADER => [
                         'Accept: application/json',
                         'Content-Type: application/json',
                         "Authorization: Bearer $token",
                     ],
                 ]);
-
-                $confirmResponse = curl_exec($curl_new);
-
-                $confirmDebug = $this->buildCurlDiagnostics('ibft_confirm', $curl_new, $confirmResponse, [
-                    'configured_url' => $transactionConfirmUrl,
-                    'inquiry_response' => $data,
-                    'confirm_plain_payload' => [
-                        'Init_transactionID' => $data['transactionID'] ?? null,
-                        'referenceID' => '(generated in encryptionIbftFunc)',
-                    ],
-                    'encrypted_payload_length' => strlen($encryptionIbftData),
-                    'post_body_length' => strlen($confirmPayload),
-                    'token_prefix' => substr($token, 0, 20) . '...',
-                ]);
-
-                $this->logger->info('IBFT confirm curl diagnostics', $confirmDebug);
-
-                if ($confirmResponse === false) {
-                    dd($confirmDebug);
-                }
-
-                $confirmHttpCode = curl_getinfo($curl_new, CURLINFO_HTTP_CODE);
+                $response = curl_exec($curl_new);
+                dd($response);
                 curl_close($curl_new);
-
-                $confirmDebug['http_code'] = $confirmHttpCode;
-                $confirmDebug['raw_response'] = $confirmResponse;
-
-                $decodeData = json_decode($confirmResponse, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    dd(array_merge($confirmDebug, [
-                        'decode_error' => json_last_error_msg(),
-                    ]));
-                }
-
-                if (! isset($decodeData['data'])) {
-                    dd(array_merge($confirmDebug, [
-                        'decoded_response' => $decodeData,
-                    ]));
-                }
-
-                $decrptionData = $this->decrytionFunc($decodeData['data']);
-                $data = json_decode($decrptionData, true);
-
-                dd(array_merge($confirmDebug, [
-                    'decrypted_confirm_response' => $data,
-                ]));
+                $decodeData=json_decode($response, true);
+                $decrptionData=$this->decrytionFunc($decodeData['data']);
+                $data=json_decode($decrptionData, true);
+                dd($data);
             }
             $values=[
                 'user_id' => $user->id,
@@ -362,35 +288,5 @@ class IbftController extends Controller
         $decryptedData = openssl_decrypt($binaryData, 'AES-128-CBC', $decryptionKey, OPENSSL_RAW_DATA, $iv);
         
         return $decryptedData;
-    }
-
-    /**
-     * Build a diagnostic array for cURL failures (transport-level).
-     */
-    private function buildCurlDiagnostics(string $step, $curl, $response, array $extra = []): array
-    {
-        return array_merge([
-            'step' => $step,
-            'curl_succeeded' => $response !== false,
-            'curl_error' => curl_error($curl),
-            'curl_errno' => curl_errno($curl),
-            'http_code' => curl_getinfo($curl, CURLINFO_HTTP_CODE),
-            'effective_url' => curl_getinfo($curl, CURLINFO_EFFECTIVE_URL),
-            'total_time_seconds' => curl_getinfo($curl, CURLINFO_TOTAL_TIME),
-            'primary_ip' => curl_getinfo($curl, CURLINFO_PRIMARY_IP),
-            'ssl_verify_result' => curl_getinfo($curl, CURLINFO_SSL_VERIFYRESULT),
-            'response_preview' => is_string($response) ? substr($response, 0, 500) : null,
-        ], $extra);
-    }
-
-    /**
-     * Log and dump cURL diagnostics when curl_exec returns false.
-     */
-    private function dumpCurlDiagnostics(string $step, $curl, $response, array $extra = []): void
-    {
-        $debug = $this->buildCurlDiagnostics($step, $curl, $response, $extra);
-        curl_close($curl);
-        $this->logger->error("IBFT curl failed: {$step}", $debug);
-        dd($debug);
     }
 }
