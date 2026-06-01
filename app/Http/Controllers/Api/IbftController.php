@@ -129,7 +129,7 @@ class IbftController extends Controller
                     ],
                 ]);
                 $response = curl_exec($curl_new);
-                dd($response);
+                // dd($response);
                 curl_close($curl_new);
                 $decodeData=json_decode($response, true);
                 $decrptionData=$this->decrytionFunc($decodeData['data']);
