@@ -41,11 +41,12 @@ class DashboardController extends Controller
             $prevBal=Settlement::where('user_id', $userId)->whereDate('date', today()->subDay())->value('closing_bal') ?? 0;
             $settlement=Settlement::where('user_id', $userId)->whereDate('date', today())->first();
             
-            $epPayinAmount = $settlement->ep_payin;
-            $jcPayinAmount = $settlement->jc_payin;
-            $epPayoutAmount = $settlement->ep_payout;
-            $jcPayoutAmount = $settlement->jc_payout;
-            $rev_cln = $settlement->rev_cln;
+            $epPayinAmount = $settlement->ep_payin ?? 0;
+            $jcPayinAmount = $settlement->jc_payin ?? 0;
+            $epPayoutAmount = $settlement->ep_payout ?? 0;
+            $jcPayoutAmount = $settlement->jc_payout ?? 0;
+            
+            $rev_cln = $settlement->rev_cln ?? 0;
             $reverseAmount = $settlement->reverse_amount ?? 0;
             // if($userId == 2 || $userId == 18){
                 $payinSuccess= $epPayinAmount + $jcPayinAmount;
@@ -53,8 +54,8 @@ class DashboardController extends Controller
                 // $payinSuccess= $jcPayinAmount;
             // }
             $payoutSuccess= $epPayoutAmount + $jcPayoutAmount;
-            $prevUsdt= $settlement->usdt;
-            $prevWalletTrans= $settlement->wallet_transfer;
+            $prevUsdt= $settlement->usdt ?? 0;
+            $prevWalletTrans= $settlement->wallet_transfer ?? 0;
             $payinFee=$client->payin_fee;
             $payoutFee=$client->payout_fee;
             //getUnsettlement
@@ -63,7 +64,8 @@ class DashboardController extends Controller
             // } 
             $unsettletdAmount=$prevBal + $payinSuccess - ($payinSuccess*$payinFee + $payoutSuccess + $payoutSuccess*$payoutFee + $prevUsdt + $prevWalletTrans);
             $assignedAmount=Setting::where('user_id',$userId)->select('jazzcash','easypaisa','payout_balance')->first();
-            $balance= $unsettletdAmount - $assignedAmount->payout_balance ;
+            // $balance= $unsettletdAmount - $assignedAmount->payout_balance ;
+            $balance = $settlement->closing_bal ?? 0;
     
             $data[] = [ 
                 'user' => $client,
