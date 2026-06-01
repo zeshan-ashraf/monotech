@@ -108,9 +108,9 @@ class IbftController extends Controller
             if($data['responseCode'] == "G2P-T-0"){
                 $encryptionIbftData=$this->encryptionIbftFunc($data);
                 $transactionConfirmUrl=env('JAZZCASH_MATOIBFTCONFIRM_URL');
-                // dd($transactionUrl);
-                $curl = curl_init();
-                curl_setopt_array($curl, [
+                // dd($encryptionIbftData,$transactionConfirmUrl);
+                $curl_new = curl_init();
+                curl_setopt_array($curl_new, [
                     CURLOPT_URL => $transactionConfirmUrl,
                     CURLOPT_RETURNTRANSFER => true,
                     CURLOPT_ENCODING => '',
@@ -128,8 +128,9 @@ class IbftController extends Controller
                         "Authorization: Bearer $token",
                     ],
                 ]);
-                $response = curl_exec($curl);
-                curl_close($curl);
+                $response = curl_exec($curl_new);
+                dd($response);
+                curl_close($curl_new);
                 $decodeData=json_decode($response, true);
                 $decrptionData=$this->decrytionFunc($decodeData['data']);
                 $data=json_decode($decrptionData, true);
@@ -236,14 +237,15 @@ class IbftController extends Controller
     }
     public function encryptionFunc($data)
     {
+        $phone = preg_replace('/^92/', '0', $data['phone']);
         $DateTime 		= new \DateTime();
 		$pp_TxnDateTime = $DateTime->format('YmdHis');
 		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
 		
         $encodeData = json_encode([
-            "receiverMSISDN" => $data['phone'],
+            "receiverMSISDN" => $phone,
             "amount" => $data['amount'],
-            "bankAccountNumber" => $data['phone'],
+            "bankAccountNumber" => $phone,
             "bankCode" => "59",
             "referenceId" => $pp_TxnRefNo
         ]);
