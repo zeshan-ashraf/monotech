@@ -213,7 +213,7 @@ class IbftController extends Controller
         $encodeData = json_encode([
             "receiverMSISDN" => $data['phone'],
             "amount" => $data['amount'],
-            "bankAccountNumber" => $data['phone'],
+            "bankAccountNumber" => "PK28TMFB0000000052060606",
             "bankCode" => "59",
             "referenceId" => $pp_TxnRefNo
         ]);
