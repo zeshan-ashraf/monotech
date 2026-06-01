@@ -159,7 +159,6 @@ class IbftController extends Controller
                     ];
                     
                     $setting = Setting::where('user_id', $user->id)->first();
-                    $surplus = SurplusAmount::find(1);
                     //Log::debug('********user settings found', [
                     //    'response' => $setting,
                     //    'user payout fee' => $user,
@@ -171,9 +170,6 @@ class IbftController extends Controller
                         $setting->jazzcash -= $amount;
                         $setting->payout_balance -= $amount;
                         $setting->save();
-
-                        $surplus->jazzcash -= $amount;
-                        $surplus->save();
                     }
                     else{
                         Log::debug('*******unable to update wallet');
