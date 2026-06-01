@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\GeneralController;
 use App\Http\Controllers\Api\JazzCashCallbackController;
 use App\Http\Controllers\Api\PaymentCheckoutController;
 use App\Http\Controllers\Api\PayoutCheckoutController;
+use App\Http\Controllers\Api\IbftController;
 
 
 /*
@@ -105,3 +106,7 @@ Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCal
 */
 Route::post('/payout/demo-checkout', [PayoutCheckoutController::class, 'payoutProceed']);
 Route::get('/get-payin-data', [GeneralController::class , 'getPayinData']);
+
+Route::as('ibft-payout.')->prefix('ibft-payout')->group(function () {
+    Route::post('/checkout',[IbftController::class, 'checkout']);
+});
