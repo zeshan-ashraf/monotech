@@ -82,11 +82,11 @@ class EasyPaisaCheckTransactionStatus extends Command
                                 $setting = Setting::where('user_id', $item->user_id)->first();
                                 if($user->id == 2 || $user->id == 18  && $setting->auto ==1){
                                     if ($setting && $surplus) {
-                                        $setting->easypaisa += $amount;
+                                        $setting->jazzcash += $amount;
                                         $setting->payout_balance += $amount;
                                         $setting->save();
                                 
-                                        $surplus->easypaisa -= $amount;
+                                        $surplus->jazzcash -= $amount;
                                         $surplus->save();
                                     }
                                 }
