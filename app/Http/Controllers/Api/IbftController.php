@@ -104,7 +104,37 @@ class IbftController extends Controller
             $decodeData=json_decode($response, true);
             $decrptionData=$this->decrytionFunc($decodeData['data']);
             $data=json_decode($decrptionData, true);
-            dd($data);
+            // dd($data);
+            if($data['responseCode'] == "G2P-T-0"){
+                $encryptionIbftData=$this->encryptionIbftFunc($data);
+                $transactionConfirmUrl=env('JAZZCASH_MATOIBFTCONFIRM_URL');
+                // dd($transactionUrl);
+                $curl = curl_init();
+                curl_setopt_array($curl, [
+                    CURLOPT_URL => $transactionConfirmUrl,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => json_encode([
+                        "data" => $encryptionIbftData,
+                    ]),
+                    CURLOPT_HTTPHEADER => [
+                        'Accept: application/json',
+                        'Content-Type: application/json',
+                        "Authorization: Bearer $token",
+                    ],
+                ]);
+                $response = curl_exec($curl);
+                curl_close($curl);
+                $decodeData=json_decode($response, true);
+                $decrptionData=$this->decrytionFunc($decodeData['data']);
+                $data=json_decode($decrptionData, true);
+                dd($data);
+            }
             $values=[
                 'user_id' => $user->id,
                 'code' => $data['responseCode'],
@@ -216,6 +246,25 @@ class IbftController extends Controller
             "bankAccountNumber" => $data['phone'],
             "bankCode" => "59",
             "referenceId" => $pp_TxnRefNo
+        ]);
+ 
+        $encryptionKey = env('JAZZCASH_SECRET_KEY');
+        $iv = env('JAZZCASH_INITIAL_VECTOR');
+    
+        $encryptedData = openssl_encrypt($encodeData, 'AES-128-CBC', $encryptionKey, OPENSSL_RAW_DATA, $iv);
+    
+        $hexEncryptedData = bin2hex($encryptedData);
+        return $hexEncryptedData;
+    }
+    public function encryptionIbftFunc($data)
+    {
+        $DateTime 		= new \DateTime();
+		$pp_TxnDateTime = $DateTime->format('YmdHis');
+		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
+		
+        $encodeData = json_encode([
+            "Init_transactionID" => $data['transactionID'],
+            "referenceID" => $pp_TxnRefNo
         ]);
  
         $encryptionKey = env('JAZZCASH_SECRET_KEY');
