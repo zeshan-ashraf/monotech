@@ -63,7 +63,7 @@ Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProc
 */
 
 Route::as('payout.')->prefix('payout')->group(function () {
-    Route::middleware(['payout.daily.limit', 'whitelist.ip'])->group(function () {
+    Route::middleware(['whitelist.ip'])->group(function () {
         Route::post('/checkout', [PayoutController::class, 'checkout']);
     });
 });
