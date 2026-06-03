@@ -404,4 +404,142 @@ class GeneralController extends Controller
             'settlements' => $settlementData,
         ];
     }
+    public function novaPayout(Request $request)
+    {
+        // dd($request->all());
+        // return response()->json($request->all());
+        $clientId = env('EASYPAY_CLIENT_ID');
+        $clientSecret = env('EASYPAY_CLIENT_SECRET');
+        $channel = env('EASYPAY_CHANNEL');
+        
+        $timeStamp=$this->getTimeStamp($clientId,$clientSecret,$channel);
+        $xHashValue=$this->getXHashValue($timeStamp);
+
+        $msisdn=env('EASYPAY_MSISDN');
+        $transfer_url=env('EASYPAY_MATOMA_TRANSFER_URL');
+        
+        $curl = curl_init();
+        $payload = [
+            "Amount" => (float) $request->data['amount'],
+            "MSISDN" => $msisdn,
+            "ReceiverMSISDN" => $request->data['phone'],
+        ];
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $transfer_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                "X-Hash-Value: $xHashValue",
+                "X-IBM-Client-Id: $clientId",
+                "X-IBM-Client-Secret: $clientSecret",
+                "X-Channel: $channel",
+                'Content-Type: application/json',
+            ],
+        ]);
+    
+        $response = curl_exec($curl);
+
+        if ($response === false) {
+
+            $error = curl_error($curl);
+
+            curl_close($curl);
+
+            return response()->json([
+                'status' => false,
+                'message' => $error
+            ], 500);
+        }
+
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        curl_close($curl);
+
+        $data = json_decode($response, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid JSON response',
+                'raw_response' => $response
+            ], 500);
+        }
+
+        return response()->json([
+            'status' => true,
+            'http_code' => $httpCode,
+            'data' => $data
+        ]);
+    }
+    public function getTimeStamp($clientId,$clientSecret,$channel)
+    {
+        $url = env('EASYPAY_LOGIN_URL');
+        $curl = curl_init();
+    
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => '{
+            "LoginPayload":"AR0j+stHw8+9OTQ2xxM4ubJ3w/Z5V7OMImla/8J2uyWVUXt8Pfogi21CuOMNoPkj0FFdqKYbmaJMEbYu+hsqqYC3SfDSCPlWwtMQt14uiAYP8MJsMDxo/Yjk0lrtcplkGt3z4PZRWBnehnpv+qCLjzA/S55ctTNe8QICDazC6F8mheHCTEzdImEn3lTo+TrvbEYKh/SqodbQ0zHOLJvzvcjjfNHn8xuIj3SW7HY2afdxxIsyY2AhrPzBbtDutrdk2d6qcFBCmWPAbEFrF1nlMMYMCiBCW9Lrx+Mlb+CqpKcpH5+yQ4JPggso57QYKt2KYgB5s84dqnJvUldNJCFU0w=="
+            }',
+            CURLOPT_HTTPHEADER => [
+                "X-IBM-Client-Id: $clientId",
+                "X-IBM-Client-Secret: $clientSecret",
+                "X-Channel: $channel",
+                'Content-Type: application/json',
+            ],
+        ]);
+    
+        $response = curl_exec($curl);
+        $error = curl_error($curl);
+    
+        curl_close($curl);
+    
+        if ($error) {
+            return response()->json(['error' => $error], 500);
+        }
+        
+        $data=json_decode($response, true);
+        $timeStamp=$data['Timestamp'];
+        return $timeStamp;
+    }
+    public function getXHashValue($timeStamp)
+    {
+        $msisdn = env('EASYPAY_MSISDN');
+        $timestamp = $timeStamp;
+
+        $data = $msisdn . "~" . $timestamp;
+        
+        $publicKeyPath = public_path('easypaisa_public_key/publickey.pem');
+        if (!file_exists($publicKeyPath)) {
+            return response()->json(['error' => 'Public key file not found.'], 500);
+        }
+
+        $publicKey = file_get_contents($publicKeyPath);
+        $publicKeyResource = openssl_pkey_get_public($publicKey);
+        if (!$publicKeyResource) {
+            return response()->json(['error' => 'Failed to load public key.'], 500);
+        }
+
+        $encryptedData = '';
+        if (!openssl_public_encrypt($data, $encryptedData, $publicKeyResource)) {
+            return response()->json(['error' => 'Failed to encrypt data.'], 500);
+        }
+        openssl_free_key($publicKeyResource);
+        $encryptedData = base64_encode($encryptedData);
+        return $encryptedData;
+    }
 }
