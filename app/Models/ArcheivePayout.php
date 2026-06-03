@@ -25,6 +25,7 @@ class ArcheivePayout extends Model
         'url',
         'request_detail',
         'transaction_id',
+        'ibft',
     ];
     
     public $timestamps = true;

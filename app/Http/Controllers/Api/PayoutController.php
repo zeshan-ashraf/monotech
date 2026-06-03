@@ -274,6 +274,7 @@ class PayoutController extends Controller
                     'message' => $data['ResponseMessage'],
                     'transaction_reference' => $data['TransactionReference'] ?? "",
                     'amount' => $request->amount,
+                    'ibft' => '0',
                     'orderId' => $request->orderId,
                     // 'fee' => $data['Fee'] ?? "",
                     'phone' => $request->phone,

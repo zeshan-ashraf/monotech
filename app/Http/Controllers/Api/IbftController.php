@@ -140,6 +140,7 @@ class IbftController extends Controller
                     'transaction_reference' => $data['referenceID'] ?? "",
                     'amount' => $request->amount,
                     'orderId' => $request->orderId,
+                    'ibft' => '1',
                     // 'fee' => $data['Fee'] ?? "",
                     'phone' => $request->phone,
                     'transaction_type' => $request->payout_method,

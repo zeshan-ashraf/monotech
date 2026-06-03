@@ -25,6 +25,7 @@ class Payout extends Model
         'url',
         'request_detail',
         'transaction_id',
+        'ibft',
     ];
     
     public function user()
