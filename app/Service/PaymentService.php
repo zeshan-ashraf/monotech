@@ -293,11 +293,11 @@ class PaymentService
                         $setting = Setting::where('user_id', $transaction->user_id)->first();
                         $surplus = SurplusAmount::find(1);
                         if ($setting && $surplus && $setting->auto ==1) {
-                            $setting->jazzcash += $amount;
+                            $setting->easypaisa += $amount;
                             $setting->payout_balance += $amount;
                             $setting->save();
                     
-                            $surplus->jazzcash -= $amount;
+                            $surplus->easypaisa -= $amount;
                             $surplus->save();
                         }
                     }

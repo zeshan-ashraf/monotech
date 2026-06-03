@@ -710,8 +710,8 @@ class PaymentServiceV1
                 $setting->jazzcash += $amount;
                 $surplus->jazzcash -= $amount;
             } else {
-                $setting->jazzcash += $amount;
-                $surplus->jazzcash -= $amount;
+                $setting->easypaisa += $amount;
+                $surplus->easypaisa -= $amount;
             }
             
             $setting->payout_balance += $amount;

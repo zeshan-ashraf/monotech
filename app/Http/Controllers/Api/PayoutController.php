@@ -165,7 +165,7 @@ class PayoutController extends Controller
             
             if($request->payout_method == "easypaisa"){
 
-                return app(IbftController::class)->checkout($request);
+                // return app(IbftController::class)->checkout($request);
 
                 $this->logger->info('Processing Easypaisa payout', [
                     'request_id' => $requestId,
