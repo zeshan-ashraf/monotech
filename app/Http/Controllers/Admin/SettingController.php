@@ -288,7 +288,7 @@ class SettingController extends Controller
         $list = User::where('user_role','client')->where('active',1)->get();
         $list2 = ScheduleSetting::where('txns_type','jazzcash')->get();
         $list3 = ScheduleSetting::where('txns_type','easypaisa')->get();
-        $payout_setting = PayoutSetting::all();
+        $payout_setting = PayoutSetting::first();
         $verificationUsers = User::where('user_role', 'client')
             ->select('id', 'name', 'email', 'new_user_verification')
             ->orderBy('name')
