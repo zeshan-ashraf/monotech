@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use DateTime;
 use DateTimeZone;
-use App\Models\{Transaction, Payout, User, Setting, SurplusAmount};
+use App\Models\{Transaction, Payout, User, Setting, SurplusAmount, PayoutSetting};
 
 class PayoutController extends Controller
 {
@@ -164,9 +164,10 @@ class PayoutController extends Controller
             }
             
             if($request->payout_method == "easypaisa"){
-
-                // return app(IbftController::class)->checkout($request);
-
+                $payout_setting = PayoutSetting::find(1);
+                if($payout_setting->type == 1){
+                    return app(IbftController::class)->checkout($request);
+                }
                 $this->logger->info('Processing Easypaisa payout', [
                     'request_id' => $requestId,
                     'amount' => $request->amount,
