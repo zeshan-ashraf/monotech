@@ -618,9 +618,12 @@ $(document).ready(function () {
         $.ajax({
             url: '{{ route("admin.setting.payout_setting") }}',
             type: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+            contentType: 'application/json',
             data: {
                 type: type,
-                _token: $('meta[name="csrf-token"]').attr('content')
             }
         });
     });
