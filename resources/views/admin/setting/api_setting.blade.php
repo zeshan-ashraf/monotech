@@ -622,9 +622,9 @@ $(document).ready(function () {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
             },
             contentType: 'application/json',
-            data: {
-                type: type,
-            }
+            data: JSON.stringify({
+                type: type
+            })
         });
     });
 </script>
