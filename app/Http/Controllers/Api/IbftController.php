@@ -160,17 +160,21 @@ class IbftController extends Controller
                     ];
                     
                     $setting = Setting::where('user_id', $user->id)->first();
+                    $surplus = SurplusAmount::find(1);
                     //Log::debug('********user settings found', [
                     //    'response' => $setting,
                     //    'user payout fee' => $user,
                     //]);
                     if ($setting && $user->per_payout_fee) {
-                        $rate = $user->per_payout_fee;
+                        $rate = 0.01;
+                        // $rate = $user->per_payout_fee;
                         $amount = $request->amount * $rate;
                     
-                        $setting->jazzcash -= $amount;
+                        $setting->easypaisa -= $amount;
                         $setting->payout_balance -= $amount;
                         $setting->save();
+                        $surplus->jazzcash-= $amount;
+                        $surplus->save();
                     }
                     else{
                         Log::debug('*******unable to update wallet');
