@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\{User, Summary, Setting,Settlement, ScheduleSetting,SurplusAmount,Transaction,ManualPayout};
+use App\Models\{User, Summary, Setting,Settlement, ScheduleSetting,SurplusAmount,Transaction,PayoutSetting};
 use Illuminate\Http\Request;
 use DB;
 
@@ -359,6 +359,17 @@ class SettingController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Payin limits reset to 0 successfully'
+        ]);
+    }
+    public function payoutSetting(Request $request)
+    {
+        $setting = PayoutSetting::first();
+
+        $setting->type = $request->type;
+        $setting->save();
+
+        return response()->json([
+            'success' => true
         ]);
     }
 }

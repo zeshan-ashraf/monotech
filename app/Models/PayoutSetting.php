@@ -8,4 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class PayoutSetting extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'type',
+    ];
 }

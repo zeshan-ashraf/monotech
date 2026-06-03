@@ -99,6 +99,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/manual_payout/detail/{id?}', [ManualPayoutController::class,'detail'])->name('detail');
         Route::get('easy-recipt/{id?}', [ManualPayoutController::class,'easyReceipt'])->name('easy_receipt');
         Route::get('jazz-recipt/{id?}', [ManualPayoutController::class,'jazzReceipt'])->name('jazz_receipt');
+        Route::post('payout/setting', [SettingController::class,'payoutSetting'])->name('payout_setting');
     });
     Route::as('settlement.')->prefix('settlement')->group(function () {
         // Unified route for all settlement types

@@ -63,6 +63,50 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header border-bottom d-flex justify-content-between">
+                                <h4 class="card-title text-capitalize">Payout Setting</h4>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="material-datatables">
+                                    <table class="table table-hover m-b-0 datatables" cellspacing="0" width="100%" style="width:100%">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Payout Setting</th>
+                                                <th>ON / OFF</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($list as $item)
+                                            <tr>
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>IBFT</td>    
+                                                <td>
+                                                    <div class="form-check form-switch">
+                                                        <input 
+                                                            class="form-check-input toggle-switch-payout" 
+                                                            type="checkbox" 
+                                                            @if($payout_setting->type == 1) checked @endif
+                                                        >
+                                                        <label class="form-check-label">
+                                                            <span class="status-label">
+                                                                {{ $payout_setting->type == 1 ? 'ON' : 'OFF' }}
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header border-bottom d-flex justify-content-between">
                                 <h4 class="card-title text-capitalize">Api Setting</h4>
                             </div>
                             <div class="card-body p-0">
@@ -563,6 +607,23 @@ $(document).ready(function () {
                     resetBtn.prop('disabled', false).text(originalText);
                 }
             });
+        });
+    });
+</script>
+<script>
+    $(document).on('change', '.toggle-switch-payout', function () {
+
+        let type = $(this).is(':checked') ? 1 : 0;
+
+        $(this).closest('.form-check').find('.status-label').text(type ? 'ON' : 'OFF');
+
+        $.ajax({
+            url: '{{ route("admin.setting.payout_setting") }}',
+            type: 'POST',
+            data: {
+                type: type,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }
         });
     });
 </script>
