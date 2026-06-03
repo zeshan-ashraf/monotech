@@ -37,7 +37,7 @@ class ReportGenerate extends Command
             $sumamry= Settlement::where('user_id',$user->id)->whereDate('date', Carbon::today()->format('y-m-d'))->first();
             if($sumamry){
                 // Get yesterday's closing balance
-                $closingBal = DB::table('settlements')
+                $preClosingBal = DB::table('settlements')
                     ->where('user_id', $user->id)
                     ->whereDate('date', Carbon::today()->subDay(1)->format('y-m-d'))
                     ->value('closing_bal');
@@ -109,25 +109,25 @@ class ReportGenerate extends Command
                     ->where('transaction_type', 'jazzcash')
                     ->whereDate('created_at', Carbon::today())
                     ->sum('amount');
-                
-                $payoutSumEP = DB::table('payouts')
-                    ->where('user_id', $user->id)
-                    ->where('status', 'success')
-                    ->where('transaction_type', 'easypaisa')
-                    ->whereDate('created_at', Carbon::today())
-                    ->sum('amount');
+
+                if($user->id == "24"){
+                    $url = 'https://novapay.pk/api/get-nova-payout';
+                    $response = Http::get($url);
+                    $data = $response->json();
+                    $payoutSumEP = $data['today_ok_ep_mono_payout'];
+                }else {
+                    $payoutSumEP = DB::table('payouts')
+                        ->where('user_id', $user->id)
+                        ->where('status', 'success')
+                        ->where('transaction_type', 'easypaisa')
+                        ->whereDate('created_at', Carbon::today())
+                        ->sum('amount');
+                }
 
                 $payinFeeJC = $user->payin_fee;
                 $payinFeeEP = $user->payin_ep_fee;
                 $PayoutFeeJC = $user->payout_fee;
                 $PayoutFeeEP = $user->payout_ep_fee;
-            
-                // Calculate balances
-                // if($user->id == 2 || $user->id == 18){
-                    $payinBal = $closingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
-                // }else{
-                //     $payinBal = $closingBal + $transactionSumJC - ($transactionSumJC * $payinFeeJC) - $transactionReverseHalf;
-                // }
 
                 $op_cln=($transactionSumJC + $transactionSumEP) * 0.015 + ($payoutSumJC + $payoutSumEP) * 0.0075 +  $transactionReverseHalf;
 
@@ -136,11 +136,18 @@ class ReportGenerate extends Command
                 $settleAmount = $payoutSumJC + $payoutSumEP + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) + $todayUsdt + $todayWalletTrans;
                 $pnl_amount=round($transactionSumJC * 0.01, 2);
                 $total_pnl_amount=$pnl_amount+$prev_pnl-$prev_usdt_pnl;
+                if($user->id == "24"){
+                    $payinBal = $payoutSumEP + ($payoutSumEP * 0.0075);
+                    $closingBal=$preClosingBal + $payinBal - $todayUsdt;
+                } else {
+                    $payinBal = $preClosingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
+                    $closingBal=$payinBal - $settleAmount;
+                }
                 // Create a summary for the user
                 $sumamry->update([
                     'date' => Carbon::today()->format('y-m-d'),
                     'user_id' => $user->id,
-                    'opening_bal'  => $closingBal,
+                    'opening_bal'  => $preClosingBal,
                     'jc_payin' => $transactionSumJC,
                     'ep_payin' => $transactionSumEP,
                     'jc_payin_fee' => $transactionSumJC * $payinFeeJC,
@@ -156,7 +163,7 @@ class ReportGenerate extends Command
                     'usdt' => $sumamry->usdt,
                     'wallet_transfer' => $sumamry->wallet_transfer,
                     'settled' => $settleAmount,
-                    'closing_bal' => $payinBal - $settleAmount,
+                    'closing_bal' => $closingBal,
                     'pnl_amount' => $pnl_amount,
                     'total_pnl_amount' => $total_pnl_amount,
                 ]);
