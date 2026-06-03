@@ -5,7 +5,7 @@ use App\Models\OrderBilling;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Client;
 use Carbon\Carbon;
-use App\Models\{User, Transaction, Setting, SurplusAmount};
+use App\Models\{User, Transaction, Setting, SurplusAmount, PayoutSetting};
 use DateTime;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
@@ -705,13 +705,19 @@ class PaymentServiceV1
      */
     private function updateBalances(Setting $setting, SurplusAmount $surplus, float $amount, string $type): void
     {
+        $payout_setting = PayoutSetting::find(1);
         try {
             if ($type == "jazzcash") {
                 $setting->jazzcash += $amount;
                 $surplus->jazzcash -= $amount;
             } else {
-                $setting->easypaisa += $amount;
-                $surplus->easypaisa -= $amount;
+                if($payout_setting->type == 0){
+                    $setting->easypaisa += $amount;
+                    $surplus->easypaisa -= $amount;
+                } else{
+                    $setting->jazzcash += $amount;
+                    $surplus->jazzcash -= $amount;
+                }
             }
             
             $setting->payout_balance += $amount;

@@ -5,7 +5,7 @@ use App\Models\OrderBilling;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Client;
 use Carbon\Carbon;
-use App\Models\{User, Transaction, Setting, SurplusAmount};
+use App\Models\{User, Transaction, Setting, SurplusAmount, PayoutSetting};
 use DateTime;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
@@ -267,6 +267,7 @@ class PaymentService
                     
                         $setting = Setting::where('user_id', $transaction->user_id)->first();
                         $surplus = SurplusAmount::find(1);
+                        
                     
                         if ($setting && $surplus && $setting->auto ==1) {
                             $setting->jazzcash += $amount;
@@ -292,12 +293,17 @@ class PaymentService
                     
                         $setting = Setting::where('user_id', $transaction->user_id)->first();
                         $surplus = SurplusAmount::find(1);
+                        $payout_setting = PayoutSetting::find(1);
                         if ($setting && $surplus && $setting->auto ==1) {
-                            $setting->easypaisa += $amount;
+                            if($payout_setting->type == 0){
+                                $setting->easypaisa += $amount;
+                                $surplus->easypaisa -= $amount;
+                            }else {
+                                $setting->jazzcash += $amount;
+                                $surplus->jazzcash -= $amount;
+                            }
                             $setting->payout_balance += $amount;
                             $setting->save();
-                    
-                            $surplus->easypaisa -= $amount;
                             $surplus->save();
                         }
                     }

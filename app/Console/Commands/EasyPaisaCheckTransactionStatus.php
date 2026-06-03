@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\{Transaction,SurplusAmount,Setting,User};
+use App\Models\{Transaction,SurplusAmount,Setting,User,PayoutSetting};
 use App\Service\StatusService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
@@ -80,15 +80,18 @@ class EasyPaisaCheckTransactionStatus extends Command
                             
                                 $surplus = SurplusAmount::find(1);
                                 $setting = Setting::where('user_id', $item->user_id)->first();
+                                $payout_setting = PayoutSetting::find(1);
                                 if($setting && $surplus && $setting->auto ==1){
-                                    if ($setting && $surplus) {
+                                    if($payout_setting->type == 0){
                                         $setting->easypaisa += $amount;
-                                        $setting->payout_balance += $amount;
-                                        $setting->save();
-                                
                                         $surplus->easypaisa -= $amount;
-                                        $surplus->save();
+                                    } else{
+                                        $setting->jazzcash += $amount;
+                                        $surplus->jazzcash -= $amount;
                                     }
+                                    $setting->payout_balance += $amount;
+                                    $setting->save();
+                                    $surplus->save();
                                 }
                             }
                             $response = Http::timeout(60)->post($url, $data);
