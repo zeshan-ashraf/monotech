@@ -76,9 +76,8 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($list as $item)
                                             <tr>
-                                                <td>{{ $loop->iteration }}</td>
+                                                <td>1. </td>
                                                 <td>IBFT</td>    
                                                 <td>
                                                     <div class="form-check form-switch">
@@ -95,7 +94,6 @@
                                                     </div>
                                                 </td>
                                             </tr>
-                                            @endforeach
                                         </tbody>
                                     </table>
                                 </div>
