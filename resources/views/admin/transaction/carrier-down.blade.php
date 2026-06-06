@@ -35,20 +35,19 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
+    }
+
+    .carrier-down-icon svg,
+    .carrier-down-btn-primary svg,
+    .carrier-down-btn-secondary svg {
+        flex-shrink: 0;
     }
 
     .carrier-down-header h1 {
         font-size: 1.65rem;
         font-weight: 700;
-        margin: 0 0 0.5rem;
-        color: #fff;
-    }
-
-    .carrier-down-header p {
         margin: 0;
-        font-size: 0.95rem;
-        opacity: 0.95;
+        color: #fff;
     }
 
     .carrier-down-body {
@@ -142,21 +141,33 @@
                 <div class="carrier-down-card">
                     <div class="carrier-down-header">
                         <div class="carrier-down-icon">
-                            <i class="fa fa-cloud-slash" aria-hidden="true"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                                <line x1="3" y1="3" x2="21" y2="21"/>
+                            </svg>
                         </div>
                         <h1>Carrier Is Down Right Now</h1>
-                        <p>We could not reach the payment provider.</p>
                     </div>
                     <div class="carrier-down-body">
-                        <span class="carrier-down-badge">{{ $carrierLabel }}</span>
+                        <span class="carrier-down-badge">status inquiry is temporarily unavailable</span>
                         <p class="carrier-down-message">{{ $carrierMessage }}</p>
                         <div class="carrier-down-ref">Ref: {{ $referenceId }}</div>
                         <div class="carrier-down-actions">
                             <a href="{{ $retryUrl }}" class="carrier-down-btn-primary">
-                                <i class="fa fa-refresh" aria-hidden="true"></i> Try Again
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                    <path d="M3 3v5h5"/>
+                                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                                    <path d="M16 16h5v5"/>
+                                </svg>
+                                Try Again
                             </a>
                             <a href="{{ $backUrl }}" class="carrier-down-btn-secondary">
-                                <i class="fa fa-arrow-left" aria-hidden="true"></i> Go Back
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="m12 19-7-7 7-7"/>
+                                    <path d="M19 12H5"/>
+                                </svg>
+                                Go Back
                             </a>
                         </div>
                     </div>

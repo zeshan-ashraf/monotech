@@ -140,11 +140,6 @@ class TransactionController extends Controller
     {
         $carrier = strtolower($type) === 'jazzcash' ? 'jazzcash' : 'easypaisa';
 
-        $labels = [
-            'easypaisa' => 'EASYPAISA SERVICE UNAVAILABLE',
-            'jazzcash' => 'JAZZCASH SERVICE UNAVAILABLE',
-        ];
-
         $messages = [
             'easypaisa' => 'Easypaisa status inquiry is temporarily unavailable. This usually means the carrier API is down or not responding. Please try again in a few minutes.',
             'jazzcash' => 'JazzCash status inquiry is temporarily unavailable. This usually means the carrier API is down or not responding. Please try again in a few minutes.',
@@ -152,7 +147,6 @@ class TransactionController extends Controller
 
         return view('admin.transaction.carrier-down', [
             'referenceId' => $referenceId,
-            'carrierLabel' => $labels[$carrier],
             'carrierMessage' => $messages[$carrier],
             'retryUrl' => route('admin.jazzcash.status-inquiry', ['id' => $referenceId, 'type' => $type]),
             'backUrl' => url()->previous() !== url()->current()
