@@ -268,6 +268,10 @@ class PayoutController extends Controller
                 ]);
 
                 $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
+                $isEasypaisaSuccess = ($data['ResponseCode'] ?? '') === '0'
+                    && ($data['TransactionStatus'] ?? '') === 'success';
+                $isEasypaisaPending = $this->isEasypaisaPendingResponse($data);
+
                 $values=[
                     'user_id' => $user->id,
                     'code' => $data['ResponseCode'],
@@ -279,12 +283,14 @@ class PayoutController extends Controller
                     // 'fee' => $data['Fee'] ?? "",
                     'phone' => $request->phone,
                     'transaction_type' => $request->payout_method,
-                    'status' => $data['ResponseCode'] === '0' && $data['ResponseMessage'] === 'Success' ? 'success' : 'failed',
+                    'status' => $isEasypaisaSuccess
+                        ? 'success'
+                        : ($isEasypaisaPending ? 'pending' : 'failed'),
                     'url' => $request->callback_url,
                     'request_detail' => json_encode($requestDetail),
                 ];
                 $transaction=Payout::create($values);
-                if($data['ResponseCode'] === '0' && $data['TransactionStatus'] === 'success'){
+                if ($isEasypaisaSuccess) {
                     $this->logger->info('Easypaisa payout successful, sending callback', [
                         'request_id' => $requestId,
                         'transaction_id' => $transaction->id
@@ -327,7 +333,41 @@ class PayoutController extends Controller
                         'message' => 'Payout processed successfully.',
                         'transaction_id' => $values['transaction_reference'],
                     ], 200);
-                }else{
+                } elseif ($isEasypaisaPending) {
+                    $this->logger->info('Easypaisa payout pending, sending callback', [
+                        'request_id' => $requestId,
+                        'response_code' => $data['ResponseCode'],
+                        'response_message' => $data['ResponseMessage'],
+                        'transaction_status' => $data['TransactionStatus'] ?? null,
+                        'transaction_id' => $transaction->id,
+                    ]);
+
+                    $url = $callback_url;
+                    $call_data = [
+                        'orderId' => $request->orderId,
+                        'tid' => $values['transaction_reference'],
+                        'message' => 'Your payout is pending confirmation from Easypaisa.',
+                        'status' => 'pending',
+                    ];
+                    $this->logger->info('Sending pending callback', [
+                        'request_id' => $requestId,
+                        'callback_url' => $url,
+                        'callback_data' => $call_data,
+                    ]);
+                    SendPayoutCallbackJob::dispatch($url, $call_data, $requestId, 'easypaisa_pending');
+                    $this->logger->info('Queued pending callback', [
+                        'request_id' => $requestId,
+                        'callback_url' => $url,
+                        'callback_data' => $call_data,
+                        'total_api_execution_time' => microtime(true) - $apiStartTime,
+                    ]);
+
+                    return response()->json([
+                        'status' => 'pending',
+                        'message' => 'Payout is pending confirmation from Easypaisa.',
+                        'transaction_id' => $values['transaction_reference'] ?: null,
+                    ], 200);
+                } else {
                     $this->logger->warning('Easypaisa payout failed, sending callback', [
                         'request_id' => $requestId,
                         'error_code' => $data['ResponseCode'],
@@ -883,5 +923,14 @@ class PayoutController extends Controller
             'memory_usage_start' => memory_get_usage(true),
             'memory_peak_start' => memory_get_peak_usage(true),
         ];
+    }
+
+    /**
+     * Easypaisa MaToMa transfer can return code 09 / PENDING while the payout is still processing.
+     */
+    private function isEasypaisaPendingResponse(array $data): bool
+    {
+        return ($data['ResponseCode'] ?? '') === '09'
+            && strtoupper((string) ($data['ResponseMessage'] ?? '')) === 'PENDING';
     }
 }
