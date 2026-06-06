@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\DataTables\Admin\TransactionDataTable;
 use App\DataTables\Admin\ZigTransactionDataTable;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\{User,Transaction,ArcheiveTransaction,BackupTransaction,Settlement};
 use Carbon\Carbon;
@@ -106,38 +108,69 @@ class TransactionController extends Controller
             : 0;
         return $this->transactionZigDatatable->with(['user_id'=>'both','status' => $status])->render('admin.transaction.zig_list', get_defined_vars());
     }
-    public function statusInquiry($id,$type)
+    public function statusInquiry($id, $type)
     {
-        $integritySalt;
-        $merchantId;
-        $password;
-        $storeId;
-        $accountNumber;
-        $easyUsername;
-        $easyPassword;
-        $item=Transaction::where('txn_ref_no',$id)->first();
-	    if (!$item) {
-            $item = ArcheiveTransaction::where('txn_ref_no',$id)->first();
+        $item = Transaction::where('txn_ref_no', $id)->first();
+        if (!$item) {
+            $item = ArcheiveTransaction::where('txn_ref_no', $id)->first();
         }
         if (!$item) {
-            $item = BackupTransaction::where('txn_ref_no',$id)->first();
+            $item = BackupTransaction::where('txn_ref_no', $id)->first();
         }
-		if($type === 'jazzcash'){
-            $integritySalt = $this->integritySalt;
-            $merchantId = $this->merchantId;
-            $password = $this->password;
-			$response=$this->jazzcashStatusFunc($id,$integritySalt,$merchantId,$password);		
-	    } else{
-            $storeId = $this->storeId;
-            $accountNumber = $this->accountNumber;
-            $easyUsername = $this->easyUsername;
-            $easyPassword = $this->easyPassword;
 
-            $response=$this->easypaisaStatusFunc($id,$storeId,$accountNumber,$easyUsername,$easyPassword);
-		}
-		$transactionDetails=$response;
-        // dd($transactionDetails);
-        return view('admin.transaction.detail',get_defined_vars());
+        if ($type === 'jazzcash') {
+            $response = $this->jazzcashStatusFunc($id, $this->integritySalt, $this->merchantId, $this->password);
+        } else {
+            $response = $this->easypaisaStatusFunc($id, $this->storeId, $this->accountNumber, $this->easyUsername, $this->easyPassword);
+        }
+
+        if ($this->isCarrierUnavailable($response)) {
+            return $this->carrierDownView($id, $type);
+        }
+
+        $transactionDetails = $response;
+
+        return view('admin.transaction.detail', get_defined_vars());
+    }
+
+    /**
+     * Render the carrier-unavailable page when the provider API cannot be reached.
+     */
+    private function carrierDownView(string $referenceId, string $type)
+    {
+        $carrier = strtolower($type) === 'jazzcash' ? 'jazzcash' : 'easypaisa';
+
+        $labels = [
+            'easypaisa' => 'EASYPAISA SERVICE UNAVAILABLE',
+            'jazzcash' => 'JAZZCASH SERVICE UNAVAILABLE',
+        ];
+
+        $messages = [
+            'easypaisa' => 'Easypaisa status inquiry is temporarily unavailable. This usually means the carrier API is down or not responding. Please try again in a few minutes.',
+            'jazzcash' => 'JazzCash status inquiry is temporarily unavailable. This usually means the carrier API is down or not responding. Please try again in a few minutes.',
+        ];
+
+        return view('admin.transaction.carrier-down', [
+            'referenceId' => $referenceId,
+            'carrierLabel' => $labels[$carrier],
+            'carrierMessage' => $messages[$carrier],
+            'retryUrl' => route('admin.jazzcash.status-inquiry', ['id' => $referenceId, 'type' => $type]),
+            'backUrl' => url()->previous() !== url()->current()
+                ? url()->previous()
+                : route('admin.transaction.list'),
+        ]);
+    }
+
+    /**
+     * Detect transport-level or empty failures from carrier status APIs.
+     */
+    private function isCarrierUnavailable($response): bool
+    {
+        if (! is_array($response)) {
+            return true;
+        }
+
+        return (bool) ($response['_carrier_unavailable'] ?? false);
     }
 	public function jazzcashStatusFunc($id,$integritySalt,$merchantId,$password)
 	{
@@ -169,8 +202,33 @@ class TransactionController extends Controller
         ));
 
         $response = curl_exec($curl);
+
+        if ($response === false) {
+            $error = curl_error($curl);
+            $errno = curl_errno($curl);
+            curl_close($curl);
+
+            Log::channel('payout')->warning('JazzCash status inquiry transport failure', [
+                'txn_ref_no' => $id,
+                'curl_error' => $error,
+                'curl_errno' => $errno,
+            ]);
+
+            return ['_carrier_unavailable' => true];
+        }
+
         curl_close($curl);
         $result = json_decode($response, true);
+
+        if (! is_array($result)) {
+            Log::channel('payout')->warning('JazzCash status inquiry invalid response', [
+                'txn_ref_no' => $id,
+                'raw_response' => is_string($response) ? substr($response, 0, 500) : null,
+            ]);
+
+            return ['_carrier_unavailable' => true];
+        }
+
         return $result;
 	}
     public function easypaisaStatusFunc($id,$storeId,$accountNumber,$easyUsername,$easyPassword)
@@ -183,14 +241,54 @@ class TransactionController extends Controller
         
         $credentials=base64_encode($easyUsername.':'.$easyPassword);
 
-		$response = Http::timeout(60)->retry(3, 1000)->withHeaders([
-            'credentials'=>$credentials,
-            'Content-Type'=> 'application/json'
-        ])->post($this->easyStatusUrl,$data);
+        try {
+            $response = Http::timeout(60)
+                ->retry(3, 1000, function ($exception) {
+                    return $exception instanceof ConnectionException;
+                })
+                ->withHeaders([
+                    'credentials' => $credentials,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post($this->easyStatusUrl, $data);
 
-        $result = $response->json();
-        return $result;
+            if ($response->failed()) {
+                Log::channel('payout')->warning('Easypaisa status inquiry HTTP failure', [
+                    'txn_ref_no' => $id,
+                    'http_status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
 
+                return ['_carrier_unavailable' => true];
+            }
+
+            $result = $response->json();
+
+            if (! is_array($result)) {
+                Log::channel('payout')->warning('Easypaisa status inquiry invalid JSON', [
+                    'txn_ref_no' => $id,
+                    'body' => $response->body(),
+                ]);
+
+                return ['_carrier_unavailable' => true];
+            }
+
+            return $result;
+        } catch (ConnectionException $exception) {
+            Log::channel('payout')->warning('Easypaisa status inquiry connection failure', [
+                'txn_ref_no' => $id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return ['_carrier_unavailable' => true];
+        } catch (\Throwable $exception) {
+            Log::channel('payout')->error('Easypaisa status inquiry unexpected failure', [
+                'txn_ref_no' => $id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return ['_carrier_unavailable' => true];
+        }
     }
     public function easyReceipt($id)
     {
