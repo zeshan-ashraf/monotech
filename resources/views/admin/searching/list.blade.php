@@ -160,14 +160,16 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        alert(response.message);
-                        location.reload();
+                        toastr.success(response.message);
+                        setTimeout(function () {
+                            location.reload();
+                        }, 1200);
                     } else {
-                        alert('Error: ' + (response.message || 'Failed to mark transaction for reversal'));
+                        toastr.error(response.message || 'Failed to mark transaction for reversal');
                     }
                 },
                 error: function(xhr) {
-                    alert('Error: ' + (xhr.responseJSON?.message || 'Failed to mark transaction for reversal'));
+                    toastr.error(xhr.responseJSON?.message || 'Failed to mark transaction for reversal');
                 }
             });
         });
