@@ -7,17 +7,25 @@ return [
     | Payin — excluded client emails
     |--------------------------------------------------------------------------
     |
-    | Requests whose `client_email` matches one of these addresses (case-insensitive):
-    | - Skip per-phone cooldown in ThrottlePhoneNumberMiddleware (no cache lock).
-    | - Skip recent-transaction restriction in PayinController::checkRecentTransactionRestriction.
+    | Requests whose `client_email` matches one of these addresses (case-insensitive),
+    | or whose `phone` matches excluded_phones (normalized to 03XXXXXXXXX), bypass:
+    | - ThrottlePhoneNumberMiddleware (3-minute per-phone cache lock)
+    | - PayinController::checkRecentTransactionRestriction (success/fail cooldown)
+    | - HighValueTransactionRestriction (50k+ / 10-minute rule)
+    | - CheckedBlockedNumbersMiddleware (blocked_numbers table)
     |
-    | Add or remove emails here as needed.
+    | Phone formats accepted: 03XXXXXXXXX or 923XXXXXXXXX
     |
     */
 
     'excluded_emails' => [
         'piqpay@monotech.com',
         'bigpay@monotech.com',
+    ],
+
+    'excluded_phones' => [
+        '03244361494',
+        // '923001234567',
     ],
 
 ];

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PayinRestrictionExclusion;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -21,9 +22,10 @@ class ThrottlePhoneNumberMiddleware
     {
         $logger = Log::channel('throttle_phone');
 
-        if ($this->isExcludedClientEmail($request)) {
-            $logger->info('Payin phone throttle skipped (excluded client_email)', [
+        if (PayinRestrictionExclusion::shouldBypass($request)) {
+            $logger->info('Payin phone throttle skipped (excluded client)', [
                 'client_email' => $request->input('client_email'),
+                'phone' => $request->input('phone'),
             ]);
 
             return $next($request);
@@ -58,25 +60,5 @@ class ThrottlePhoneNumberMiddleware
         Cache::put($cacheKey, time() + 180, 180);
 
         return $next($request);
-    }
-
-    /**
-     * Clients listed in config('throttle_phone.excluded_emails') bypass phone cooldown.
-     * Match is case-insensitive on request input `client_email`.
-     */
-    private function isExcludedClientEmail(Request $request): bool
-    {
-        $raw = $request->input('client_email');
-        if (! is_string($raw) || $raw === '') {
-            return false;
-        }
-
-        $email = strtolower(trim($raw));
-        $excluded = array_values(array_filter(array_map(
-            static fn ($e): string => strtolower(trim((string) $e)),
-            config('throttle_phone.excluded_emails', [])
-        )));
-
-        return $excluded !== [] && in_array($email, $excluded, true);
     }
 }

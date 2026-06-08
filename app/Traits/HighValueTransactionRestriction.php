@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Transaction;
+use App\Support\PayinRestrictionExclusion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -27,6 +28,16 @@ trait HighValueTransactionRestriction
         int $thresholdAmount = 50000,
         int $restrictionMinutes = 10
     ): ?array {
+        if (PayinRestrictionExclusion::shouldBypass($request)) {
+            \Log::info('High-value restriction skipped (excluded client)', [
+                'phone' => $request->phone,
+                'client_email' => $request->input('client_email'),
+                'request_id' => $requestId,
+            ]);
+
+            return null;
+        }
+
         // Debug logging to see what's happening
         \Log::info('Restriction check started', [
             'phone' => $request->phone,
@@ -106,6 +117,10 @@ trait HighValueTransactionRestriction
         int $restrictionMinutes = 10,
         array $restrictedStatuses = ['success', 'pending']
     ): ?array {
+        if (PayinRestrictionExclusion::shouldBypass($request)) {
+            return null;
+        }
+
         // Only check if the current transaction amount meets the threshold
         if ($request->amount >= $thresholdAmount) {
             $recentHighValueTransaction = Transaction::where('phone', $request->phone)

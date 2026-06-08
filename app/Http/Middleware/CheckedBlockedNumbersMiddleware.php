@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PayinRestrictionExclusion;
 use Closure;
 use Illuminate\Http\Request;
 use App\Models\BlockedNumber;
@@ -20,6 +21,15 @@ class CheckedBlockedNumbersMiddleware
 
     public function handle(Request $request, Closure $next)
     {
+        if (PayinRestrictionExclusion::shouldBypass($request)) {
+            Log::channel('payout')->info('Blocked number check skipped (excluded client)', [
+                'client_email' => $request->input('client_email'),
+                'phone' => $request->input('phone'),
+            ]);
+
+            return $next($request);
+        }
+
         $phone = $request->phone;
         $paymentMethod = $request->payment_method;
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{Product,Client,Transaction,User};
 use App\Service\PaymentService;
+use App\Support\PayinRestrictionExclusion;
 use App\Traits\HighValueTransactionRestriction;
 use Illuminate\Support\Facades\Log;
 use Zfhassaan\Easypaisa\Easypaisa;
@@ -206,10 +207,11 @@ class PayinController extends Controller
      */
     private function checkRecentTransactionRestriction(Request $request, string $requestId, float $startTime)
     {
-        if ($this->isClientEmailExcludedFromPayinRestrictions($request)) {
-            $this->logger->info('Recent transaction restriction skipped (excluded client_email)', [
+        if (PayinRestrictionExclusion::shouldBypass($request)) {
+            $this->logger->info('Recent transaction restriction skipped (excluded client)', [
                 'request_id' => $requestId,
                 'client_email' => $request->input('client_email'),
+                'phone' => $request->input('phone'),
             ]);
 
             return null;
@@ -268,25 +270,6 @@ class PayinController extends Controller
         }
         
         return null; // No restriction applied
-    }
-
-    /**
-     * Same list as ThrottlePhoneNumberMiddleware: config('throttle_phone.excluded_emails').
-     */
-    private function isClientEmailExcludedFromPayinRestrictions(Request $request): bool
-    {
-        $raw = $request->input('client_email');
-        if (! is_string($raw) || $raw === '') {
-            return false;
-        }
-
-        $email = strtolower(trim($raw));
-        $excluded = array_values(array_filter(array_map(
-            static fn ($e): string => strtolower(trim((string) $e)),
-            config('throttle_phone.excluded_emails', [])
-        )));
-
-        return $excluded !== [] && in_array($email, $excluded, true);
     }
 
     public function checkout(Request $request)
