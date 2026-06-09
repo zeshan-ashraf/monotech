@@ -21,6 +21,7 @@ return [
     'excluded_emails' => [
         'piqpay@monotech.com',
         'bigpay@monotech.com',
+        'jackpay@monotech.com',
     ],
 
     'excluded_phones' => [
