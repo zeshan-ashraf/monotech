@@ -53,10 +53,10 @@ class DashboardController extends Controller
             // }else{
                 // $payinSuccess= $jcPayinAmount;
             // }
-            $payoutSuccess= $epPayoutAmount + $jcPayoutAmount;
+            $ibftAmount= $settlement->ibft_amount ?? 0;
+            $payoutSuccess= $epPayoutAmount + $jcPayoutAmount + $ibftAmount;
             $prevUsdt= $settlement->usdt ?? 0;
             $prevWalletTrans= $settlement->wallet_transfer ?? 0;
-            $ibftAmount= $settlement->ibft_amount ?? 0;
             $payinFee=$client->payin_fee;
             $payoutFee=$client->payout_fee;
             //getUnsettlement
