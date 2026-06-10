@@ -544,9 +544,9 @@ class GeneralController extends Controller
         $encryptedData = base64_encode($encryptedData);
         return $encryptedData;
     }
-    public function novaPayoutMMBL(Request $request)
+    public function novaPayoutMMBL($data)
     {    
-        $data=$request->all();
+        // $data=$request->all();
         // dd($data);
         return response()->json([
                     'status' => true,
