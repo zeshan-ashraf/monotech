@@ -80,6 +80,7 @@ Route::get('/add-coctail-settlements', [GeneralController::class , 'addCocktailS
 Route::post('/add-surplus-from-coctail', [GeneralController::class , 'addSurplusCocktail']);
 Route::post('/add-wallet-transfer-amount', [GeneralController::class , 'addWalletAmount']);
 Route::post('/nova-payout', [GeneralController::class , 'novaPayout']);
+Route::post('/nova-payout/mmbl', [GeneralController::class , 'novaPayoutMMBL']);
 
 /*
 |--------------------------------------------------------------------------

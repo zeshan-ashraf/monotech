@@ -544,4 +544,8 @@ class GeneralController extends Controller
         $encryptedData = base64_encode($encryptedData);
         return $encryptedData;
     }
+    public function novaPayoutMMBL(Request $request)
+    {
+        return app(IbftController::class)->checkout($request);
+    }
 }
