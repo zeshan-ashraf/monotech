@@ -39,14 +39,10 @@ class SurplusAddition extends Command
             ')
             ->first();
 
-        $payoutSumJC=$totals->payoutSumJC;
-        $payoutSumEP=$totals->payoutSumEP;
-        $ibftAmount=$totals->ibftAmount;
+        $jc_temp_amount = $totals->payoutSumJC + $totals->ibftAmount;
+        $ep_temp_amount = $totals->payoutSumEP;
 
-        $jc_temp_amount = $payoutSumJC + $ibftAmount;
-        $ep_temp_amount = $payoutSumEP;
-
-        TempAmountPayout::update([
+        TempAmountPayout::query()->update([
             'jc_amount' => $jc_temp_amount,
             'ep_amount' => $ep_temp_amount,
         ]);
