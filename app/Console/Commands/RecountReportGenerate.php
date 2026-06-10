@@ -134,7 +134,7 @@ class RecountReportGenerate extends Command
                         ->where('status', 'success')
                         ->where('transaction_type', 'easypaisa')
                         ->where('ibft','1')
-                        ->whereDate('created_at', Carbon::today())
+                        ->whereDate('created_at', Carbon::today()->subDay(1))
                         ->sum('amount');
                 }
 
