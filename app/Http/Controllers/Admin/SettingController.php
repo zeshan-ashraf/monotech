@@ -240,15 +240,15 @@ class SettingController extends Controller
         $setting->jazzcash += $submittedJazzcash;
         $setting->payout_balance = $setting->easypaisa + $setting->jazzcash;
         $setting->save();
-        $surplus->jazzcash -= $submittedJazzcash;
-        if($payout_setting->type == 0){
-            $surplus->easypaisa -= $submittedEasypaisa;
-            $surplus->save();
-        }else{
+        // $surplus->jazzcash -= $submittedJazzcash;
+        // if($payout_setting->type == 0){
+        //     $surplus->easypaisa -= $submittedEasypaisa;
+        //     $surplus->save();
+        // }else{
             
-            $surplus->jazzcash -= $submittedEasypaisa;
-            $surplus->save();
-        }
+        //     $surplus->jazzcash -= $submittedEasypaisa;
+        //     $surplus->save();
+        // }
         
         $successMsg = 'Amount assigned successfully.';
         if ($request->ajax()) {
