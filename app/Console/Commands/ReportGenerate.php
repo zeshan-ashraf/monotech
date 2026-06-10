@@ -103,21 +103,20 @@ class ReportGenerate extends Command
                     ->sum('amount');
 
                 // Sum of successful payout amounts
-                
-
-                if($user->id == "24"){
-                    $url = 'https://novapay.pk/api/get-nova-payout';
-                    $response = Http::get($url);
-                    $data = $response->json();
-                    $payoutSumEP = $data['today_ok_ep_mono_payout'];
-                    $payoutSumJC = $data['today_ok_ep_mono_mmbl_payout'];
-                }else {
-                    $payoutSumJC = DB::table('payouts')
+                $payoutSumJC = DB::table('payouts')
                         ->where('user_id', $user->id)
                         ->where('status', 'success')
                         ->where('transaction_type', 'jazzcash')
                         ->whereDate('created_at', Carbon::today())
                         ->sum('amount');
+                $ibftAmount=0;
+                if($user->id == "24"){
+                    $url = 'https://novapay.pk/api/get-nova-payout';
+                    $response = Http::get($url);
+                    $data = $response->json();
+                    $payoutSumEP = $data['today_ok_ep_mono_payout'];
+                    $ibftAmount = $data['today_ok_ep_mono_mmbl_payout'];
+                }else {
                     $payoutSumEP = DB::table('payouts')
                         ->where('user_id', $user->id)
                         ->where('status', 'success')
@@ -168,6 +167,7 @@ class ReportGenerate extends Command
                     'closing_bal' => $closingBal,
                     'pnl_amount' => $pnl_amount,
                     'total_pnl_amount' => $total_pnl_amount,
+                    'ibft_amount'=>$ibftAmount,
                 ]);
                 
             }
@@ -195,6 +195,7 @@ class ReportGenerate extends Command
                     'pnl_amount' => '0',
                     'total_pnl_amount' => '0',
                     'usdt_pnl_amount' => '0',
+                    'ibft_amount'=>'0',
                 ]);
                 User::query()->update([
                     'temp_amount' => 0

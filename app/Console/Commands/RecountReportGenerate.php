@@ -114,12 +114,13 @@ class RecountReportGenerate extends Command
                     ->where('transaction_type', 'easypaisa')
                     ->whereDate('created_at', Carbon::today()->subDay(1))
                     ->sum('amount');
-
+                $ibftAmount =0;
                 if($user->id == "24"){
                     $url = 'https://novapay.pk/api/get-nova-payout';
                     $response = Http::get($url);
                     $data = $response->json();
                     $payoutSumEP = $data['today_ok_ep_mono_payout'];
+                    $ibftAmount = $data['today_ok_ep_mono_mmbl_payout'];
                 }else {
                     $payoutSumEP = DB::table('payouts')
                         ->where('user_id', $user->id)
@@ -171,6 +172,7 @@ class RecountReportGenerate extends Command
                     'closing_bal' => $closingBal,
                     'pnl_amount' => $pnl_amount,
                     'total_pnl_amount' => $total_pnl_amount,
+                    'ibft_amount'=>$ibftAmount,
                 ]);
                 
             }

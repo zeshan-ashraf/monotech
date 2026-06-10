@@ -33,6 +33,7 @@ class Settlement extends Model
         'wallet_transfer',
         'op_cln',
         'rev_cln',
+        'ibft_amount',
     ];
     
     protected $casts = [
