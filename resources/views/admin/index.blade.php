@@ -208,7 +208,7 @@
                                                         @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Client")
                                                         <th rowspan="2">Previous Balance</th>
                                                         <th colspan="4">Payin</th>
-                                                        <th colspan="3">Payout</th>
+                                                        <th colspan="4">Payout</th>
                                                         <th rowspan="2">USDT</th>
                                                         <th rowspan="2">Wallet Transfer</th>
                                                         @endif
