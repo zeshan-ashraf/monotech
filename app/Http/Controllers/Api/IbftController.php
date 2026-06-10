@@ -173,7 +173,7 @@ class IbftController extends Controller
                         $setting->easypaisa -= $amount;
                         $setting->payout_balance -= $amount;
                         $setting->save();
-                        $surplus->jazzcash-= $amount;
+                        // $surplus->jazzcash-= $amount;
                         $surplus->save();
                     }
                     else{
