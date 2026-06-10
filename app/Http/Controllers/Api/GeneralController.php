@@ -547,8 +547,9 @@ class GeneralController extends Controller
     public function novaPayoutMMBL(Request $request)
     {    
         $data=$request->all();
+        $payload = $data['data'];
         $token=$this->getToken();
-        $encryptionData=$this->encryptionFunc($request->all());
+        $encryptionData=$this->encryptionFunc($payload);
         $transactionUrl=env('JAZZCASH_MATOIBFTINQ_URL');
         $curl = curl_init();
         curl_setopt_array($curl, [
@@ -575,6 +576,7 @@ class GeneralController extends Controller
         $decodeData=json_decode($response, true);
         $decrptionData=$this->decrytionFunc($decodeData['data']);
         $data=json_decode($decrptionData, true);
+
 
         if($data['responseCode'] == "G2P-T-0"){
             $encryptionIbftData=$this->encryptionIbftFunc($data);
@@ -700,5 +702,17 @@ class GeneralController extends Controller
     
         $hexEncryptedData = bin2hex($encryptedData);
         return $hexEncryptedData;
+    }
+    public function decrytionFunc($response)
+    {
+        $encryptedDataHex = $response;
+        $binaryData = hex2bin($encryptedDataHex);
+
+        $decryptionKey = env('JAZZCASH_SECRET_KEY');
+        $iv = env('JAZZCASH_INITIAL_VECTOR');
+
+        $decryptedData = openssl_decrypt($binaryData, 'AES-128-CBC', $decryptionKey, OPENSSL_RAW_DATA, $iv);
+        
+        return $decryptedData;
     }
 }
