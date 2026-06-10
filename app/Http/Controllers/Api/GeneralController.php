@@ -544,18 +544,13 @@ class GeneralController extends Controller
         $encryptedData = base64_encode($encryptedData);
         return $encryptedData;
     }
-    public function novaPayoutMMBL($data)
+    public function novaPayoutMMBL(Request $request)
     {    
-        // $data=$request->all();
-        // dd($data);
-        return response()->json([
-                    'status' => true,
-                    'data' => $data
-                ]);
+        $data=$request->all();
+
         $token=$this->getToken();
         $encryptionData=$this->encryptionFunc($request->all());
         $transactionUrl=env('JAZZCASH_MATOIBFTINQ_URL');
-        // dd($transactionUrl);
         $curl = curl_init();
         curl_setopt_array($curl, [
             CURLOPT_URL => $transactionUrl,
@@ -629,6 +624,29 @@ class GeneralController extends Controller
                 'message' => 'Your payout cannot be processed due to '. $data['responseDescription']. ' , please try again.',
             ], 400);
         }
+    }
+    public function encryptionFunc($data)
+    {
+        $phone = preg_replace('/^92/', '0', $data['phone']);
+        $DateTime 		= new \DateTime();
+		$pp_TxnDateTime = $DateTime->format('YmdHis');
+		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
+		
+        $encodeData = json_encode([
+            "receiverMSISDN" => $phone,
+            "amount" => $data['amount'],
+            "bankAccountNumber" => $phone,
+            "bankCode" => "59",
+            "referenceId" => $pp_TxnRefNo
+        ]);
+ 
+        $encryptionKey = env('JAZZCASH_SECRET_KEY');
+        $iv = env('JAZZCASH_INITIAL_VECTOR');
+    
+        $encryptedData = openssl_encrypt($encodeData, 'AES-128-CBC', $encryptionKey, OPENSSL_RAW_DATA, $iv);
+    
+        $hexEncryptedData = bin2hex($encryptedData);
+        return $hexEncryptedData;
     }
     public function encryptionIbftFunc($data)
     {
