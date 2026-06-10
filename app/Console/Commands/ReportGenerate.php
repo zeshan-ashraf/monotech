@@ -142,7 +142,7 @@ class ReportGenerate extends Command
 
                 $rev_cln=($transactionSumJC * $payinFeeJC + $transactionSumEP * $payinFeeEP)  + ($payoutSumJC * $PayoutFeeJC + $payoutSumEP * $PayoutFeeEP) -  $op_cln;     
                 
-                $settleAmount = $payoutSumJC + $payoutSumEP + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) + $todayUsdt + $todayWalletTrans;
+                $settleAmount = $payoutSumJC + $payoutSumEP + $ibftAmount + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) +($ibftAmount * $PayoutFeeEP) + $todayUsdt + $todayWalletTrans;
                 $pnl_amount=round($transactionSumJC * 0.01, 2);
                 $total_pnl_amount=$pnl_amount+$prev_pnl-$prev_usdt_pnl;
                 // if($user->id == "24"){
@@ -150,7 +150,7 @@ class ReportGenerate extends Command
                 //     $closingBal=$preClosingBal + $payinBal - $todayUsdt;
                 // } else {
                     $payinBal = $preClosingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
-                    $closingBal=$payinBal - $settleAmount - $ibftAmount;
+                    $closingBal=$payinBal - $settleAmount;
                 // }
                 // Create a summary for the user
                 $sumamry->update([
