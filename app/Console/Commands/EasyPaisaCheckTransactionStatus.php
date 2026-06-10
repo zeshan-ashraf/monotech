@@ -84,14 +84,14 @@ class EasyPaisaCheckTransactionStatus extends Command
                                 if($setting && $surplus && $setting->auto ==1){
                                     if($payout_setting->type == 0){
                                         $setting->easypaisa += $amount;
-                                        $surplus->easypaisa -= $amount;
+                                        // $surplus->easypaisa -= $amount;
                                     } else{
                                         $setting->easypaisa += $amount;
                                         // $surplus->jazzcash -= $amount;
                                     }
                                     $setting->payout_balance += $amount;
                                     $setting->save();
-                                    $surplus->save();
+                                    // $surplus->save();
                                 }
                             }
                             $response = Http::timeout(60)->post($url, $data);

@@ -68,8 +68,8 @@ class JazzCashCheckTransactionStatus extends Command
                             $setting->payout_balance += $amount;
                             $setting->save();
                     
-                            $surplus->jazzcash -= $amount;
-                            $surplus->save();
+                            // $surplus->jazzcash -= $amount;
+                            // $surplus->save();
                         }
                     }
                     $response = Http::timeout(60)->post($url, $data);
