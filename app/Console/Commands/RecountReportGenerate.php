@@ -172,7 +172,7 @@ class RecountReportGenerate extends Command
                     'jc_payout' => $payoutSumJC,
                     'ep_payout' => $payoutSumEP,
                     'jc_payout_fee' => $payoutSumJC * $PayoutFeeJC,
-                    'ep_payout_fee' => $payoutSumEP * $PayoutFeeEP,
+                    'ep_payout_fee' => $payoutSumEP * $PayoutFeeEP + ($ibftAmount *$PayoutFeeEP),
                     'op_cln' => $op_cln,
                     'rev_cln' => $rev_cln,
                     'usdt' => $sumamry->usdt,
