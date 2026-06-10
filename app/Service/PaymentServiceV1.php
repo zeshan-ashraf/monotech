@@ -711,13 +711,13 @@ class PaymentServiceV1
                 $setting->jazzcash += $amount;
                 $surplus->jazzcash -= $amount;
             } else {
-                if($payout_setting->type == 0){
+                // if($payout_setting->type == 0){
                     $setting->easypaisa += $amount;
                     $surplus->easypaisa -= $amount;
-                } else{
-                    $setting->jazzcash += $amount;
-                    $surplus->jazzcash -= $amount;
-                }
+                // } else{
+                //     $setting->jazzcash += $amount;
+                //     $surplus->jazzcash -= $amount;
+                // }
             }
             
             $setting->payout_balance += $amount;
