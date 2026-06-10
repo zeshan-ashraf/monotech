@@ -150,7 +150,7 @@ class ReportGenerate extends Command
                 //     $closingBal=$preClosingBal + $payinBal - $todayUsdt;
                 // } else {
                     $payinBal = $preClosingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
-                    $closingBal=$payinBal - $settleAmount;
+                    $closingBal=$payinBal - $settleAmount - $ibftAmount;
                 // }
                 // Create a summary for the user
                 $sumamry->update([
