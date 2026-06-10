@@ -628,6 +628,41 @@ class GeneralController extends Controller
             ], 400);
         }
     }
+    public function getToken()
+    {
+        $url = env('JAZZCASH_GET_TOKEN_URL');
+        $token = 'Basic ' . env('JAZZCASH_TOKEN');
+        
+        $curl = curl_init();
+    
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => 'grant_type=client_credentials',
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/x-www-form-urlencoded',
+                "Authorization: $token",
+            ),
+        ));
+    
+        $response = curl_exec($curl);
+        // dd($response);
+        if (curl_errno($curl)) {
+            // Log error if needed
+            echo 'Error: ' . curl_error($curl);
+        }
+    
+        curl_close($curl);
+        $data=json_decode($response, true);
+        $accessToken=$data['access_token'];
+        return $accessToken;
+    }
     public function encryptionFunc($data)
     {
         $phone = preg_replace('/^92/', '0', $data['phone']);
