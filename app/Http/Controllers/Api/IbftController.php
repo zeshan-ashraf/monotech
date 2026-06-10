@@ -166,8 +166,8 @@ class IbftController extends Controller
                     //    'user payout fee' => $user,
                     //]);
                     if ($setting && $user->per_payout_fee) {
-                        $rate = 0.015;
-                        // $rate = $user->per_payout_fee;
+                        // $rate = 0.015;
+                        $rate = $user->per_payout_fee;
                         $amount = $request->amount * $rate;
                     
                         $setting->easypaisa -= $amount;
