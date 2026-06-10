@@ -56,6 +56,7 @@ class DashboardController extends Controller
             $payoutSuccess= $epPayoutAmount + $jcPayoutAmount;
             $prevUsdt= $settlement->usdt ?? 0;
             $prevWalletTrans= $settlement->wallet_transfer ?? 0;
+            $ibftAmount= $settlement->ibft_amount ?? 0;
             $payinFee=$client->payin_fee;
             $payoutFee=$client->payout_fee;
             //getUnsettlement
@@ -85,6 +86,7 @@ class DashboardController extends Controller
                 'setting' => Setting::where('user_id', $userId)->first(),
                 'set_id'=> $settlement->id,
                 'rev_cln'=> $rev_cln,
+                'ibft_amount'=>$ibftAmount,
             ];
         }
         $totals = [
@@ -104,6 +106,7 @@ class DashboardController extends Controller
             'assigned_ep' => 0,
             'assigned_payout' => 0,
             'total_rev_cln' => 0,
+            'total_ibft_amount' => 0,
         ];
         
         foreach ($data as $item) {
@@ -123,6 +126,7 @@ class DashboardController extends Controller
             $totals['assigned_ep'] += $item['assigned_amount']->easypaisa ?? 0;
             $totals['assigned_payout'] += $item['assigned_amount']->payout_balance ?? 0;
             $totals['total_rev_cln'] += $item['rev_cln'] ?? 0;
+            $totals['total_ibft_amount'] += $item['ibft_amount'] ?? 0;
         }
         
         $jcOkPendingOrder = Transaction::where([

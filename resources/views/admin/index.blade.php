@@ -229,6 +229,7 @@
                                                         <th>Total</th>
                                                         <th>Deduction</th>
                                                         <th>JC</th>
+                                                        <th>IBFT</th>
                                                         <th>EP</th>
                                                         <th>Total</th>
                                                         @endif
@@ -254,6 +255,7 @@
                                                                 <td class="bg-green font-weight-bold">{{ number_format($item['total_payin']) }}</td>
                                                                 <td class="font-weight-bold text-red">{{ number_format($item['reverse_amount']) }}</td>
                                                                 <td class="bg-red">{{ number_format($item['jc_payout']) }}</td>
+                                                                <td class="bg-red">{{ number_format($item['ibft_amount']) }}</td>
                                                                 <td class="bg-red">{{ number_format($item['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($item['total_payout']) }}</td>
                                                                 <td>{{ number_format($item['prev_usdt']) }}</td>
@@ -314,6 +316,7 @@
                                                                 <td class="bg-green font-weight-bold">{{ number_format($totals['total_payin']) }}</td>
                                                                 <td class="bg-green font-weight-bold">{{ number_format($totals['reverse_amount']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($totals['jc_payout']) }}</td>
+                                                                <td class="bg-red font-weight-bold">{{ number_format($totals['total_ibft_amount']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($totals['ep_payout']) }}</td>
                                                                 <td class="bg-red font-weight-bold">{{ number_format($totals['total_payout']) }}</td>
                                                                 <td class="font-weight-bold">{{ number_format($totals['prev_usdt']) }}</td>
