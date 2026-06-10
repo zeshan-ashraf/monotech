@@ -160,7 +160,7 @@
                                                 <thead>
                                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                     <tr class="bg-warning">
-                                                        <th colspan="@if (auth()->user()->user_role == "Super Admin") 12 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
+                                                        <th colspan="@if (auth()->user()->user_role == "Super Admin") 13 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
                                                         <th>JC</th>
                                                         <th>EP</th>
                                                         <th colspan="6">Action</th>
