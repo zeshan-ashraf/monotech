@@ -126,7 +126,15 @@ class RecountReportGenerate extends Command
                         ->where('user_id', $user->id)
                         ->where('status', 'success')
                         ->where('transaction_type', 'easypaisa')
+                        ->where('ibft','0')
                         ->whereDate('created_at', Carbon::today()->subDay(1))
+                        ->sum('amount');
+                    $ibftAmount = DB::table('payouts')
+                        ->where('user_id', $user->id)
+                        ->where('status', 'success')
+                        ->where('transaction_type', 'easypaisa')
+                        ->where('ibft','1')
+                        ->whereDate('created_at', Carbon::today())
                         ->sum('amount');
                 }
 
@@ -134,21 +142,22 @@ class RecountReportGenerate extends Command
                 $payinFeeEP = $user->payin_ep_fee;
                 $PayoutFeeJC = $user->payout_fee;
                 $PayoutFeeEP = $user->payout_ep_fee;
-            
-                $op_cln=($transactionSumJC + $transactionSumEP) * 0.015 + ($payoutSumJC + $payoutSumEP) * 0.0075 +  $transactionReverseHalf;
-
-                $rev_cln=($transactionSumJC * $payinFeeJC + $transactionSumEP * $payinFeeEP)  + ($payoutSumJC * $PayoutFeeJC + $payoutSumEP * $PayoutFeeEP) -  $op_cln;   
-
-                $settleAmount = $payoutSumJC + $payoutSumEP + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) + $todayUsdt + $todayWalletTrans;
-                $pnl_amount=round($transactionSumJC * 0.01, 2);
-                $total_pnl_amount=$pnl_amount+$prev_pnl-$prev_usdt_pnl;
                 if($user->id == "24"){
-                    $payinBal = $payoutSumEP + ($payoutSumEP * 0.0075);
-                    $closingBal=$preClosingBal + $payinBal - $todayUsdt;
-                } else {
+                    $op_cln = 0;
+                    $rev_cln = 0;
+                    $settleAmount = 0;
+                    $payinBal = 0;
+                    $closingBal = 0;
+                }else{
+                    $op_cln=($transactionSumJC + $transactionSumEP) * 0.015 + ($payoutSumJC + $payoutSumEP) * 0.0075 +  $transactionReverseHalf;
+                    $rev_cln=($transactionSumJC * $payinFeeJC + $transactionSumEP * $payinFeeEP)  + ($payoutSumJC * $PayoutFeeJC + $payoutSumEP * $PayoutFeeEP) -  $op_cln;  
+                    $settleAmount = $payoutSumJC + $payoutSumEP + $ibftAmount + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) +($ibftAmount * $PayoutFeeEP) + $todayUsdt + $todayWalletTrans;
                     $payinBal = $preClosingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
                     $closingBal=$payinBal - $settleAmount;
                 }
+                
+                $pnl_amount=round($transactionSumJC * 0.01, 2);
+                $total_pnl_amount=$pnl_amount+$prev_pnl-$prev_usdt_pnl;
                 // Create a summary for the user
                 $sumamry->update([
                     'date' => Carbon::today()->subDay(1)->format('y-m-d'),
