@@ -545,10 +545,9 @@ class GeneralController extends Controller
         return $encryptedData;
     }
     public function novaPayoutMMBL(Request $request)
-    {
-        $callback_url = $request->callback_url;
-            
+    {    
         $data=$request->all();
+        dd($data);
         $token=$this->getToken();
         $encryptionData=$this->encryptionFunc($request->all());
         $transactionUrl=env('JAZZCASH_MATOIBFTINQ_URL');
