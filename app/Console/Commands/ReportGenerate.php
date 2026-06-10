@@ -103,19 +103,21 @@ class ReportGenerate extends Command
                     ->sum('amount');
 
                 // Sum of successful payout amounts
-                $payoutSumJC = DB::table('payouts')
-                    ->where('user_id', $user->id)
-                    ->where('status', 'success')
-                    ->where('transaction_type', 'jazzcash')
-                    ->whereDate('created_at', Carbon::today())
-                    ->sum('amount');
+                
 
                 if($user->id == "24"){
                     $url = 'https://novapay.pk/api/get-nova-payout';
                     $response = Http::get($url);
                     $data = $response->json();
                     $payoutSumEP = $data['today_ok_ep_mono_payout'];
+                    $payoutSumJC = $data['today_ok_ep_mono_mmbl_payout'];
                 }else {
+                    $payoutSumJC = DB::table('payouts')
+                        ->where('user_id', $user->id)
+                        ->where('status', 'success')
+                        ->where('transaction_type', 'jazzcash')
+                        ->whereDate('created_at', Carbon::today())
+                        ->sum('amount');
                     $payoutSumEP = DB::table('payouts')
                         ->where('user_id', $user->id)
                         ->where('status', 'success')
@@ -136,13 +138,13 @@ class ReportGenerate extends Command
                 $settleAmount = $payoutSumJC + $payoutSumEP + ($payoutSumJC * $PayoutFeeJC) + ($payoutSumEP * $PayoutFeeEP) + $todayUsdt + $todayWalletTrans;
                 $pnl_amount=round($transactionSumJC * 0.01, 2);
                 $total_pnl_amount=$pnl_amount+$prev_pnl-$prev_usdt_pnl;
-                if($user->id == "24"){
-                    $payinBal = $payoutSumEP + ($payoutSumEP * 0.0075);
-                    $closingBal=$preClosingBal + $payinBal - $todayUsdt;
-                } else {
+                // if($user->id == "24"){
+                //     $payinBal = $payoutSumEP + ($payoutSumEP * 0.0075);
+                //     $closingBal=$preClosingBal + $payinBal - $todayUsdt;
+                // } else {
                     $payinBal = $preClosingBal + $transactionSumJC + $transactionSumEP - ($transactionSumJC * $payinFeeJC) - ($transactionSumEP * $payinFeeEP) - $transactionReverseHalf;
                     $closingBal=$payinBal - $settleAmount;
-                }
+                // }
                 // Create a summary for the user
                 $sumamry->update([
                     'date' => Carbon::today()->format('y-m-d'),
