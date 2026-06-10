@@ -175,6 +175,9 @@ class DashboardController extends Controller
         
         $list = Setting::all();
         $surplusAmount=SurplusAmount::where('id','1')->first();
+        $data = collect($data)->sortBy(function ($item) {
+            return $item['user']->id == 24 ? 1 : 0;
+        })->values()->toArray();
         return view('admin.index', get_defined_vars());
 
     }
