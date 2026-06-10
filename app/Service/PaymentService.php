@@ -295,13 +295,13 @@ class PaymentService
                         $surplus = SurplusAmount::find(1);
                         $payout_setting = PayoutSetting::find(1);
                         if ($setting && $surplus && $setting->auto ==1) {
-                            if($payout_setting->type == 0){
+                            // if($payout_setting->type == 0){
                                 $setting->easypaisa += $amount;
                                 $surplus->easypaisa -= $amount;
-                            }else {
-                                $setting->jazzcash += $amount;
-                                $surplus->jazzcash -= $amount;
-                            }
+                            // }else {
+                            //     $setting->jazzcash += $amount;
+                            //     $surplus->jazzcash -= $amount;
+                            // }
                             $setting->payout_balance += $amount;
                             $setting->save();
                             $surplus->save();
