@@ -233,27 +233,20 @@ class SettingController extends Controller
             }
         }
         
-        if($userid == 18){// copay
-            $setting = $currentSetting;
-            $setting->easypaisa += $submittedEasypaisa;
-            $setting->jazzcash += $submittedJazzcash;
-            $setting->payout_balance = $setting->easypaisa + $setting->jazzcash;
-            $setting->save();
-            
-            $surplus = SurplusAmount::where('id','1')->first();
-            $surplus->jazzcash -= $submittedJazzcash;
+        $surplus = SurplusAmount::find(1);
+        $payout_setting = PayoutSetting::find(1);
+        $setting = $currentSetting;
+        $setting->easypaisa += $submittedEasypaisa;
+        $setting->jazzcash += $submittedJazzcash;
+        $setting->payout_balance = $setting->easypaisa + $setting->jazzcash;
+        $setting->save();
+        $surplus->jazzcash -= $submittedJazzcash;
+        if($payout_setting->type == 0){
             $surplus->easypaisa -= $submittedEasypaisa;
             $surplus->save();
-        } else {
-            $setting = $currentSetting;
-            $setting->easypaisa += $submittedEasypaisa;
-            $setting->jazzcash += $submittedJazzcash;
-            $setting->payout_balance = $setting->easypaisa + $setting->jazzcash;
-            $setting->save();
+        }else{
             
-            $surplus = SurplusAmount::where('id','1')->first();
-            $surplus->jazzcash -= $submittedJazzcash;
-            $surplus->easypaisa -= $submittedEasypaisa;
+            $surplus->jazzcash -= $submittedEasypaisa;
             $surplus->save();
         }
         
