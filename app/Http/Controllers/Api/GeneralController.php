@@ -546,6 +546,104 @@ class GeneralController extends Controller
     }
     public function novaPayoutMMBL(Request $request)
     {
-        return app(IbftController::class)->checkout($request);
+        $callback_url = $request->callback_url;
+            
+        $data=$request->all();
+        $token=$this->getToken();
+        $encryptionData=$this->encryptionFunc($request->all());
+        $transactionUrl=env('JAZZCASH_MATOIBFTINQ_URL');
+        // dd($transactionUrl);
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $transactionUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode([
+                "data" => $encryptionData,
+            ]),
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+                'Content-Type: application/json',
+                "Authorization: Bearer $token",
+            ],
+        ]);
+        
+        $response = curl_exec($curl);
+        curl_close($curl);
+        $decodeData=json_decode($response, true);
+        $decrptionData=$this->decrytionFunc($decodeData['data']);
+        $data=json_decode($decrptionData, true);
+
+        if($data['responseCode'] == "G2P-T-0"){
+            $encryptionIbftData=$this->encryptionIbftFunc($data);
+            $transactionConfirmUrl=env('JAZZCASH_MATOIBFTCONFIRM_URL');
+            $curl_new = curl_init();
+            curl_setopt_array($curl_new, [
+                CURLOPT_URL => $transactionConfirmUrl,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => json_encode([
+                    "data" => $encryptionIbftData,
+                ]),
+                CURLOPT_HTTPHEADER => [
+                    'Accept: application/json',
+                    'Content-Type: application/json',
+                    "Authorization: Bearer $token",
+                ],
+            ]);
+            $response = curl_exec($curl_new);
+            curl_close($curl_new);
+            $decodeData=json_decode($response, true);
+            $decrptionData=$this->decrytionFunc($decodeData['data']);
+            $data=json_decode($decrptionData, true);
+
+            if($data['responseCode'] === 'G2P-T-0'){
+                
+                return response()->json([
+                    'status' => true,
+                    'data' => $data
+                ]);
+            }else{
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Your payout cannot be processed due to '. $data['responseDescription']. ' , please try again.',
+                ], 400);
+            }
+        }
+        else{
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Your payout cannot be processed due to '. $data['responseDescription']. ' , please try again.',
+            ], 400);
+        }
+    }
+    public function encryptionIbftFunc($data)
+    {
+        $DateTime 		= new \DateTime();
+		$pp_TxnDateTime = $DateTime->format('YmdHis');
+		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
+		
+        $encodeData = json_encode([
+            "Init_transactionID" => $data['transactionID'],
+            "referenceID" => $pp_TxnRefNo
+        ]);
+ 
+        $encryptionKey = env('JAZZCASH_SECRET_KEY');
+        $iv = env('JAZZCASH_INITIAL_VECTOR');
+    
+        $encryptedData = openssl_encrypt($encodeData, 'AES-128-CBC', $encryptionKey, OPENSSL_RAW_DATA, $iv);
+    
+        $hexEncryptedData = bin2hex($encryptedData);
+        return $hexEncryptedData;
     }
 }
