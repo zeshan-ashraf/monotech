@@ -123,6 +123,13 @@ class ReportGenerate extends Command
                         ->where('transaction_type', 'easypaisa')
                         ->whereDate('created_at', Carbon::today())
                         ->sum('amount');
+                    $ibftAmount = DB::table('payouts')
+                        ->where('user_id', $user->id)
+                        ->where('status', 'success')
+                        ->where('transaction_type', 'easypaisa')
+                        ->where('ibft','1')
+                        ->whereDate('created_at', Carbon::today())
+                        ->sum('amount');
                 }
 
                 $payinFeeJC = $user->payin_fee;
