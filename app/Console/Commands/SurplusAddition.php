@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Models\{TempAmountPayout,Settlement};
+use App\Models\{TempAmountPayout,Settlement,SurplusAmount};
 use Illuminate\Support\Facades\Cache;
 
 class SurplusAddition extends Command
@@ -31,6 +31,8 @@ class SurplusAddition extends Command
      */
     public function handle()
     {
+        $tempAmount=TempAmountPayout::first();
+        $surplus=SurplusAmount::first();
         $totals = Settlement::whereDate('date', today())
             ->selectRaw('
                 COALESCE(SUM(jc_payout), 0) as payoutSumJC,
@@ -39,12 +41,17 @@ class SurplusAddition extends Command
             ')
             ->first();
 
-        $jc_temp_amount = $totals->payoutSumJC + $totals->ibftAmount;
-        $ep_temp_amount = $totals->payoutSumEP;
+        $totalJCPayout = $totals->payoutSumJC + $totals->ibftAmount;
+        $totalEPPayout = $totals->payoutSumEP;
 
-        TempAmountPayout::query()->update([
-            'jc_amount' => $jc_temp_amount,
-            'ep_amount' => $ep_temp_amount,
+        $surplus->update([
+            'jazzcash' => $surplus->jazzcash + $tempAmount->jc_amount - $totalJCPayout,
+            'easypaisa' => $surplus->easypaisa + $tempAmount->ep_amount - $totalEPPayout,
+        ]);
+
+        $tempAmount->update([
+            'jc_amount' => $totalJCPayout,
+            'ep_amount' => $totalEPPayout,
         ]);
                     
         $this->info('Adding surplus amount in wallet successfully.');

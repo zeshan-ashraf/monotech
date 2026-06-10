@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Models\{Settlement,SurplusAmount,Setting,User};
+use App\Models\{Settlement,SurplusAmount,TempAmountPayout,User};
 use Illuminate\Support\Facades\Http;
 
 class ReportGenerate extends Command
@@ -206,6 +206,10 @@ class ReportGenerate extends Command
                     'total_pnl_amount' => '0',
                     'usdt_pnl_amount' => '0',
                     'ibft_amount'=>'0',
+                ]);
+                TempAmountPayout::query()->update([
+                    'jc_amount' => 0,
+                    'ep_amount' => 0,
                 ]);
                 User::query()->update([
                     'temp_amount' => 0
