@@ -73,8 +73,8 @@
                                                                 @endif
                                                                 <td>{{ number_format(round($item->payin_bal,0)) }}</td>
                                                                 <td>{{ number_format(round($item->jc_payout,0)) }}</td>
-                                                                <td>{{ number_format(round($item->ep_payout,0)) }}</td>
-                                                                <td>{{ number_format(round($item->jc_payout+$item->ep_payout,0)) }}</td>
+                                                                <td>{{ number_format(round($item->ibft_amount+$item->ep_payout,0)) }}</td>
+                                                                <td>{{ number_format(round($item->ibft_amount+$item->jc_payout+$item->ep_payout,0)) }}</td>
                                                                 <td>{{ number_format($item->jc_payout_fee + $item->ep_payout_fee) }}</td>
                                                                 <td>{{ number_format($item->op_cln) }}</td>
                                                                 <td>{{ number_format($item->rev_cln) }}</td>
