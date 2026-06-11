@@ -122,8 +122,7 @@ class ReportGenerate extends Command
                     $data = $response->json();
                     $payoutSumEP = $data['today_ep_mono_payout'];
                     $ibftAmount = $data['today_ep_mono_mmbl_payout'];
-                }
-                else {
+                } else {
                     $payoutSumEP = DB::table('payouts')
                         ->where('user_id', $user->id)
                         ->where('status', 'success')

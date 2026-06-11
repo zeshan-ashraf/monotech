@@ -121,7 +121,13 @@ class RecountReportGenerate extends Command
                     $data = $response->json();
                     $payoutSumEP = $data['today_ok_ep_mono_payout'];
                     $ibftAmount = $data['today_ok_ep_mono_mmbl_payout'];
-                }else {
+                }elseif($user->id == "25"){
+                    $url = 'https://khushiconnect.com/api/get-khushi-payout';
+                    $response = Http::get($url);
+                    $data = $response->json();
+                    $payoutSumEP = $data['today_ep_mono_payout'];
+                    $ibftAmount = $data['today_ep_mono_mmbl_payout'];
+                } else {
                     $payoutSumEP = DB::table('payouts')
                         ->where('user_id', $user->id)
                         ->where('status', 'success')
@@ -142,7 +148,7 @@ class RecountReportGenerate extends Command
                 $payinFeeEP = $user->payin_ep_fee;
                 $PayoutFeeJC = $user->payout_fee;
                 $PayoutFeeEP = $user->payout_ep_fee;
-                if($user->id == "24"){
+                if($user->id == "24" || $user->id == "25"){
                     $op_cln = 0;
                     $rev_cln = 0;
                     $settleAmount = 0;
