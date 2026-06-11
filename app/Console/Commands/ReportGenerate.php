@@ -116,7 +116,7 @@ class ReportGenerate extends Command
                     $data = $response->json();
                     $payoutSumEP = $data['today_ok_ep_mono_payout'];
                     $ibftAmount = $data['today_ok_ep_mono_mmbl_payout'];
-                }elseif($user->id == "25"){
+                }elseif($user->id == "26"){
                     $url = 'https://khushiconnect.com/api/get-khushi-payout';
                     $response = Http::get($url);
                     $data = $response->json();
