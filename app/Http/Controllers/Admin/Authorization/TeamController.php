@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin\Authorization;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
+use App\Models\{User,Setting};
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Str;
 
@@ -39,11 +39,18 @@ class TeamController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'role' => 'admin',
+            'user_role' => $request->role,
             'visible_password' => $request->password,
             'password' => Hash::make($request->password)
         ]);
         $user->assignRole($request->role);
-
+        
+        Setting::create([
+            'user_id' => $user->id,
+            'easypaisa' => '0',
+            'jazzcash' => '0',
+            'payout_balance' => '0',
+        ]);
 
         // sendMail([
         //         'view' => 'emails.admin.team',
