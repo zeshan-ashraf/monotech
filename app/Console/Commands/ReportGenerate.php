@@ -144,7 +144,7 @@ class ReportGenerate extends Command
                 $payinFeeEP = $user->payin_ep_fee;
                 $PayoutFeeJC = $user->payout_fee;
                 $PayoutFeeEP = $user->payout_ep_fee;
-                if($user->id == "24"){
+                if($user->id == "24" || $user->id == "25"){
                     $op_cln = 0;
                     $rev_cln = 0;
                     $settleAmount = 0;
