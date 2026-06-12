@@ -229,7 +229,7 @@ class SettingController extends Controller
         $setting = $currentSetting;
         // $setting->easypaisa += $submittedEasypaisa;
         // $setting->jazzcash += $submittedJazzcash;
-        $setting->payout_balance = $submittedEasypaisa;
+        $setting->payout_balance += $submittedEasypaisa;
         $setting->save();
         // $surplus->jazzcash -= $submittedJazzcash;
         // if($payout_setting->type == 0){
