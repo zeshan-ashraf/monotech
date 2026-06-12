@@ -321,7 +321,7 @@ class GeneralController extends Controller
         $user=User::where('email',$request->client_email)->first();
         
         $item = Settlement::where('user_id',$user->id)->whereDate('date', Carbon::today()->format('y-m-d'))->first();
-        
+        $setting = Setting::where('user_id',$user->id)->first();
 
         if($request->wallet_transfer > 0 && $request->store_name != "None"){
             $request->validate([
@@ -380,7 +380,8 @@ class GeneralController extends Controller
         $item->settled = $item->settled+$totalUsdt+$todayWalletTrans;
 
         $item->save();
-
+        $setting->payout_balance = $setting->payout_balance + $totalUsdt+$todayWalletTrans;
+        $setting->save();
         return response()->json(['status' => 'success']);
     }
     public function addSurplusCocktail(Request $request)
