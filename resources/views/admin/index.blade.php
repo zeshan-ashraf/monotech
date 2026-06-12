@@ -213,7 +213,7 @@
                                                         <th rowspan="2">Wallet Transfer</th>
                                                         @endif
                                                         <th rowspan="2">Unsettled (Payable)</th>
-                                                        <th colspan="3">Wallet</th>
+                                                        <th >Wallet</th>
                                                         @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->user_role == "Client")
                                                         <th colspan="3" rowspan="3">Balance</th>
                                                         @endif
@@ -233,8 +233,8 @@
                                                         <th>EP</th>
                                                         <th>Total</th>
                                                         @endif
-                                                        <th>JC</th>
-                                                        <th>EP</th>
+                                                        {{--<th>JC</th>
+                                                        <th>EP</th>--}}
                                                         <th>Total</th>
                                                     </tr>
                                                 </thead>
