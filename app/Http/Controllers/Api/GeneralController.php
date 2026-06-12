@@ -294,6 +294,7 @@ class GeneralController extends Controller
         } else {
             $userId = $request->user_id == "19" ? 2 : ($request->user_id == "36" ? 4 : null);
         }
+        $setting = Setting::where('user_id',$userId)->first();
         $trans_amount=$request->trans_amount * -1;
 
         WalletTransfer::create([
@@ -310,6 +311,9 @@ class GeneralController extends Controller
             'wallet_transfer' => $summary->wallet_transfer + ($trans_amount),
             'settled' => $summary->settled + ($trans_amount),
         ]);
+        
+        $setting->payout_balance = $setting->payout_balance + $request->trans_amount;
+        $setting->save();
 
         return response()->json(['status' => 'success']);
     }
