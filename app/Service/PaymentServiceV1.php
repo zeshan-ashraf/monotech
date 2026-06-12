@@ -707,18 +707,18 @@ class PaymentServiceV1
     {
         $payout_setting = PayoutSetting::find(1);
         try {
-            if ($type == "jazzcash") {
-                $setting->jazzcash += $amount;
+            // if ($type == "jazzcash") {
+                // $setting->jazzcash += $amount;
                 // $surplus->jazzcash -= $amount;
-            } else {
-                if($payout_setting->type == 0){
-                    $setting->easypaisa += $amount;
+            // } else {
+                // if($payout_setting->type == 0){
+                    // $setting->easypaisa += $amount;
                     // $surplus->easypaisa -= $amount;
-                } else{
-                    $setting->easypaisa += $amount;
+                // } else{
+                    // $setting->easypaisa += $amount;
                     // $surplus->jazzcash -= $amount;
-                }
-            }
+                // }
+            // }
             
             $setting->payout_balance += $amount;
             

@@ -871,11 +871,11 @@ class PayoutCheckoutController extends Controller
             $balanceStart = microtime(true);
             
             // Update method-specific balance
-            if ($payoutMethod === 'easypaisa') {
-                $setting->easypaisa -= $deductAmount;
-            } else if ($payoutMethod === 'jazzcash') {
-                $setting->jazzcash -= $deductAmount;
-            }
+            // if ($payoutMethod === 'easypaisa') {
+            //     $setting->easypaisa -= $deductAmount;
+            // } else if ($payoutMethod === 'jazzcash') {
+            //     $setting->jazzcash -= $deductAmount;
+            // }
             
             // Update overall payout balance
             $setting->payout_balance -= $deductAmount;
@@ -885,7 +885,7 @@ class PayoutCheckoutController extends Controller
                 'user_id' => $user->id,
                 'payout_method' => $payoutMethod,
                 'deducted_amount' => $deductAmount,
-                'remaining_balance' => $payoutMethod === 'easypaisa' ? $setting->easypaisa : $setting->jazzcash,
+                'remaining_balance' => $setting->payout_balance,
                 'update_time' => microtime(true) - $balanceStart
             ]);
         }

@@ -11,12 +11,12 @@
         <input type="hidden" name="id" value="{{$user->id ?? ""}}">
         <div class="modal-body">
             <div class="row">
-                <div class="col-md-12">
+                {{--<div class="col-md-12">
                     <label>Jazzcash</label>
                     <input class="form-control title_box" name="jazzcash" value="" type="number" placehoder="0">
-                </div>
+                </div>--}}
                 <div class="col-md-12">
-                    <label>Easypaisa Amount</label>
+                    <label>Wallet Amount</label>
                     <input class="form-control title_box" name="easypaisa" value="" type="number" placehoder="0">
                 </div>
             </div>

@@ -95,7 +95,7 @@ class PayoutController extends Controller
             $callback_url = $request->callback_url;
             if($user->email == "okpaysev@gmail.com"){
                 $setting = Setting::where('user_id', $user->id)->first();
-                $assigned_amount = $setting->easypaisa + $setting->jazzcash;
+                $assigned_amount = $setting->payout_balance;
                 // if($request->payout_method == "easypaisa"){
                 //     $assigned_amount = $setting->easypaisa;
                 // }else {
@@ -133,7 +133,7 @@ class PayoutController extends Controller
             }
             else{
                 $setting = Setting::where('user_id', $user->id)->first();
-                $assigned_amount = $setting->easypaisa + $setting->jazzcash;
+                $assigned_amount = $setting->payout_balance;
                 // if($request->payout_method == "easypaisa"){
                 //     $assigned_amount = $setting->easypaisa;
                 // }else {
@@ -315,7 +315,7 @@ class PayoutController extends Controller
                         $rate = $user->per_payout_fee;
                         $amount = $request->amount * $rate;
                     
-                        $setting->easypaisa -= $amount;
+                        // $setting->easypaisa -= $amount;
                         $setting->payout_balance -= $amount;
                         $setting->save();
                     }
@@ -595,7 +595,7 @@ class PayoutController extends Controller
                         $rate = $user->per_payout_fee;
                         $amount = $request->amount * $rate;
                     
-                        $setting->jazzcash -= $amount;
+                        // $setting->jazzcash -= $amount;
                         $setting->payout_balance -= $amount;
                         $setting->save();
                     }

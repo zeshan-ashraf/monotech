@@ -170,7 +170,7 @@ class IbftController extends Controller
                         $rate = $user->per_payout_fee;
                         $amount = $request->amount * $rate;
                     
-                        $setting->easypaisa -= $amount;
+                        // $setting->easypaisa -= $amount;
                         $setting->payout_balance -= $amount;
                         $setting->save();
                         // $surplus->jazzcash-= $amount;
