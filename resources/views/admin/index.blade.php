@@ -263,8 +263,8 @@
                                                             @endif
                                                     
                                                             <td class="font-weight-bold text-red">{{ number_format($item['unsettled_amount']) }}</td>
-                                                            <td class="bg-gray">{{ number_format($item['assigned_amount']->jazzcash ?? 0) }}</td>
-                                                            <td class="bg-gray">{{ number_format($item['assigned_amount']->easypaisa ?? 0) }}</td>
+                                                            {{--<td class="bg-gray">{{ number_format($item['assigned_amount']->jazzcash ?? 0) }}</td>
+                                                            <td class="bg-gray">{{ number_format($item['assigned_amount']->easypaisa ?? 0) }}</td>--}}
                                                             <td class="bg-gray font-weight-bold">{{ number_format($item['assigned_amount']->payout_balance ?? 0) }}</td>
                                                     
                                                             @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == $user->id)
@@ -324,8 +324,8 @@
                                                             @endif
                                                         
                                                             <td class="font-weight-bold text-red">{{ number_format($totals['unsettled_amount']) }}</td>
-                                                            <td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_jc']) }}</td>
-                                                            <td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_ep']) }}</td>
+                                                            {{--<td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_jc']) }}</td>
+                                                            <td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_ep']) }}</td>--}}
                                                             <td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_payout']) }}</td>
                                                             <td colspan="3" class="bg-warning font-weight-bold">{{ number_format($totals['unsettled_amount_balance']) }}</td>
                                                             <td class="font-weight-bold text-green">{{ number_format($totals['total_rev_cln']) }}</td>
