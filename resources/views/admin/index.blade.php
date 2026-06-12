@@ -265,7 +265,7 @@
                                                             <td class="font-weight-bold text-red">{{ number_format($item['unsettled_amount']) }}</td>
                                                             {{--<td class="bg-gray">{{ number_format($item['assigned_amount']->jazzcash ?? 0) }}</td>
                                                             <td class="bg-gray">{{ number_format($item['assigned_amount']->easypaisa ?? 0) }}</td>--}}
-                                                            <td class="bg-gray font-weight-bold">{{ number_format($item['assigned_amount']->payout_balance ?? 0) }}</td>
+                                                            <td colspan="2" class="bg-gray font-weight-bold">{{ number_format($item['assigned_amount']->payout_balance ?? 0) }}</td>
                                                     
                                                             @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == $user->id)
                                                             <td class="bg-warning">{{ number_format(round($item['unsettled_amount_balance'], 0)) }}</td>
