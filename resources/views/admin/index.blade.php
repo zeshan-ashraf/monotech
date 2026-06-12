@@ -326,7 +326,7 @@
                                                             <td class="font-weight-bold text-red">{{ number_format($totals['unsettled_amount']) }}</td>
                                                             {{--<td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_jc']) }}</td>
                                                             <td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_ep']) }}</td>--}}
-                                                            <td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_payout']) }}</td>
+                                                            <td colspan="2" class="bg-gray font-weight-bold">{{ number_format($totals['assigned_payout']) }}</td>
                                                             <td colspan="3" class="bg-warning font-weight-bold">{{ number_format($totals['unsettled_amount_balance']) }}</td>
                                                             <td class="font-weight-bold text-green">{{ number_format($totals['total_rev_cln']) }}</td>
                                                         </tr>
