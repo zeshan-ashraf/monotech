@@ -278,6 +278,12 @@ class PaymentService
                             // $surplus->save();
                         }
                     }
+                } elseif (isset($request->pp_ResponseCode) && $request->pp_ResponseCode == '157') {
+                    $transaction->update([
+                        'status' => 'pending',
+                        'pp_code' => $request->pp_ResponseCode,
+                        'pp_message' => $request->pp_ResponseMessage,
+                    ]);
                 } else {
                     $transaction->update(['status'=>'failed','pp_code'=>$request->pp_ResponseCode, 'pp_message'=>$request->pp_ResponseMessage,'transactionId'=>$request->ppmpf_1]);
                 }
