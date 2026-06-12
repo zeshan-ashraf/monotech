@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Transaction,Payout,Settlement,User,WalletTransfer};
+use App\Models\{Transaction,Payout,Settlement,User,WalletTransfer,Setting};
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -152,6 +152,7 @@ class SettlementController extends Controller
         // ]);
 
         $item = Settlement::findOrFail($request->id);
+        $setting=Setting::where('user_id',$item->user_id)->first();
         if($request->wallet_transfer > 0 && $request->store_name != "None"){
             $request->validate([
                 'store_name'=>'required',
@@ -201,20 +202,21 @@ class SettlementController extends Controller
                 'trans_amount'=> $request->wallet_transfer,
             ]);
         }
-        if(auth()->user()->id == 16){
-            $item = Settlement::findOrFail($request->id);
-            $totalUsdt = $item->usdt_pnl_amount+$request->usdt;
-            $item->usdt_pnl_amount = $totalUsdt;
-        } else{
+        // if(auth()->user()->id == 16){
+        //     $item = Settlement::findOrFail($request->id);
+        //     $totalUsdt = $item->usdt_pnl_amount+$request->usdt;
+        //     $item->usdt_pnl_amount = $totalUsdt;
+        // } else{
             $item = Settlement::findOrFail($request->id);
             $totalUsdt = $item->usdt+$request->usdt;
             $todayWalletTrans = $item->wallet_transfer+$request->wallet_transfer;
             $item->usdt = $totalUsdt;
             $item->wallet_transfer = $todayWalletTrans;
             $item->settled = $item->settled+$totalUsdt+$todayWalletTrans;
-        }
-        $item->save();
-
+            // }
+            $item->save();
+            $setting->payout_balance = $setting->payout_balance - ($request->usdt + $request->wallet_transfer);
+            $setting->save();
         $msg = "Summary Updated Successfully!";
         return redirect()->back()->with('message',$msg);
     }
