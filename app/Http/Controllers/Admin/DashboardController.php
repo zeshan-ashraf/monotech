@@ -7,7 +7,7 @@ use App\Models\Client;
 use App\Models\Payout;
 use App\Models\Transaction;
 use App\Models\ArcheiveTransaction;
-use App\Models\{User,Settlement, Setting, BackupTransaction, SurplusAmount};
+use App\Models\{User,Settlement, Setting, BackupTransaction, SurplusAmount,PayoutSetting};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -182,6 +182,7 @@ class DashboardController extends Controller
         $data = collect($data)->sortBy(function ($item) {
             return $item['user']->id == 24 ? 1 : 0;
         })->values()->toArray();
+        $payout_setting = PayoutSetting::all();
         return view('admin.index', get_defined_vars());
 
     }

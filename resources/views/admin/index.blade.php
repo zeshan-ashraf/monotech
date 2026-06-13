@@ -163,12 +163,31 @@
                                                         <th colspan="@if (auth()->user()->user_role == "Super Admin") 13 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
                                                         <th>JC</th>
                                                         <th>EP</th>
-                                                        <th colspan="6">Action</th>
+                                                        <th colspan="3">Action</th>
+                                                        <th colspan="3">Payout EP Setting</th>
                                                     </tr>
                                                     <tr class="bg-warning">
                                                         <th>{{number_format(round($surplusAmount->jazzcash,0))}}</th>
                                                         <th>{{number_format(round($surplusAmount->easypaisa,0))}}</th>
-                                                        <th colspan="6"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
+                                                        <th colspan="3"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
+                                                        @foreach($payout_setting as $item)
+                                                            <th>
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <span class="mb-0">{{ $item->type }}</span>
+
+                                                                    <div class="form-check mb-0">
+                                                                        <input 
+                                                                            class="form-check-input payout-radio"
+                                                                            type="radio"
+                                                                            name="payout_setting"
+                                                                            value="{{ $item->id }}"
+                                                                            data-id="{{ $item->id }}"
+                                                                            @if($item->value == 1) checked @endif
+                                                                        >
+                                                                    </div>
+                                                                </div>
+                                                            </th>
+                                                        @endforeach
                                                     </tr>
                                                     @endif
                                                     <tr>
@@ -736,5 +755,36 @@ document.addEventListener("DOMContentLoaded", function () {
     // Initial state
     updateTableVisibility();
 });
+</script>
+<script>
+    $(document).ready(function () {
+
+        $('.payout-radio').on('change', function () {
+
+            const id = $(this).data('id');
+
+            updateCheckedTogglePayout(id);
+        });
+
+        function updateCheckedTogglePayout(id) {
+            var URL = '{{ route("admin.setting.payout_setting") }}';
+
+            $.ajax({
+                url: URL,
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                contentType: 'application/json',
+                data: JSON.stringify({ id: id }),
+                success: function (response) {
+                    console.log(response);
+                },
+                error: function (xhr) {
+                    console.error('Error:', xhr.responseText);
+                },
+            });
+        }
+    });
 </script>
 @endpush
