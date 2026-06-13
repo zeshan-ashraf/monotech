@@ -50,5 +50,16 @@ class Handler extends ExceptionHandler
                 'request_id' => uniqid('rate_limited_')
             ]);
         });
+
+        $this->renderable(function (ThrottleRequestsException $e, Request $request) {
+            if (!$request->is('api/payout/checkout', 'api/v1/payout/checkout')) {
+                return null;
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Too many requests. Please try again later.',
+            ], 429, $e->getHeaders());
+        });
     }
 }
