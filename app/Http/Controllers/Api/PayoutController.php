@@ -173,7 +173,7 @@ class PayoutController extends Controller
                 if($payoutOption->type == "Mono MMBL"){
                     return app(IbftController::class)->checkout($request);
                 } elseif($payoutOption->type == "Khushi"){
-                    $url = 'https://monotech.pk/api/nova-payout';
+                    $url = 'https://khushiconnect.com/api/nova-payout';
                     $api_type = 'Khushi';
 
                     $response = Http::timeout(10)->post($url, [
