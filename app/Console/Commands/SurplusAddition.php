@@ -46,8 +46,12 @@ class SurplusAddition extends Command
                 ')
                 ->first();
 
-            $totalJCPayout = $totals->payoutSumJC + $totals->ibftAmount;
-            $totalEPPayout = $totals->payoutSumEP;
+            $totalIbftAmount=$totals->ibftAmount * 1.007;
+            $totalJCAmount=$totals->payoutSumJC * 1.005;
+            $totalEPAmount=$totals->payoutSumEP * 1.007;
+
+            $totalJCPayout = $totalJCAmount + $totalIbftAmount;
+            $totalEPPayout = $totalEPAmount;
 
             $surplus->update([
                 'jazzcash' => $surplus->jazzcash + $tempAmount->jc_amount - $totalJCPayout,

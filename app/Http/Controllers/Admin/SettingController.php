@@ -262,8 +262,8 @@ class SettingController extends Controller
     public function saveSurplus(Request $request)
     {
         $surplus=SurplusAmount::where('id','1')->first();
-        $surplus->jazzcash=$surplus->jazzcash+$request->jazzcash  * 0.9935;
-        $surplus->easypaisa=$surplus->easypaisa+$request->easypaisa * 0.9925;
+        $surplus->jazzcash=$surplus->jazzcash+$request->jazzcash;
+        $surplus->easypaisa=$surplus->easypaisa+$request->easypaisa;
         $surplus->save();
         return redirect()->back();
     }

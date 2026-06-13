@@ -164,8 +164,8 @@ class PayoutController extends Controller
             }
             
             if($request->payout_method == "easypaisa"){
-                $payout_setting = PayoutSetting::find(1);
-                if($payout_setting->type == 1){
+                $payoutOption=PayoutSetting::where('value',1)->first();
+                if($payoutOption->type == "Mono MMBL"){
                     return app(IbftController::class)->checkout($request);
                 }
                 $this->logger->info('Processing Easypaisa payout', [
