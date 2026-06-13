@@ -586,6 +586,52 @@ class PayinController extends Controller
                                 ]);
                             }
                         }
+                    } elseif (isset($result->pp_ResponseCode) && $result->pp_ResponseCode == '157') {
+                        $transaction = $this->service->orderFinalProcess($result, $result->pp_TxnRefNo, 'jazzcash');
+                        if ($transaction) {
+                            $url = $transaction->url;
+                            $data = [
+                                'orderId' => $transaction->orderId,
+                                'tid' => $transaction->transactionId,
+                                'amount' => $transaction->amount,
+                                'status' => 'pending',
+                            ];
+
+                            try {
+                                $callbackStartTime = microtime(true);
+                                $callbackResponse = Http::timeout(120)->post($url, $data);
+                                $this->logger->info('Callback URL notification sent', [
+                                    'request_id' => $requestId,
+                                    'callback_url' => $url,
+                                    'callback_data' => $data,
+                                    'callback_response' => [
+                                        'status' => $callbackResponse->status(),
+                                        'body' => $callbackResponse->body(),
+                                        'headers' => $callbackResponse->headers()
+                                    ],
+                                    'callback_execution_time' => microtime(true) - $callbackStartTime
+                                ]);
+                            } catch (\Exception $e) {
+                                $this->logger->error('Callback URL notification failed', [
+                                    'request_id' => $requestId,
+                                    'error' => $e->getMessage(),
+                                    'callback_url' => $url,
+                                    'execution_time' => microtime(true) - $startTime
+                                ]);
+                            }
+                        }
+
+                        $this->logger->info('JazzCash payment pending', [
+                            'request_id' => $requestId,
+                            'response_code' => $result->pp_ResponseCode,
+                            'response_message' => $result->pp_ResponseMessage ?? null,
+                            'execution_time' => microtime(true) - $startTime
+                        ]);
+                        return response()->json([
+                            'status' => 'pending',
+                            'transaction_id' => $transaction ? $transaction->txn_ref_no : $result->pp_TxnRefNo,
+                            'message' => 'Payment is pending.',
+                        ], 200);
                     } else {
                         $transaction = $this->service->orderFinalProcess($result, $result->pp_TxnRefNo, 'jazzcash');
                         $this->logger->warning($type .' Payment checkout failed', [
