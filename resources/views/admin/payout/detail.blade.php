@@ -29,6 +29,8 @@
                                     <div class="col-6">{{$item->transaction_type}}</div>
                                     <div class="col-6"><span class="bolder">Transaction Placed On</span></div>
                                     <div class="col-6">{{$item->created_at}}</div>
+                                    <div class="col-6"><span class="bolder">Type</span></div>
+                                    <div class="col-6">{{$item->api_type}}</div>
                                     <div class="col-6"><span class="bolder">Code</span></div>
                                     <div class="col-6"><span class="text-capitalize">{{$item->code}}</span></div>
                                      <div class="col-6"><span class="bolder">Message</span></div>
