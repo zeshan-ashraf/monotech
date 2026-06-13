@@ -168,7 +168,7 @@
                                                     </tr>
                                                     <tr class="bg-warning">
                                                         @foreach($payout_setting as $item)
-                                                            <th>
+                                                            <th  colspan="2">
                                                                 <div class="d-flex align-items-center gap-2">
                                                                     <span class="mb-0">{{ $item->type }}</span>
 
