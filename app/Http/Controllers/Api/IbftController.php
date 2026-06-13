@@ -141,7 +141,7 @@ class IbftController extends Controller
                     'amount' => $request->amount,
                     'orderId' => $request->orderId,
                     'ibft' => '1',
-                    // 'fee' => $data['Fee'] ?? "",
+                    'api_type' => "Mono MMBL",
                     'phone' => $request->phone,
                     'transaction_type' => $request->payout_method,
                     'transaction_id' => $data['transactionID'] ?? "",

@@ -39,6 +39,7 @@ class ArchivePayouts extends Command
                     'created_at' => $item->created_at,
                     'updated_at' => $item->updated_at,
                     'ibft' => $item->ibft,
+                    'api_type' => $item->api_type,
                 ]);
                 DB::table('payouts')->where('id', $item->id)->delete();
             }
