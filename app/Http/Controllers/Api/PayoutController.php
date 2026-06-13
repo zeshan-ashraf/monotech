@@ -164,109 +164,120 @@ class PayoutController extends Controller
             }
             
             if($request->payout_method == "easypaisa"){
-                $payoutOption=PayoutSetting::where('value',1)->first();
-                if($payoutOption->type == "Mono MMBL"){
-                    return app(IbftController::class)->checkout($request);
-                }
                 $this->logger->info('Processing Easypaisa payout', [
                     'request_id' => $requestId,
                     'amount' => $request->amount,
                     'phone' => $request->phone
                 ]);
+                $payoutOption=PayoutSetting::where('value',1)->first();
+                if($payoutOption->type == "Mono MMBL"){
+                    return app(IbftController::class)->checkout($request);
+                } elseif($payoutOption->type == "Mono"){
+                    $url = 'https://monotech.pk/api/nova-payout';
+                    $api_type = 'Monotech';
 
-                $clientId = env('EASYPAY_CLIENT_ID');
-                $clientSecret = env('EASYPAY_CLIENT_SECRET');
-                $channel = env('EASYPAY_CHANNEL');
-                
-                $timeStamp = $this->getTimeStamp($clientId, $clientSecret, $channel);
-                $xHashValue = $this->getXHashValue($timeStamp);
+                    $response = Http::timeout(10)->post($url, [
+                        'data' => $request->all(),
+                    ]);
         
-                $msisdn = env('EASYPAY_MSISDN');
-                $transfer_url = env('EASYPAY_MATOMA_TRANSFER_URL');
-                
-                $this->logger->info('Easypaisa API call initiated', [
-                    'request_id' => $requestId,
-                    'api_url' => $transfer_url,
-                    'client_id' => $clientId,
-                    'channel' => $channel,
-                    'msisdn' => $msisdn,
-                    'timestamp' => $timeStamp,
-                    'hash_value' => substr($xHashValue, 0, 20) . '...', // Log partial hash for security
-                    'client_ip' => $request->ip(),
-                    'client_email' => $request->client_email,
-                    'user_id' => $user->id,
-                ]);
-                
-                $curl = curl_init();
-                $payload = [
-                    "Amount" => (float) $request->amount,
-                    "MSISDN" => $msisdn,
-                    "ReceiverMSISDN" => $request->phone,
-                ];
-                
-                $this->logger->info('Easypaisa API payload', [
-                    'request_id' => $requestId,
-                    'payload' => $payload,
-                    'client_ip' => $request->ip(),
-                    'client_email' => $request->client_email,
-                    'user_id' => $user->id,
-                ]);
-                
-                curl_setopt_array($curl, [
-                    CURLOPT_URL => $transfer_url,
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_ENCODING => '',
-                    CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_TIMEOUT => 0,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    CURLOPT_CUSTOMREQUEST => 'POST',
-                    CURLOPT_POSTFIELDS => json_encode($payload),
-                    CURLOPT_HTTPHEADER => [
-                        "X-Hash-Value: $xHashValue",
-                        "X-IBM-Client-Id: $clientId",
-                        "X-IBM-Client-Secret: $clientSecret",
-                        "X-Channel: $channel",
-                        'Content-Type: application/json',
-                    ],
-                ]);
-            
-                $apiStartTime = microtime(true);
-                $response = curl_exec($curl);
-                $apiExecutionTime = microtime(true) - $apiStartTime;
-                
-                if ($response === false) {
-                    $error = curl_error($curl);
-                    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-                    curl_close($curl);
+                    $result = $response->json();
+
+                    $data = $result['data'];
+                } else{
+                    $clientId = env('EASYPAY_CLIENT_ID');
+                    $clientSecret = env('EASYPAY_CLIENT_SECRET');
+                    $channel = env('EASYPAY_CHANNEL');
                     
-                    $this->logger->error('Easypaisa API call failed', [
+                    $timeStamp = $this->getTimeStamp($clientId, $clientSecret, $channel);
+                    $xHashValue = $this->getXHashValue($timeStamp);
+            
+                    $msisdn = env('EASYPAY_MSISDN');
+                    $transfer_url = env('EASYPAY_MATOMA_TRANSFER_URL');
+                    
+                    $this->logger->info('Easypaisa API call initiated', [
                         'request_id' => $requestId,
-                        'error' => $error,
-                        'http_code' => $httpCode,
-                        'api_execution_time' => $apiExecutionTime,
+                        'api_url' => $transfer_url,
+                        'client_id' => $clientId,
+                        'channel' => $channel,
+                        'msisdn' => $msisdn,
+                        'timestamp' => $timeStamp,
+                        'hash_value' => substr($xHashValue, 0, 20) . '...', // Log partial hash for security
                         'client_ip' => $request->ip(),
                         'client_email' => $request->client_email,
                         'user_id' => $user->id,
                     ]);
                     
-                    return response()->json(['error' => $error], 500);
+                    $curl = curl_init();
+                    $payload = [
+                        "Amount" => (float) $request->amount,
+                        "MSISDN" => $msisdn,
+                        "ReceiverMSISDN" => $request->phone,
+                    ];
+                    
+                    $this->logger->info('Easypaisa API payload', [
+                        'request_id' => $requestId,
+                        'payload' => $payload,
+                        'client_ip' => $request->ip(),
+                        'client_email' => $request->client_email,
+                        'user_id' => $user->id,
+                    ]);
+                    
+                    curl_setopt_array($curl, [
+                        CURLOPT_URL => $transfer_url,
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 0,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => json_encode($payload),
+                        CURLOPT_HTTPHEADER => [
+                            "X-Hash-Value: $xHashValue",
+                            "X-IBM-Client-Id: $clientId",
+                            "X-IBM-Client-Secret: $clientSecret",
+                            "X-Channel: $channel",
+                            'Content-Type: application/json',
+                        ],
+                    ]);
+                
+                    $apiStartTime = microtime(true);
+                    $response = curl_exec($curl);
+                    $apiExecutionTime = microtime(true) - $apiStartTime;
+                    
+                    if ($response === false) {
+                        $error = curl_error($curl);
+                        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                        curl_close($curl);
+                        
+                        $this->logger->error('Easypaisa API call failed', [
+                            'request_id' => $requestId,
+                            'error' => $error,
+                            'http_code' => $httpCode,
+                            'api_execution_time' => $apiExecutionTime,
+                            'client_ip' => $request->ip(),
+                            'client_email' => $request->client_email,
+                            'user_id' => $user->id,
+                        ]);
+                        
+                        return response()->json(['error' => $error], 500);
+                    }
+            
+                    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                    curl_close($curl);
+                    $data = json_decode($response, true);
+
+                    $this->logger->info('Easypaisa API response received', [
+                        'request_id' => $requestId,
+                        'http_code' => $httpCode,
+                        'api_execution_time' => $apiExecutionTime,
+                        'response' => $data,
+                        'client_ip' => $request->ip(),
+                        'client_email' => $request->client_email,
+                        'user_id' => $user->id,
+                    ]);
+
                 }
-        
-                $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-                curl_close($curl);
-                $data = json_decode($response, true);
-
-                $this->logger->info('Easypaisa API response received', [
-                    'request_id' => $requestId,
-                    'http_code' => $httpCode,
-                    'api_execution_time' => $apiExecutionTime,
-                    'response' => $data,
-                    'client_ip' => $request->ip(),
-                    'client_email' => $request->client_email,
-                    'user_id' => $user->id,
-                ]);
-
                 $requestDetail = $this->getRequestDetailForStorage($request, $requestId, $startTime);
                 $isEasypaisaSuccess = ($data['ResponseCode'] ?? '') === '0'
                     && ($data['TransactionStatus'] ?? '') === 'success';
