@@ -430,6 +430,28 @@ class PayinController extends Controller
                                         'message' => 'Payment checkout initiated successfully.',
                                     ], 200);
                                 }
+                            } elseif ($responseCode == '0001') {
+                                $transaction = $this->service->orderFinalProcess($response, $response['orderId'], 'easypaisa');
+                                if ($transaction) {
+                                    $this->queuePayinCallback(
+                                        $transaction,
+                                        $this->payinCallbackPayload($transaction, 'pending'),
+                                        $requestId,
+                                        'easypaisa_pending'
+                                    );
+                                }
+
+                                $this->logger->info('Easypaisa payment pending', [
+                                    'request_id' => $requestId,
+                                    'response_code' => $responseCode,
+                                    'response_desc' => $responseDesc,
+                                    'execution_time' => microtime(true) - $startTime
+                                ]);
+                                return response()->json([
+                                    'status' => 'pending',
+                                    'transaction_id' => $transaction ? $transaction->txn_ref_no : $response['orderId'],
+                                    'message' => 'Payment is pending.',
+                                ], 200);
                             }
                             
                             $transaction = $this->service->orderFinalProcess($response, $response['orderId'], 'easypaisa');
@@ -634,11 +656,13 @@ class PayinController extends Controller
         }
 
         SendPayinCallbackJob::dispatch($transaction->url, $payload, $requestId, $context)
+            ->onConnection('database')
             ->afterResponse();
 
         $this->logger->info('Payin callback queued', [
             'request_id' => $requestId,
             'context' => $context,
+            'queue_connection' => 'database',
             'callback_url' => $transaction->url,
             'callback_data' => $payload,
         ]);
