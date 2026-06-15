@@ -550,28 +550,12 @@ class GeneralController extends Controller
         return $encryptedData;
     }
     public function novaPayoutMMBL(Request $request)
-    {
-        $requestData = $request->all();
-
-        if (! isset($requestData['data']) || ! is_array($requestData['data'])) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid payout request payload.',
-            ], 422);
-        }
-
-        try {
-            $token = $this->getToken();
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unable to authenticate with JazzCash payout service.',
-            ], 502);
-        }
-
-        $payload = $requestData['data'];
-        $encryptionData = $this->encryptionFunc($payload);
-        $transactionUrl = env('JAZZCASH_MATOIBFTINQ_URL');
+    {    
+        $data=$request->all();
+        $payload = $data['data'];
+        $token=$this->getToken();
+        $encryptionData=$this->encryptionFunc($payload);
+        $transactionUrl=env('JAZZCASH_MATOIBFTINQ_URL');
         $curl = curl_init();
         curl_setopt_array($curl, [
             CURLOPT_URL => $transactionUrl,
@@ -583,7 +567,7 @@ class GeneralController extends Controller
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_POSTFIELDS => json_encode([
-                'data' => $encryptionData,
+                "data" => $encryptionData,
             ]),
             CURLOPT_HTTPHEADER => [
                 'Accept: application/json',
@@ -591,30 +575,19 @@ class GeneralController extends Controller
                 "Authorization: Bearer $token",
             ],
         ]);
-
+        
         $response = curl_exec($curl);
-        $curlError = curl_error($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
+        $decodeData=json_decode($response, true);
+        $decrptionData=$this->decrytionFunc($decodeData['data']);
+        $data=json_decode($decrptionData, true);
 
-        if ($response === false) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unable to reach JazzCash payout service.',
-                'detail' => $curlError,
-            ], 502);
-        }
 
-        $data = $this->decodeJazzCashEncryptedResponse($response, $httpCode, 'inquiry');
-        if ($data instanceof \Illuminate\Http\JsonResponse) {
-            return $data;
-        }
-
-        if (($data['responseCode'] ?? null) == 'G2P-T-0') {
-            $encryptionIbftData = $this->encryptionIbftFunc($data);
-            $transactionConfirmUrl = env('JAZZCASH_MATOIBFTCONFIRM_URL');
-            $curlNew = curl_init();
-            curl_setopt_array($curlNew, [
+        if($data['responseCode'] == "G2P-T-0"){
+            $encryptionIbftData=$this->encryptionIbftFunc($data);
+            $transactionConfirmUrl=env('JAZZCASH_MATOIBFTCONFIRM_URL');
+            $curl_new = curl_init();
+            curl_setopt_array($curl_new, [
                 CURLOPT_URL => $transactionConfirmUrl,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => '',
@@ -624,7 +597,7 @@ class GeneralController extends Controller
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => 'POST',
                 CURLOPT_POSTFIELDS => json_encode([
-                    'data' => $encryptionIbftData,
+                    "data" => $encryptionIbftData,
                 ]),
                 CURLOPT_HTTPHEADER => [
                     'Accept: application/json',
@@ -632,69 +605,31 @@ class GeneralController extends Controller
                     "Authorization: Bearer $token",
                 ],
             ]);
+            $response = curl_exec($curl_new);
+            curl_close($curl_new);
+            $decodeData=json_decode($response, true);
+            $decrptionData=$this->decrytionFunc($decodeData['data']);
+            $data=json_decode($decrptionData, true);
 
-            $confirmResponse = curl_exec($curlNew);
-            $confirmCurlError = curl_error($curlNew);
-            $confirmHttpCode = curl_getinfo($curlNew, CURLINFO_HTTP_CODE);
-            curl_close($curlNew);
-
-            if ($confirmResponse === false) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Unable to confirm JazzCash payout.',
-                    'detail' => $confirmCurlError,
-                ], 502);
-            }
-
-            $data = $this->decodeJazzCashEncryptedResponse($confirmResponse, $confirmHttpCode, 'confirm');
-            if ($data instanceof \Illuminate\Http\JsonResponse) {
-                return $data;
-            }
-
-            if (($data['responseCode'] ?? null) === 'G2P-T-0') {
+            if($data['responseCode'] === 'G2P-T-0'){
+                
                 return response()->json([
                     'status' => true,
-                    'data' => $data,
+                    'data' => $data
                 ]);
+            }else{
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Your payout cannot be processed due to '. $data['responseDescription']. ' , please try again.',
+                ], 400);
             }
-
+        }
+        else{
             return response()->json([
                 'status' => 'error',
-                'message' => 'Your payout cannot be processed due to '.($data['responseDescription'] ?? 'confirmation failed').' , please try again.',
+                'message' => 'Your payout cannot be processed due to '. $data['responseDescription']. ' , please try again.',
             ], 400);
         }
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Your payout cannot be processed due to '.($data['responseDescription'] ?? 'inquiry failed').' , please try again.',
-        ], 400);
-    }
-
-    private function decodeJazzCashEncryptedResponse($response, $httpCode, $step)
-    {
-        $decodeData = json_decode($response, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decodeData) || ! isset($decodeData['data'])) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid response from JazzCash payout service.',
-                'step' => $step,
-                'http_code' => $httpCode,
-            ], 502);
-        }
-
-        $decrptionData = $this->decrytionFunc($decodeData['data']);
-        $data = json_decode($decrptionData, true);
-
-        if (! is_array($data) || ! isset($data['responseCode'])) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unable to decode JazzCash payout response.',
-                'step' => $step,
-            ], 502);
-        }
-
-        return $data;
     }
     public function getToken()
     {
@@ -720,21 +655,16 @@ class GeneralController extends Controller
         ));
     
         $response = curl_exec($curl);
-
+        // dd($response);
         if (curl_errno($curl)) {
-            $error = curl_error($curl);
-            curl_close($curl);
-            throw new \RuntimeException('Failed to get JazzCash token: '.$error);
+            // Log error if needed
+            echo 'Error: ' . curl_error($curl);
         }
-
+    
         curl_close($curl);
-        $data = json_decode($response, true);
-
-        if (! is_array($data) || empty($data['access_token'])) {
-            throw new \RuntimeException('Invalid JazzCash token response');
-        }
-
-        return $data['access_token'];
+        $data=json_decode($response, true);
+        $accessToken=$data['access_token'];
+        return $accessToken;
     }
     public function encryptionFunc($data)
     {
