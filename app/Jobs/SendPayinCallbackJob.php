@@ -17,10 +17,6 @@ class SendPayinCallbackJob implements ShouldQueue
 
     private const CALLBACK_HTTP_TIMEOUT_SECONDS = 20;
 
-    public string $connection = 'database';
-
-    public string $queue = 'default';
-
     public int $tries = 3;
     public int $timeout = 20;
 

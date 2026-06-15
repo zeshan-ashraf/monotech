@@ -10,6 +10,7 @@ use App\Service\PaymentService;
 use App\Support\PayinRestrictionExclusion;
 use App\Traits\HighValueTransactionRestriction;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use Zfhassaan\Easypaisa\Easypaisa;
 use Illuminate\Support\Facades\Validator;
 use DB;
@@ -652,16 +653,25 @@ class PayinController extends Controller
         string $context
     ): void {
         if (!$transaction || empty($transaction->url)) {
+            $this->logger->info('Payin callback skipped', [
+                'request_id' => $requestId,
+                'context' => $context,
+                'reason' => !$transaction ? 'no_transaction' : 'empty_callback_url',
+            ]);
             return;
         }
 
-        SendPayinCallbackJob::dispatch($transaction->url, $payload, $requestId, $context);
+        $job = new SendPayinCallbackJob($transaction->url, $payload, $requestId, $context);
+        $jobId = Queue::connection('database')->pushOn('default', $job);
 
         $this->logger->info('Payin callback queued', [
             'request_id' => $requestId,
             'context' => $context,
             'callback_url' => $transaction->url,
             'callback_data' => $payload,
+            'queue_connection' => 'database',
+            'queue_default' => config('queue.default'),
+            'queue_job_id' => $jobId,
         ]);
     }
 }
