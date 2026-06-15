@@ -313,6 +313,12 @@ class PaymentService
                             $surplus->save();
                         }
                     }
+			    } elseif ($request['responseCode'] == '0001') {
+			        $transaction->update([
+			            'status' => 'pending',
+			            'pp_code' => $request['responseCode'],
+			            'pp_message' => $request['responseDesc'],
+			        ]);
 			    } else {
 			        $transaction->update(['status'=>'failed','pp_code'=>$request['responseCode'], 'pp_message'=>$request['responseDesc']]);
 			    }

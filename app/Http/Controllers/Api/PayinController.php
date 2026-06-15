@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Jobs\SendPayinCallbackJob;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{Product,Client,Transaction,User};
@@ -11,7 +12,6 @@ use App\Traits\HighValueTransactionRestriction;
 use Illuminate\Support\Facades\Log;
 use Zfhassaan\Easypaisa\Easypaisa;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Http;
 use DB;
 use App\Services\PhoneVerificationService;
 use Ramsey\Uuid\Uuid;
@@ -402,65 +402,67 @@ class PayinController extends Controller
                             if ($responseCode == '0000') {
                                 $transaction = $this->service->orderFinalProcess($response, $response['orderId'], 'easypaisa');
                                 if ($transaction) {
-                                    $url = $transaction->url;
-                                    $data = [
-                                        'orderId' => $transaction->orderId,
-                                        'tid' => $transaction->transactionId,
-                                        'amount' => $transaction->amount,
-                                        'status' => $transaction->status,
-                                    ];
-                
+                                    $this->queuePayinCallback(
+                                        $transaction,
+                                        $this->payinCallbackPayload($transaction, $transaction->status),
+                                        $requestId,
+                                        'easypaisa_success'
+                                    );
+
+                                    $this->logger->info('Payment checkout completed successfully', [
+                                        'request_id' => $requestId,
+                                        'transaction_id' => $transaction->txn_ref_no,
+                                        'total_execution_time' => microtime(true) - $startTime
+                                    ]);
                                     try {
-                                        $callbackStartTime = microtime(true);
-                                        $callbackResponse = Http::timeout(120)->post($url, $data);
-                                        $this->logger->info('Callback URL notification sent', [
+                                        app(PhoneVerificationService::class)->markVerified((string) $request->phone);
+                                    } catch (\Throwable $e) {
+                                        $this->logger->info('Failed to mark phone verified after success', [
                                             'request_id' => $requestId,
-                                            'callback_url' => $url,
-                                            'callback_data' => $data,
-                                            'callback_response' => [
-                                                'status' => $callbackResponse->status(),
-                                                'body' => $callbackResponse->body(),
-                                                'headers' => $callbackResponse->headers()
-                                            ],
-                                            'callback_execution_time' => microtime(true) - $callbackStartTime
-                                        ]);
-                
-                                        $this->logger->info('Payment checkout completed successfully', [
-                                            'request_id' => $requestId,
-                                            'transaction_id' => $transaction->txn_ref_no,
-                                            'total_execution_time' => microtime(true) - $startTime
-                                        ]);
-                                        try {
-                                            app(PhoneVerificationService::class)->markVerified((string) $request->phone);
-                                        } catch (\Throwable $e) {
-                                            $this->logger->info('Failed to mark phone verified after success', [
-                                                'request_id' => $requestId,
-                                                'payment_method' => $paymentMethod,
-                                                'phone' => (string) $request->phone,
-                                                'error' => $e->getMessage(),
-                                            ]);
-                                        }
-                                        return response()->json([
-                                            'status' => $transaction->status,
-                                            'transaction_id' => $transaction->txn_ref_no,
-                                            'message' => 'Payment checkout initiated successfully.',
-                                        ], 200);
-                                    } catch (\Exception $e) {
-                                        $this->logger->error('Callback URL notification failed', [
-                                            'request_id' => $requestId,
+                                            'payment_method' => $paymentMethod,
+                                            'phone' => (string) $request->phone,
                                             'error' => $e->getMessage(),
-                                            'callback_url' => $url,
-                                            'execution_time' => microtime(true) - $startTime
                                         ]);
-                                        return response()->json([
-                                            'status' => 'error',
-                                            'message' => 'Error notifying the callback URL.',
-                                        ], 500);
                                     }
+                                    return response()->json([
+                                        'status' => $transaction->status,
+                                        'transaction_id' => $transaction->txn_ref_no,
+                                        'message' => 'Payment checkout initiated successfully.',
+                                    ], 200);
                                 }
+                            } elseif ($responseCode == '0001') {
+                                $transaction = $this->service->orderFinalProcess($response, $response['orderId'], 'easypaisa');
+                                if ($transaction) {
+                                    $this->queuePayinCallback(
+                                        $transaction,
+                                        $this->payinCallbackPayload($transaction, 'pending'),
+                                        $requestId,
+                                        'easypaisa_pending'
+                                    );
+                                }
+
+                                $this->logger->info('Easypaisa payment pending', [
+                                    'request_id' => $requestId,
+                                    'response_code' => $responseCode,
+                                    'response_desc' => $responseDesc,
+                                    'execution_time' => microtime(true) - $startTime
+                                ]);
+                                return response()->json([
+                                    'status' => 'pending',
+                                    'transaction_id' => $transaction ? $transaction->txn_ref_no : $response['orderId'],
+                                    'message' => 'Payment is pending.',
+                                ], 200);
                             }
                             
-                            $this->service->orderFinalProcess($response, $response['orderId'], 'easypaisa');
+                            $transaction = $this->service->orderFinalProcess($response, $response['orderId'], 'easypaisa');
+                            if ($transaction) {
+                                $this->queuePayinCallback(
+                                    $transaction,
+                                    $this->payinCallbackPayload($transaction, 'failed'),
+                                    $requestId,
+                                    'easypaisa_failed'
+                                );
+                            }
                             $this->logger->warning($type .' Payment checkout failed', [
                                 'request_id' => $requestId,
                                 'response_code' => $responseCode,
@@ -544,81 +546,43 @@ class PayinController extends Controller
                     if (isset($result->pp_ResponseCode) && $result->pp_ResponseCode == '000') {
                         $transaction = $this->service->orderFinalProcess($result, $result->pp_TxnRefNo, 'jazzcash');
                         if ($transaction) {
-                            $url = $transaction->url;
-                            $data = [
-                                'orderId' => $transaction->orderId,
-                                'tid' => $transaction->transactionId,
-                                'amount' => $transaction->amount,
+                            $this->queuePayinCallback(
+                                $transaction,
+                                $this->payinCallbackPayload($transaction, $transaction->status),
+                                $requestId,
+                                'jazzcash_success'
+                            );
+
+                            $this->logger->info('Payment checkout completed successfully', [
+                                'request_id' => $requestId,
+                                'transaction_id' => $transaction->txn_ref_no,
+                                'total_execution_time' => microtime(true) - $startTime
+                            ]);
+                            return response()->json([
                                 'status' => $transaction->status,
-                            ];
-        
-                            try {
-                                $callbackStartTime = microtime(true);
-                                $callbackResponse = Http::timeout(120)->post($url, $data);
-                                $this->logger->info('Callback URL notification sent', [
-                                    'request_id' => $requestId,
-                                    'callback_url' => $url,
-                                    'callback_data' => $data,
-                                    'callback_response' => [
-                                        'status' => $callbackResponse->status(),
-                                        'body' => $callbackResponse->body(),
-                                        'headers' => $callbackResponse->headers()
-                                    ],
-                                    'callback_execution_time' => microtime(true) - $callbackStartTime
-                                ]);
-                                
-                                $this->logger->info('Payment checkout completed successfully', [
-                                    'request_id' => $requestId,
-                                    'transaction_id' => $transaction->txn_ref_no,
-                                    'total_execution_time' => microtime(true) - $startTime
-                                ]);
-                                return response()->json([
-                                    'status' => $transaction->status,
-                                    'transaction_id' => $transaction->txn_ref_no,
-                                    'message' => 'Payment checkout initiated successfully.',
-                                ], 200);
-                            } catch (\Exception $e) {
-                                $this->logger->error('Callback URL notification failed', [
-                                    'request_id' => $requestId,
-                                    'error' => $e->getMessage(),
-                                    'callback_url' => $url,
-                                    'execution_time' => microtime(true) - $startTime
-                                ]);
-                            }
+                                'transaction_id' => $transaction->txn_ref_no,
+                                'message' => 'Payment checkout initiated successfully.',
+                            ], 200);
                         }
+
+                        $this->logger->warning($type .' Payment checkout failed', [
+                            'request_id' => $requestId,
+                            'response_code' => $result->pp_ResponseCode,
+                            'execution_time' => microtime(true) - $startTime
+                        ]);
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Payment checkout cannot be processed, please try again.',
+                        ], 400);
                     } elseif (isset($result->pp_ResponseCode) && $result->pp_ResponseCode == '157') {
                         $transaction = $this->service->orderFinalProcess($result, $result->pp_TxnRefNo, 'jazzcash');
                         if ($transaction) {
-                            $url = $transaction->url;
-                            $data = [
-                                'orderId' => $transaction->orderId,
-                                'tid' => $transaction->transactionId,
-                                'amount' => $transaction->amount,
-                                'status' => 'pending',
-                            ];
-
-                            try {
-                                $callbackStartTime = microtime(true);
-                                $callbackResponse = Http::timeout(120)->post($url, $data);
-                                $this->logger->info('Callback URL notification sent', [
-                                    'request_id' => $requestId,
-                                    'callback_url' => $url,
-                                    'callback_data' => $data,
-                                    'callback_response' => [
-                                        'status' => $callbackResponse->status(),
-                                        'body' => $callbackResponse->body(),
-                                        'headers' => $callbackResponse->headers()
-                                    ],
-                                    'callback_execution_time' => microtime(true) - $callbackStartTime
-                                ]);
-                            } catch (\Exception $e) {
-                                $this->logger->error('Callback URL notification failed', [
-                                    'request_id' => $requestId,
-                                    'error' => $e->getMessage(),
-                                    'callback_url' => $url,
-                                    'execution_time' => microtime(true) - $startTime
-                                ]);
-                            }
+                            $this->queuePayinCallback(
+                                $transaction,
+                                $this->payinCallbackPayload($transaction, 'pending'),
+                                $requestId,
+                                'jazzcash_pending'
+                            );
                         }
 
                         $this->logger->info('JazzCash payment pending', [
@@ -634,6 +598,14 @@ class PayinController extends Controller
                         ], 200);
                     } else {
                         $transaction = $this->service->orderFinalProcess($result, $result->pp_TxnRefNo, 'jazzcash');
+                        if ($transaction) {
+                            $this->queuePayinCallback(
+                                $transaction,
+                                $this->payinCallbackPayload($transaction, 'failed'),
+                                $requestId,
+                                'jazzcash_failed'
+                            );
+                        }
                         $this->logger->warning($type .' Payment checkout failed', [
                             'request_id' => $requestId,
                             'response_code' => $result->pp_ResponseCode ?? 'unknown',
@@ -644,14 +616,6 @@ class PayinController extends Controller
                             'message' => 'Payment checkout cannot be processed, please try again.',
                         ], 400);
                     }
-                    $this->logger->warning($type .' Payment checkout failed', [
-                        'request_id' => $requestId,
-                        'execution_time' => microtime(true) - $startTime
-                    ]);
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Payment checkout cannot be processed, please try again.',
-                    ], 400);
                 }
         
             } catch (\Exception $e) {
@@ -669,5 +633,35 @@ class PayinController extends Controller
                 ], 500);
             }
         }
+    }
+
+    private function payinCallbackPayload(Transaction $transaction, string $status): array
+    {
+        return [
+            'orderId' => $transaction->orderId,
+            'tid' => $transaction->transactionId,
+            'amount' => $transaction->amount,
+            'status' => $status,
+        ];
+    }
+
+    private function queuePayinCallback(
+        ?Transaction $transaction,
+        array $payload,
+        string $requestId,
+        string $context
+    ): void {
+        if (!$transaction || empty($transaction->url)) {
+            return;
+        }
+
+        SendPayinCallbackJob::dispatch($transaction->url, $payload, $requestId, $context);
+
+        $this->logger->info('Payin callback queued', [
+            'request_id' => $requestId,
+            'context' => $context,
+            'callback_url' => $transaction->url,
+            'callback_data' => $payload,
+        ]);
     }
 }
