@@ -57,15 +57,15 @@ class DashboardController extends Controller
             $payoutSuccess= $epPayoutAmount + $jcPayoutAmount + $ibftAmount;
             $prevUsdt= $settlement->usdt ?? 0;
             $prevWalletTrans= $settlement->wallet_transfer ?? 0;
-            $payinFee=$client->payin_fee;
-            $payoutFee=$client->payout_fee;
+            $payinFee=$client->payin_fee  ?? 0;
+            $payoutFee=$client->payout_fee  ?? 0;
             //getUnsettlement
             // if ($userId == 2) {
             //     $payinSuccess = $epPayinAmount;
             // } 
             $unsettletdAmount=$settlement->closing_bal ?? 0;
             $assignedAmount=Setting::where('user_id',$userId)->select('jazzcash','easypaisa','payout_balance')->first();
-            $balance= $unsettletdAmount - $assignedAmount->payout_balance ;
+            $balance= $unsettletdAmount - $assignedAmount->payout_balance  ?? 0 ;
             // $balance = $settlement->closing_bal ?? 0;
     
             $data[] = [ 
@@ -110,18 +110,18 @@ class DashboardController extends Controller
         ];
         
         foreach ($data as $item) {
-            $totals['prev_balance'] += $item['prev_balance'];
-            $totals['jc_payin'] += $item['jc_payin'];
-            $totals['ep_payin'] += $item['ep_payin'];
-            $totals['reverse_amount'] += $item['reverse_amount'];
-            $totals['total_payin'] += $item['total_payin'];
-            $totals['jc_payout'] += $item['jc_payout'];
-            $totals['ep_payout'] += $item['ep_payout'];
-            $totals['total_payout'] += $item['total_payout'];
-            $totals['prev_usdt'] += $item['prev_usdt'];
-            $totals['wallet_transfer'] += $item['wallet_transfer'];
-            $totals['unsettled_amount'] += $item['unsettled_amount'];
-            $totals['unsettled_amount_balance'] += $item['unsettled_amount_balance'];
+            $totals['prev_balance'] += $item['prev_balance'] ?? 0;
+            $totals['jc_payin'] += $item['jc_payin'] ?? 0;
+            $totals['ep_payin'] += $item['ep_payin'] ?? 0;
+            $totals['reverse_amount'] += $item['reverse_amount'] ?? 0;
+            $totals['total_payin'] += $item['total_payin'] ?? 0;
+            $totals['jc_payout'] += $item['jc_payout'] ?? 0;
+            $totals['ep_payout'] += $item['ep_payout'] ?? 0;
+            $totals['total_payout'] += $item['total_payout'] ?? 0;
+            $totals['prev_usdt'] += $item['prev_usdt'] ?? 0;
+            $totals['wallet_transfer'] += $item['wallet_transfer'] ?? 0;
+            $totals['unsettled_amount'] += $item['unsettled_amount'] ?? 0;
+            $totals['unsettled_amount_balance'] += $item['unsettled_amount_balance'] ?? 0;
             $totals['assigned_jc'] += $item['assigned_amount']->jazzcash ?? 0;
             $totals['assigned_ep'] += $item['assigned_amount']->easypaisa ?? 0;
             $totals['assigned_payout'] += $item['assigned_amount']->payout_balance ?? 0;
