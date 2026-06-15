@@ -655,14 +655,11 @@ class PayinController extends Controller
             return;
         }
 
-        SendPayinCallbackJob::dispatch($transaction->url, $payload, $requestId, $context)
-            ->onConnection('database')
-            ->afterResponse();
+        SendPayinCallbackJob::dispatch($transaction->url, $payload, $requestId, $context);
 
         $this->logger->info('Payin callback queued', [
             'request_id' => $requestId,
             'context' => $context,
-            'queue_connection' => 'database',
             'callback_url' => $transaction->url,
             'callback_data' => $payload,
         ]);
