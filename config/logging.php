@@ -176,6 +176,12 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => 60,
         ],
+        'payin_diagnostics' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/payin_diagnostics.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
     ],
 
 ];

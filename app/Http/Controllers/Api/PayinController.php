@@ -11,9 +11,9 @@ use App\Support\PayinRestrictionExclusion;
 use App\Traits\HighValueTransactionRestriction;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
-use Zfhassaan\Easypaisa\Easypaisa;
 use Illuminate\Support\Facades\Validator;
 use DB;
+use App\Services\Payin\InstrumentedEasypaisaPayinClient;
 use App\Services\PhoneVerificationService;
 use Ramsey\Uuid\Uuid;
 
@@ -383,10 +383,20 @@ class PayinController extends Controller
                 ]);
 
                 if ($type == "easypaisa") {
+                    $easypaisaNetworkDiagnostics = null;
+                    $easypaisaDiagnosticsLevel = 'info';
+
                     try {
-                        $easypaisa = new Easypaisa;
                         $easypaisaStartTime = microtime(true);
-                        $response = $easypaisa->sendRequest($post_data);
+                        $payinResult = app(InstrumentedEasypaisaPayinClient::class)->sendRequest(
+                            $post_data,
+                            $requestId,
+                            $post_data['orderId'] ?? null,
+                            $request->orderId
+                        );
+                        $easypaisaNetworkDiagnostics = $payinResult['diagnostics'] ?? null;
+                        $easypaisaDiagnosticsLevel = $payinResult['diagnostics_level'] ?? 'info';
+                        $response = $payinResult['response'];
                         $this->logger->info('Easypaisa API response', [
                             'request_id' => $requestId,
                             'response' => $response,
@@ -496,6 +506,14 @@ class PayinController extends Controller
                             'status' => 'error',
                             'message' => 'An error occurred while processing the payment.',
                         ], 500);
+                    } finally {
+                        if (is_array($easypaisaNetworkDiagnostics)) {
+                            $this->logger->log(
+                                $easypaisaDiagnosticsLevel,
+                                'Easypaisa network diagnostics',
+                                $easypaisaNetworkDiagnostics
+                            );
+                        }
                     }
                 } else {
                     $encode_data = json_encode($post_data, false);
