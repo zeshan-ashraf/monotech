@@ -8,6 +8,7 @@ use App\Models\Payout;
 use App\Models\Transaction;
 use App\Models\ArcheiveTransaction;
 use App\Models\{User,Settlement, Setting, BackupTransaction, SurplusAmount,PayoutSetting};
+use App\Services\DashboardMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -129,60 +130,17 @@ class DashboardController extends Controller
             $totals['total_ibft_amount'] += $item['ibft_amount'] ?? 0;
         }
         
-        $jcOkPendingOrder = Transaction::where([
-            ['status', 'pending'],
-            ['user_id', '2'],
-            ['txn_type', 'jazzcash']
-        ])->count();
-        
-        $epOkPendingOrder = Transaction::where([
-            ['status', 'pending'],
-            ['user_id', '2'],
-            ['txn_type', 'easypaisa']
-        ])->count();
-        
-        $jcPiqPendingOrder = Transaction::where([
-            ['status', 'pending'],
-            ['user_id', '4'],
-            ['txn_type', 'jazzcash']
-        ])->count();
-        
-        $epPiqPendingOrder = Transaction::where([
-            ['status', 'pending'],
-            ['user_id', '4'],
-            ['txn_type', 'easypaisa']
-        ])->count();
-        
-        $jcPkNPendingOrder = Transaction::where([
-            ['status', 'pending'],
-            ['user_id', '5'],
-            ['txn_type', 'jazzcash']
-        ])->count();
-        
-        $epPkNPendingOrder = Transaction::where([
-            ['status', 'pending'],
-            ['user_id', '5'],
-            ['txn_type', 'easypaisa']
-        ])->count();
-        
-        $jcJackPendingOrder = Transaction::where([
-            ['status', 'pending'],
-            ['user_id', '23'],
-            ['txn_type', 'jazzcash']
-        ])->count();
-        
-        $epJackPendingOrder = Transaction::where([
-            ['status', 'pending'],
-            ['user_id', '23'],
-            ['txn_type', 'easypaisa']
-        ])->count();
-        
         $list = Setting::all();
-        $surplusAmount=SurplusAmount::where('id','1')->first();
+        $surplusAmount = SurplusAmount::where('id', '1')->first();
         $data = collect($data)->sortBy(function ($item) {
             return $item['user']->id == 24 ? 1 : 0;
         })->values()->toArray();
         $payout_setting = PayoutSetting::all();
+
+        $metricsService = app(DashboardMetricsService::class);
+        $dashboardMetricClients = $metricsService->getVisibleClients(auth()->user());
+        $dashboardMetricsPayload = $metricsService->getMetricsPayloadForClients($dashboardMetricClients);
+
         return view('admin.index', get_defined_vars());
 
     }

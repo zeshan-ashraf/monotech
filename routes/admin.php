@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Authorization\RoleController;
 use App\Http\Controllers\Admin\Authorization\TeamController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DashboardMetricsController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\PayoutController;
 use App\Http\Controllers\Admin\SettlementController;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/metrics', [DashboardMetricsController::class, 'index'])->name('dashboard.metrics');
+    Route::get('/dashboard/metrics/{userId}', [DashboardMetricsController::class, 'show'])->name('dashboard.metrics.show');
     Route::get('/zig-dashboard', [DashboardController::class, 'zigIndex'])->name('zig_dashboard');
     Route::get('/testing', [DashboardController::class, 'testing'])->name('testing');
     Route::get('/add-data/{id}', [DashboardController::class, 'prevClientSettlementEntry'])->name('add.data');

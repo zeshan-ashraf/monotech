@@ -394,16 +394,285 @@
                             </div>
                         </div>
                     </div>
-                <x-dashboard-metrics.panel
-                    :clients="$dashboardMetricClients"
-                    :metrics-payload="$dashboardMetricsPayload"
-                />
+                @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 2)
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card shadow-lg card-graph">
+                                <div class="card-body">
+                                    <h5 class="card-title font-weight-bold">Ok JazzCash Success Rate</h5>
+                                    <div id="okJcSRChart" style="margin-top: -40px;"></div>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div class="col-md-3">
+                            <div class="card card-graph-red">
+                                <div class="card-header">
+                                    <h5 class="card-title font-weight-bold">OK JazzCash Pending Orders</h5>
+                                </div>
+                                <div class="card-body" style="margin-top: -40px;">
+                                    <div id="jazzCashChartOk"></div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <div class="col-md-3">
+                            <div class="card shadow-lg card-graph">
+                                <div class="card-body">
+                                    <h5 class="card-title font-weight-bold">Ok Easypaisa Success Rate</h5>
+                                    <div id="okEpSRChart" style="margin-top: -40px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Easypaisa Chart -->
+                        <div class="col-md-3">
+                            <div class="card card-graph-green">
+                                <div class="card-header text-center">
+                                    <h5 class="card-title font-weight-bold">OK Easypaisa Pending Orders</h5>
+                                </div>
+                                <div class="card-body" style="margin-top: -40px;">
+                                    <div id="easypaisaChartOk"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+                {{--@if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 5)
+                    <div class="row mt-1">
+                        <div class="col-md-4">
+                            <div class="card shadow-lg card-graph">
+                                <div class="card-body">
+                                    <h5 class="card-title font-weight-bold">PK9 Success Rate</h5>
+                                    <div id="pkNSRChart" style="margin-top: -30px;"></div>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div class="col-md-4">
+                            <div class="card card-graph-red">
+                                <div class="card-header">
+                                    <h5 class="card-title font-weight-bold">PK9 JazzCash Pending Orders</h5>
+                                </div>
+                                <div class="card-body" style="margin-top: -30px;">
+                                    <div id="jazzCashChartPkN"></div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <!-- Easypaisa Chart -->
+                        <div class="col-md-4">
+                            <div class="card card-graph-green">
+                                <div class="card-header text-center">
+                                    <h5 class="card-title font-weight-bold">PK9 Easypaisa Pending Orders</h5>
+                                </div>
+                                <div class="card-body" style="margin-top: -30px;">
+                                    <div id="easypaisaChartPkN"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif--}}
+                
+                
+                @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 4)
+                    <div class="row mt-1">
+                        <div class="col-md-3">
+                            <div class="card shadow-lg card-graph">
+                                <div class="card-body">
+                                    <h5 class="card-title font-weight-bold">PIQ JazzCash Success Rate</h5>
+                                    <div id="piqJcSRChart" style="margin-top: -30px;"></div>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div class="col-md-3">
+                            <div class="card card-graph-red">
+                                <div class="card-header">
+                                    <h5 class="card-title font-weight-bold">PIQ JazzCash Pending Orders</h5>
+                                </div>
+                                <div class="card-body" style="margin-top: -30px;">
+                                    <div id="jazzCashChartPiq"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card shadow-lg card-graph">
+                                <div class="card-body">
+                                    <h5 class="card-title font-weight-bold">PIQ Easypaisa Success Rate</h5>
+                                    <div id="piqEpSRChart" style="margin-top: -30px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Easypaisa Chart -->
+                        <div class="col-md-3">
+                            <div class="card card-graph-green">
+                                <div class="card-header text-center">
+                                    <h5 class="card-title font-weight-bold">PIQ Easypaisa Pending Orders</h5>
+                                </div>
+                                <div class="card-body" style="margin-top: -30px;">
+                                    <div id="easypaisaChartPiq"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+                
+                @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 23)
+                    <div class="row mt-1">
+                        <div class="col-md-3">
+                            <div class="card shadow-lg card-graph">
+                                <div class="card-body">
+                                    <h5 class="card-title font-weight-bold">Jack JazzCash Success Rate</h5>
+                                    <div id="jackJcSRChart" style="margin-top: -30px;"></div>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div class="col-md-3">
+                            <div class="card card-graph-red">
+                                <div class="card-header">
+                                    <h5 class="card-title font-weight-bold">Jack JazzCash Pending Orders</h5>
+                                </div>
+                                <div class="card-body" style="margin-top: -30px;">
+                                    <div id="jazzCashChartJack"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card shadow-lg card-graph">
+                                <div class="card-body">
+                                    <h5 class="card-title font-weight-bold">Jack Easypaisa Success Rate</h5>
+                                    <div id="jackEpSRChart" style="margin-top: -30px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Easypaisa Chart -->
+                        <div class="col-md-3">
+                            <div class="card card-graph-green">
+                                <div class="card-header text-center">
+                                    <h5 class="card-title font-weight-bold">Jack Easypaisa Pending Orders</h5>
+                                </div>
+                                <div class="card-body" style="margin-top: -30px;">
+                                    <div id="easypaisaChartJack"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </section>
         </div>
     </div>
 </div>
 @endsection
 @push('js')
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var piqJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 4) {{ round(srCount(4,"jazzcash"), 2) }} @else 0 @endif;
+    var piqEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 4) {{ round(srCount(4,"easypaisa"), 2) }} @else 0 @endif;
+    var pkNJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 5) {{ round(srCount(5,"Jazzcash"), 2) }} @else 0 @endif;
+    var pkNEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 5) {{ round(srCount(5,"easypaisa"), 2) }} @else 0 @endif;
+    var okJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 2) {{ round(srCount(2,"jazzcash"), 2) }} @else 0 @endif;
+    var okEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 2) {{ round(srCount(2,"easypaisa"), 2) }} @else 0 @endif;
+    var jackJcSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 23) {{ round(srCount(23,"jazzcash"), 2) }} @else 0 @endif;
+    var jackEpSR = @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager"  || auth()->user()->id == 23) {{ round(srCount(23,"easypaisa"), 2) }} @else 0 @endif;
+
+    function createSemiCircleChart(containerId, value, color) {
+        var options = {
+            series: [value], // Success rate percentage
+            chart: {
+                type: 'radialBar',
+                height: 160
+            },
+            plotOptions: {
+                radialBar: {
+                    hollow: { size: '60%' },
+                    startAngle: -90,
+                    endAngle: 90,
+                    track: { background: "#e0e0e0" },
+                    dataLabels: {
+                        name: { show: true, fontSize: '14px', color: "#999", offsetY: -10, text: "Completed Task" },
+                        value: { fontSize: '22px', color: "#333", fontWeight: 'bold', offsetY: 10, formatter: function (val) { return val + "%"; } }
+                    }
+                }
+            },
+            colors: [color]
+        };
+
+        var chart = new ApexCharts(document.querySelector("#" + containerId), options);
+        chart.render();
+    }
+
+    // Create charts
+    createSemiCircleChart("pkNJcSRChart", pkNJcSR, "#FF4500");
+    createSemiCircleChart("pkNEpSRChart", pkNEpSR, "#FF4500");
+    createSemiCircleChart("okJcSRChart", okJcSR, "#FF4500");
+    createSemiCircleChart("okEpSRChart", okEpSR, "#FF4500");
+    createSemiCircleChart("piqJcSRChart", piqJcSR, "#FF4500");
+    createSemiCircleChart("piqEpSRChart", piqEpSR, "#FF4500");
+    createSemiCircleChart("jackJcSRChart", jackJcSR, "#FF4500");
+    createSemiCircleChart("jackEpSRChart", jackEpSR, "#FF4500");
+});
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        function renderChart(selector, value, label, color) {
+            var options = {
+                chart: {
+                    type: "radialBar",
+                    height: 150,
+                },
+                series: [value], 
+                labels: [label],
+                colors: [color], 
+                plotOptions: {
+                    radialBar: {
+                        hollow: {
+                            size: "70%", // Smaller inner circle
+                        },
+                        dataLabels: {
+                            show: true,
+                            value: {
+                                fontSize: "20px",  // Larger font size for emphasis
+                                fontWeight: "bold", // Makes the value bold
+                                formatter: function (val) {
+                                    return val;
+                                }
+                            },
+                        },
+                    },
+                },
+            };
+
+            var chart = new ApexCharts(document.querySelector(selector), options);
+            chart.render();
+        }
+        // JazzCash OK Pending
+        renderChart("#jazzCashChartOk", {{ $jcOkPendingOrder }}, "JC Pending", "#FF5733");
+
+        // Easypaisa OK Pending
+        renderChart("#easypaisaChartOk", {{ $epOkPendingOrder }}, "EP Pending", "#28C76F");
+        
+        // JazzCash PIQ Pending
+        renderChart("#jazzCashChartPiq", {{ $jcPiqPendingOrder }}, "JC Pending", "#FF5733");
+
+        // Easypaisa PIQ Pending
+        renderChart("#easypaisaChartPiq", {{ $epPiqPendingOrder }}, "EP Pending", "#28C76F");
+        
+        // JazzCash OK Pending
+        renderChart("#jazzCashChartPkN", {{ $jcPkNPendingOrder }}, "JC Pending", "#FF5733");
+
+        // Easypaisa OK Pending
+        renderChart("#easypaisaChartPkN", {{ $epPkNPendingOrder }}, "EP Pending", "#28C76F");
+        
+        // JazzCash OK Pending
+        renderChart("#jazzCashChartJack", {{ $jcJackPendingOrder }}, "JC Pending", "#FF5733");
+
+        // Easypaisa OK Pending
+        renderChart("#easypaisaChartJack", {{ $epJackPendingOrder }}, "EP Pending", "#28C76F");
+    });
+</script>
 <script>
 $(document).ready(function () {
     $('.toggle-switch').on('change', function () {
