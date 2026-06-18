@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\{Transaction,SurplusAmount,Setting,User,PayoutSetting};
+use App\Models\{Transaction,SurplusAmount,Setting,User};
 use App\Service\StatusService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
@@ -56,74 +56,79 @@ class EasyPaisaCheckTransactionStatus extends Command
                     $url = $item->url;
 
                     $result = $this->statusService->process($item);
-                  
-                    // Check if the response code is successful
-                    if ($result['responseCode'] == '0000') {
-                        // Check transactionStatus in response
-                        if ($result['transactionStatus'] == 'PAID') {
-                            $item->update([
-                                'status' => 'success',
-                                'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null
-                            ]);
+
+                    // Guard 1 — Skip 0003 (treat as in-progress, not failed)
+                    if (($result['responseCode'] ?? '') === '0003') {
+                        continue;
+                    }
+
+                    // Guard 2 — Skip if checkout or another worker already finalized
+                    $item->refresh();
+                    if ($item->status !== 'pending') {
+                        continue;
+                    }
+
+                    if (($result['responseCode'] ?? '') === '0000') {
+                        if (($result['transactionStatus'] ?? '') === 'PAID') {
+                            $updated = Transaction::where('id', $item->id)
+                                ->where('status', 'pending')
+                                ->update([
+                                    'status' => 'success',
+                                    'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
+                                ]);
+
+                            // Guard 3 — Callback only after safe DB update
+                            if (!$updated) {
+                                continue;
+                            }
+
+                            $item->refresh();
+
                             $data = [
                                 'orderId' => $item->orderId,
                                 'tid' => $item->transactionId,
                                 'amount' => $item->amount,
                                 'status' => 'success',
                             ];
-                            
+
                             $user = User::find($item->user_id);
 
                             if ($user && $user->per_payin_fee) {
                                 $rate = $user->per_payin_fee;
                                 $amount = $item->amount * $rate;
-                            
+
                                 $surplus = SurplusAmount::find(1);
                                 $setting = Setting::where('user_id', $item->user_id)->first();
-                                $payout_setting = PayoutSetting::find(1);
-                                if($setting && $surplus && $setting->auto ==1){
-                                    // if($payout_setting->type == 0){
-                                        // $setting->easypaisa += $amount;
-                                        // $surplus->easypaisa -= $amount;
-                                    // } else{
-                                        // $setting->easypaisa += $amount;
-                                        // $surplus->jazzcash -= $amount;
-                                    // }
+                                if ($setting && $surplus && $setting->auto == 1) {
                                     $setting->payout_balance += $amount;
                                     $setting->save();
-                                    // $surplus->save();
                                 }
                             }
-                            $response = Http::timeout(60)->post($url, $data);
-                        } elseif ($result['transactionStatus'] == 'FAILED') {
-                            $item->update([
-                                'status' => 'failed',
-                                'transactionId'=>$result['transactionId'] ?? $result['msisdn'] ?? null,
-                                'pp_code' => $result['errorCode'] ?? null,
-                                'pp_message' => $result['errorReason'] ?? null
-                            ]);
+                            $this->sendCronCallback('check-status', $item, $url, $data);
+                        } elseif (($result['transactionStatus'] ?? '') === 'FAILED') {
+                            $updated = Transaction::where('id', $item->id)
+                                ->where('status', 'pending')
+                                ->update([
+                                    'status' => 'failed',
+                                    'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
+                                    'pp_code' => $result['errorCode'] ?? null,
+                                    'pp_message' => $result['errorReason'] ?? null,
+                                ]);
+
+                            if (!$updated) {
+                                continue;
+                            }
+
+                            $item->refresh();
+
                             $data = [
                                 'orderId' => $item->orderId,
                                 'tid' => $item->transactionId,
                                 'amount' => $item->amount,
                                 'status' => 'failed',
                             ];
-                            $response = Http::timeout(60)->post($url, $data);
+                            $this->sendCronCallback('check-status', $item, $url, $data);
                         }
-                    } elseif ($result['responseCode'] == '0003') {
-                        // Transaction failed, update and notify
-                        $item->update([
-                            'status' => 'failed',
-                            'pp_code' => $result['responseCode'],
-                            'pp_message' => $result['responseDesc']
-                        ]);
-                        $data = [
-                            'orderId' => $item->orderId,
-                            'tid' => $item->transactionId,
-                            'amount' => $item->amount,
-                            'status' => 'failed',
-                        ];
-                        $response = Http::timeout(60)->post($url, $data);
                     }
                 }
             }
@@ -133,5 +138,42 @@ class EasyPaisaCheckTransactionStatus extends Command
         }
 
         $this->info('Pending transactions checked and updated.');
+    }
+
+    private function sendCronCallback(string $cron, Transaction $item, string $url, array $data): void
+    {
+        $logger = Log::channel('payin');
+        $context = 'easypaisa_cron_' . $cron;
+
+        $logger->info('Easypaisa cron callback sending', [
+            'context' => $context,
+            'order_id' => $item->orderId,
+            'transaction_id' => $item->id,
+            'callback_url' => $url,
+            'callback_data' => $data,
+        ]);
+
+        try {
+            $response = Http::timeout(60)->post($url, $data);
+
+            $logger->info('Easypaisa cron callback response received', [
+                'context' => $context,
+                'order_id' => $item->orderId,
+                'transaction_id' => $item->id,
+                'callback_url' => $url,
+                'callback_data' => $data,
+                'response_status' => $response->status(),
+                'response_body' => $response->json() ?? $response->body(),
+            ]);
+        } catch (\Throwable $e) {
+            $logger->error('Easypaisa cron callback failed', [
+                'context' => $context,
+                'order_id' => $item->orderId,
+                'transaction_id' => $item->id,
+                'callback_url' => $url,
+                'callback_data' => $data,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
