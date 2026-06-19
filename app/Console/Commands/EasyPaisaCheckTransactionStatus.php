@@ -5,10 +5,10 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\{Transaction,SurplusAmount,Setting,User};
 use App\Service\StatusService;
+use App\Services\EasypaisaCronChunkService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class EasyPaisaCheckTransactionStatus extends Command
 {
@@ -21,17 +21,18 @@ class EasyPaisaCheckTransactionStatus extends Command
     // Dependency injection for the StatusService
     protected $statusService;
 
-    public function __construct(StatusService $statusService)
+    protected $chunkService;
+
+    public function __construct(StatusService $statusService, EasypaisaCronChunkService $chunkService)
     {
         parent::__construct();
         $this->statusService = $statusService;
+        $this->chunkService = $chunkService;
     }
 
     // Execute the console command.
     public function handle()
     {
-        $now = Carbon::now();
-        
         // Acquire global lock to prevent multiple instances
         $lock = Cache::lock('easypaisa-check-status-lock', 300); // 5 minutes timeout
         
@@ -42,17 +43,20 @@ class EasyPaisaCheckTransactionStatus extends Command
         }
 
         try {
+            $chunk = $this->chunkService->getChunk('check');
+
             $list = Transaction::where('status', 'pending')
                 ->where('txn_type', 'easypaisa')
-                ->limit(50) // Limit to 50 transactions
+                ->orderBy('created_at', 'asc')
+                ->limit($chunk)
                 ->get();
-            
-            // \Log::info('Response from notifyurl:', ['response' => $now]);
-            
+
             set_time_limit(0);
+            $processed = 0;
 
             if ($list->isNotEmpty()) {
                 foreach ($list as $item) {
+                    $processed++;
                     $url = $item->url;
 
                     $result = $this->statusService->process($item);
@@ -132,6 +136,8 @@ class EasyPaisaCheckTransactionStatus extends Command
                     }
                 }
             }
+
+            $this->chunkService->logRunContext('check-status', $chunk, $processed);
         } finally {
             // Always release the global lock
             $lock->release();

@@ -3,11 +3,11 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\{Transaction, SurplusAmount, Setting, User};
+use App\Models\Transaction;
 use App\Service\StatusService;
+use App\Services\EasypaisaCronChunkService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class EasyPaisaTransactionRecheckStatus extends Command
 {
@@ -17,24 +17,32 @@ class EasyPaisaTransactionRecheckStatus extends Command
 
     protected $statusService;
 
-    public function __construct(StatusService $statusService)
+    protected $chunkService;
+
+    public function __construct(StatusService $statusService, EasypaisaCronChunkService $chunkService)
     {
         parent::__construct();
         $this->statusService = $statusService;
+        $this->chunkService = $chunkService;
     }
 
     public function handle()
     {
+        $chunk = $this->chunkService->getChunk('recheck');
+
         $list = Transaction::where('status', 'failed')
             ->where('pp_code', '0003')
             ->where('txn_type', 'easypaisa')
-            ->limit(50)
+            ->orderBy('created_at', 'asc')
+            ->limit($chunk)
             ->get();
 
         set_time_limit(0);
+        $processed = 0;
 
         if ($list->isNotEmpty()) {
             foreach ($list as $item) {
+                $processed++;
                 $url = $item->url;
 
                 $result = $this->statusService->process($item);
@@ -99,6 +107,8 @@ class EasyPaisaTransactionRecheckStatus extends Command
                 }
             }
         }
+
+        $this->chunkService->logRunContext('recheck-status', $chunk, $processed);
 
         $this->info('Failed Easypaisa transactions rechecked and updated.');
     }
