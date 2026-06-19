@@ -7,7 +7,7 @@ use App\Models\{Transaction,SurplusAmount,Setting,User};
 use App\Service\StatusService;
 use App\Services\EasypaisaCronChunkService;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class EasyPaisaCheckTransactionStatus extends Command
@@ -33,115 +33,105 @@ class EasyPaisaCheckTransactionStatus extends Command
     // Execute the console command.
     public function handle()
     {
-        // Acquire global lock to prevent multiple instances
-        $lock = Cache::lock('easypaisa-check-status-lock', 300); // 5 minutes timeout
-        
-        if (!$lock->get()) {
-            Log::info('EasyPaisaCheckTransactionStatus: Another instance is already running');
-            $this->error('Another instance of this command is already running.');
-            return 1;
-        }
+        $chunk = $this->chunkService->getChunk('check');
 
-        try {
-            $chunk = $this->chunkService->getChunk('check');
-
-            $list = Transaction::where('status', 'pending')
+        $list = DB::transaction(function () use ($chunk) {
+            return Transaction::where('status', 'pending')
                 ->where('txn_type', 'easypaisa')
                 ->orderBy('created_at', 'asc')
                 ->limit($chunk)
+                ->lockForUpdate()
+                ->skipLocked()
                 ->get();
+        });
 
-            set_time_limit(0);
-            $processed = 0;
+        set_time_limit(0);
+        $processed = 0;
 
-            if ($list->isNotEmpty()) {
-                foreach ($list as $item) {
-                    $processed++;
-                    $url = $item->url;
+        if ($list->isNotEmpty()) {
+            foreach ($list as $item) {
+                $processed++;
+                $url = $item->url;
 
-                    $result = $this->statusService->process($item);
+                $result = $this->statusService->process($item);
 
-                    // Guard 1 — Skip 0003 (treat as in-progress, not failed)
-                    if (($result['responseCode'] ?? '') === '0003') {
-                        continue;
-                    }
+                // Guard 1 — Skip 0003 (treat as in-progress, not failed)
+                if (($result['responseCode'] ?? '') === '0003') {
+                    continue;
+                }
 
-                    // Guard 2 — Skip if checkout or another worker already finalized
-                    $item->refresh();
-                    if ($item->status !== 'pending') {
-                        continue;
-                    }
+                // Guard 2 — Skip if checkout or another worker already finalized
+                $item->refresh();
+                if ($item->status !== 'pending') {
+                    continue;
+                }
 
-                    if (($result['responseCode'] ?? '') === '0000') {
-                        if (($result['transactionStatus'] ?? '') === 'PAID') {
-                            $updated = Transaction::where('id', $item->id)
-                                ->where('status', 'pending')
-                                ->update([
-                                    'status' => 'success',
-                                    'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
-                                ]);
-
-                            // Guard 3 — Callback only after safe DB update
-                            if (!$updated) {
-                                continue;
-                            }
-
-                            $item->refresh();
-
-                            $data = [
-                                'orderId' => $item->orderId,
-                                'tid' => $item->transactionId,
-                                'amount' => $item->amount,
+                if (($result['responseCode'] ?? '') === '0000') {
+                    if (($result['transactionStatus'] ?? '') === 'PAID') {
+                        $updated = Transaction::where('id', $item->id)
+                            ->where('status', 'pending')
+                            ->update([
                                 'status' => 'success',
-                            ];
+                                'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
+                            ]);
 
-                            $user = User::find($item->user_id);
-
-                            if ($user && $user->per_payin_fee) {
-                                $rate = $user->per_payin_fee;
-                                $amount = $item->amount * $rate;
-
-                                $surplus = SurplusAmount::find(1);
-                                $setting = Setting::where('user_id', $item->user_id)->first();
-                                if ($setting && $surplus && $setting->auto == 1) {
-                                    $setting->payout_balance += $amount;
-                                    $setting->save();
-                                }
-                            }
-                            $this->sendCronCallback('check-status', $item, $url, $data);
-                        } elseif (($result['transactionStatus'] ?? '') === 'FAILED') {
-                            $updated = Transaction::where('id', $item->id)
-                                ->where('status', 'pending')
-                                ->update([
-                                    'status' => 'failed',
-                                    'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
-                                    'pp_code' => $result['errorCode'] ?? null,
-                                    'pp_message' => $result['errorReason'] ?? null,
-                                ]);
-
-                            if (!$updated) {
-                                continue;
-                            }
-
-                            $item->refresh();
-
-                            $data = [
-                                'orderId' => $item->orderId,
-                                'tid' => $item->transactionId,
-                                'amount' => $item->amount,
-                                'status' => 'failed',
-                            ];
-                            $this->sendCronCallback('check-status', $item, $url, $data);
+                        // Guard 3 — Callback only after safe DB update
+                        if (!$updated) {
+                            continue;
                         }
+
+                        $item->refresh();
+
+                        $data = [
+                            'orderId' => $item->orderId,
+                            'tid' => $item->transactionId,
+                            'amount' => $item->amount,
+                            'status' => 'success',
+                        ];
+
+                        $user = User::find($item->user_id);
+
+                        if ($user && $user->per_payin_fee) {
+                            $rate = $user->per_payin_fee;
+                            $amount = $item->amount * $rate;
+
+                            $surplus = SurplusAmount::find(1);
+                            $setting = Setting::where('user_id', $item->user_id)->first();
+                            if ($setting && $surplus && $setting->auto == 1) {
+                                $setting->payout_balance += $amount;
+                                $setting->save();
+                            }
+                        }
+                        $this->sendCronCallback('check-status', $item, $url, $data);
+                    } elseif (($result['transactionStatus'] ?? '') === 'FAILED') {
+                        $updated = Transaction::where('id', $item->id)
+                            ->where('status', 'pending')
+                            ->update([
+                                'status' => 'failed',
+                                'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
+                                'pp_code' => $result['errorCode'] ?? null,
+                                'pp_message' => $result['errorReason'] ?? null,
+                            ]);
+
+                        if (!$updated) {
+                            continue;
+                        }
+
+                        $item->refresh();
+
+                        $data = [
+                            'orderId' => $item->orderId,
+                            'tid' => $item->transactionId,
+                            'amount' => $item->amount,
+                            'status' => 'failed',
+                        ];
+                        $this->sendCronCallback('check-status', $item, $url, $data);
                     }
                 }
             }
-
-            $this->chunkService->logRunContext('check-status', $chunk, $processed);
-        } finally {
-            // Always release the global lock
-            $lock->release();
         }
+
+        $this->chunkService->logRunContext('check-status', $chunk, $processed);
 
         $this->info('Pending transactions checked and updated.');
     }
