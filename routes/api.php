@@ -33,7 +33,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::as('payin.')->prefix('payin')->group(function () {
     Route::post('/checkout',[PayinController::class, 'checkout'])
-        ->middleware(['log.rejected', 'throttle.phone','phone.verified']);
+        ->middleware(['log.rejected', 'payin.pending.limit', 'throttle.phone', 'phone.verified']);
     Route::get('/test-trait',[PayinController::class, 'testTrait']); // Test route for trait
 });
 
@@ -41,7 +41,7 @@ Route::as('payin.')->prefix('payin')->group(function () {
 
 
 Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProceed'])
-    ->middleware(['payment.validate', 'check.blocked.numbers']);
+    ->middleware(['payment.validate', 'check.blocked.numbers', 'payin.pending.limit']);
 
 
  /*Route::as('payout.')->prefix('payout')->group(function () {
@@ -92,7 +92,8 @@ Route::get('v1/get-dashboard-data', [GeneralController::class , 'dashboardDataV1
 Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
     //Route::post('payment-checkout', [TestPayinController::class, 'checkout']);// testing purpose only
     // payin route
-    Route::post('payment-checkout', [PayinController::class, 'checkout']);
+    Route::post('payment-checkout', [PayinController::class, 'checkout'])
+        ->middleware('payin.pending.limit');
 
     // Payout Route
     Route::post('payout/checkout', [PayoutController::class, 'checkout'])

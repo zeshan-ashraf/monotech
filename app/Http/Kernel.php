@@ -78,5 +78,6 @@ class Kernel extends HttpKernel
         'throttle.phone' => \App\Http\Middleware\ThrottlePhoneNumberMiddleware::class,
 		'phone.verified' => \App\Http\Middleware\EnsurePhoneIsVerified::class,
         'payout.daily.limit' => \App\Http\Middleware\CheckPayoutDailyLimit::class,
+        'payin.pending.limit' => \App\Http\Middleware\CheckPayinPendingBacklogMiddleware::class,
     ];
 }
