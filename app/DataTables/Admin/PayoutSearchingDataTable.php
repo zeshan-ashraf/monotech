@@ -32,21 +32,21 @@ class PayoutSearchingDataTable extends DataTable
                 if ($query->transaction_type === 'jazzcash' && $query->status === 'success') {
                     $buttons .= '
                         <a href="' . route('admin.searching.payout_callback.send', $query->id) . '" class="btn btn-success btn-sm">Send Callback</a>
-                        <a href="' . route('admin.payout.detail', $query->id) . '" class="btn btn-primary btn-sm">Detail</a>
+                        <a href="' . route('admin.payout.detail', $query->id) . '" class="btn btn-primary btn-sm mt-1">Detail</a>
                         <a href="' . route('admin.payout.jazz_receipt', $query->id) . '" class="btn btn-danger btn-sm mt-1">Receipt</a>
                     ';
                 }
                 elseif ($query->transaction_type != 'jazzcash' && $query->status === 'success') {
                     $buttons .= '
                         <a href="' . route('admin.searching.payout_callback.send', $query->id) . '" class="btn btn-success btn-sm">Send Callback</a>
-                        <a href="' . route('admin.payout.detail', $query->id) . '" class="btn btn-primary btn-sm">Detail</a>
+                        <a href="' . route('admin.payout.detail', $query->id) . '" class="btn btn-primary btn-sm mt-1">Detail</a>
                         <a href="' . route('admin.payout.easy_receipt', $query->id) . '" class="btn btn-success btn-sm mt-1">Receipt</a>
                     ';
                 }
                 else {
                     $buttons .= '
                         <a href="' . route('admin.searching.payout_callback.send', $query->id) . '" class="btn btn-success btn-sm">Send Callback</a>
-                        <a href="' . route('admin.payout.detail', $query->id) . '" class="btn btn-primary btn-sm">Detail</a>
+                        <a href="' . route('admin.payout.detail', $query->id) . '" class="btn btn-primary btn-sm mt-1">Detail</a>
                     ';
                 }
             
