@@ -20,7 +20,7 @@ class EasyPaisaCheckTransactionStatus extends Command
 
     private const LOCK_KEY = 'easypaisa-check-status-lock';
 
-    private const LOCK_SECONDS = 600;
+    private const LOCK_SECONDS = 300;
 
     private const TRANSACTION_LOCK_SECONDS = 120;
 

@@ -125,20 +125,36 @@ class Kernel extends ConsoleKernel
 
     /**
      * Schedule EasyPaisa status check with overlap protection.
-     * Sub-minute schedule types from DB are capped to everyMinute for CPU safety.
+     * Sub-minute DB types are capped to everyMinute() for CPU safety.
+     * Requires system cron: * * * * * php artisan schedule:run
      */
     private function scheduleEasypaisaCheckStatus(Schedule $schedule, callable $wrapSchedule, ScheduleSetting $eptime): void
     {
-        $interval = match ($eptime->type) {
-            'everyFiveMinutes' => 'everyFiveMinutes',
-            'everyTenMinutes' => 'everyTenMinutes',
-            default => 'everyMinute',
-        };
+        $command = $schedule->command('transactions:easypaisa-check-status');
 
-        $event = $schedule->command('transactions:easypaisa-check-status')
-            ->{$interval}()
-            ->withoutOverlapping(10)
-            ->onOneServer();
+        switch ($eptime->type) {
+            case 'everyFiveMinutes':
+                $event = $command->everyFiveMinutes();
+                break;
+            case 'everyTenMinutes':
+                $event = $command->everyTenMinutes();
+                break;
+            case 'everyMinute':
+                $event = $command->everyMinute();
+                break;
+            case 'everyFiveSeconds':
+            case 'everyTenSeconds':
+            case 'everyThirtySeconds':
+                Log::channel('schedule_debug')->warning('Easypaisa schedule type capped to everyMinute', [
+                    'requested_type' => $eptime->type,
+                ]);
+                $event = $command->everyMinute();
+                break;
+            default:
+                throw new \Exception("Invalid easypaisa schedule type: {$eptime->type}");
+        }
+
+        //$event->withoutOverlapping(15);
 
         $wrapSchedule($event, 'transactions:easypaisa-check-status');
     }
