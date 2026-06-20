@@ -105,12 +105,12 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(15);
         $wrapSchedule($event, 'report:generate');
         $schedule->command('suplus:addition')->everyFiveMinutes();
-        $event = $schedule->command('transactions:archive')->dailyAt('02:00');
-        $wrapSchedule($event, 'transactions:archive');
-        $event = $schedule->command('transactions:backup')->dailyAt('02:30');
-        $wrapSchedule($event, 'transactions:backup');
-        $event = $schedule->command('payouts:archive')->dailyAt('03:00');
-        $wrapSchedule($event, 'payouts:archive');
+        // $event = $schedule->command('transactions:archive')->dailyAt('02:00');
+        // $wrapSchedule($event, 'transactions:archive');
+        // $event = $schedule->command('transactions:backup')->dailyAt('02:30');
+        // $wrapSchedule($event, 'transactions:backup');
+        // $event = $schedule->command('payouts:archive')->dailyAt('03:00');
+        // $wrapSchedule($event, 'payouts:archive');
         // $schedule->command('transactions:old')->dailyAt('04:25');
         $event = $schedule->command('app:recount-report-generate')->dailyAt('01:00');
         $wrapSchedule($event, 'app:recount-report-generate');
