@@ -57,34 +57,7 @@ class Kernel extends ConsoleKernel
         $eptime=ScheduleSetting::where('txns_type','easypaisa')->where('value',1)->first();
         $jctime=ScheduleSetting::where('txns_type','jazzcash')->where('value',1)->first();
         if ($eptime) {
-            switch ($eptime->type) {
-                case 'everyFiveSeconds':
-                    $event = $schedule->command('transactions:easypaisa-check-status')->everyFiveSeconds();
-                    $wrapSchedule($event, 'transactions:easypaisa-check-status');
-                    break;
-                case 'everyTenSeconds':
-                    $event = $schedule->command('transactions:easypaisa-check-status')->everyTenSeconds();
-                    $wrapSchedule($event, 'transactions:easypaisa-check-status');
-                    break;
-                case 'everyThirtySeconds':
-                    $event = $schedule->command('transactions:easypaisa-check-status')->everyThirtySeconds();
-                    $wrapSchedule($event, 'transactions:easypaisa-check-status');
-                    break;
-                case 'everyMinute':
-                    $event = $schedule->command('transactions:easypaisa-check-status')->everyMinute();
-                    $wrapSchedule($event, 'transactions:easypaisa-check-status');
-                    break;
-                case 'everyFiveMinutes':
-                    $event = $schedule->command('transactions:easypaisa-check-status')->everyFiveMinutes();
-                    $wrapSchedule($event, 'transactions:easypaisa-check-status');
-                    break;
-                case 'everyTenMinutes':
-                    $event = $schedule->command('transactions:easypaisa-check-status')->everyTenMinutes();
-                    $wrapSchedule($event, 'transactions:easypaisa-check-status');
-                    break;
-                default:
-                    throw new \Exception("Invalid schedule type: {$eptime->type}");
-            }
+            $this->scheduleEasypaisaCheckStatus($schedule, $wrapSchedule, $eptime);
         }
         if ($jctime) {
             switch ($jctime->type) {
@@ -148,6 +121,26 @@ class Kernel extends ConsoleKernel
         $event = $schedule->command('transactions:auto-reverse')->everyFiveMinutes();
         $wrapSchedule($event, 'transactions:auto-reverse');
 
+    }
+
+    /**
+     * Schedule EasyPaisa status check with overlap protection.
+     * Sub-minute schedule types from DB are capped to everyMinute for CPU safety.
+     */
+    private function scheduleEasypaisaCheckStatus(Schedule $schedule, callable $wrapSchedule, ScheduleSetting $eptime): void
+    {
+        $interval = match ($eptime->type) {
+            'everyFiveMinutes' => 'everyFiveMinutes',
+            'everyTenMinutes' => 'everyTenMinutes',
+            default => 'everyMinute',
+        };
+
+        $event = $schedule->command('transactions:easypaisa-check-status')
+            ->{$interval}()
+            ->withoutOverlapping(10)
+            ->onOneServer();
+
+        $wrapSchedule($event, 'transactions:easypaisa-check-status');
     }
 
     /**
