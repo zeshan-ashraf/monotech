@@ -104,7 +104,7 @@ class Kernel extends ConsoleKernel
             ->everyTenMinutes()
             ->withoutOverlapping(15);
         $wrapSchedule($event, 'report:generate');
-        $schedule->command('suplus:addition')->everyFiveMinutes();
+        $schedule->command('suplus:addition')->everyTenMinutes();
         // $event = $schedule->command('transactions:archive')->dailyAt('02:00');
         // $wrapSchedule($event, 'transactions:archive');
         // $event = $schedule->command('transactions:backup')->dailyAt('02:30');
@@ -114,11 +114,11 @@ class Kernel extends ConsoleKernel
         // $schedule->command('transactions:old')->dailyAt('04:25');
         $event = $schedule->command('app:recount-report-generate')->dailyAt('01:00');
         $wrapSchedule($event, 'app:recount-report-generate');
-        $event = $schedule->command('transactions:auto-fail')->everyFiveMinutes();
+        $event = $schedule->command('transactions:auto-fail')->everyTenMinutes();
         $wrapSchedule($event, 'transactions:auto-fail');
         
         // Auto-reverse transactions after 6 hours
-        $event = $schedule->command('transactions:auto-reverse')->everyFiveMinutes();
+        $event = $schedule->command('transactions:auto-reverse')->everyTenMinutes();
         $wrapSchedule($event, 'transactions:auto-reverse');
 
     }
