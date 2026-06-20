@@ -241,6 +241,8 @@ class TransactionReversalService
                 $reversedCount++;
             }
 
+            /*
+
             // Process backup_transactions table
             $backup = BackupTransaction::whereNotNull('reverse_requested_at')
                 ->where('reverse_requested_at', '<=', $cutoffTime)
@@ -253,7 +255,7 @@ class TransactionReversalService
                 $transaction->reverse_requested_at = null;
                 $transaction->save();
                 $reversedCount++;
-            }
+            }/*
 
             if ($reversedCount > 0) {
                 Log::info("Auto-reversed transactions", [
