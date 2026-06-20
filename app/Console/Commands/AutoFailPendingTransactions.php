@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Transaction;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AutoFailPendingTransactions extends Command
 {
@@ -22,6 +23,12 @@ class AutoFailPendingTransactions extends Command
                 'pp_code' => '999',
                 'pp_message' => 'Auto-failed after 60 minutes'
             ]);
+
+        DB::table('backup_transactions')
+            ->where('created_at', '<', now()->subMonths(2))
+            ->limit(1000)
+            ->delete();
+
 
         $this->info("Updated $count transaction(s) to failed.");
     }
