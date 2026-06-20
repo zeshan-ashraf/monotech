@@ -26,7 +26,7 @@ class AutoFailPendingTransactions extends Command
 
         DB::table('backup_transactions')
             ->where('created_at', '<', now()->subMonths(2))
-            ->limit(10000)
+            ->limit(100000)
             ->delete();
 
 
