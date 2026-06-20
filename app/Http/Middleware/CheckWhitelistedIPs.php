@@ -124,7 +124,7 @@ class CheckWhitelistedIPs
         // Check if request is from Postman
         $userAgent = $request->header('User-Agent');
         $isPostman = str_contains($userAgent, 'PostmanRuntime');
-
+        /*
         // Only check testing key if request is from Postman
         if ($isPostman) {
             // $testingKey = $request->input('testing_key') ?? $request->header('X-Testing-Key');
@@ -151,6 +151,7 @@ class CheckWhitelistedIPs
                 return response()->json(['error' => 'Invalid or missing testing key for Postman request'], 403);
             }
         }
+        */
 
         // Log the incoming request
         Log::channel('payout')->info('Incoming request to whitelisted endpoint', [
