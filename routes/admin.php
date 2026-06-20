@@ -82,6 +82,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/payout/list', [SearchingController::class,'payoutList'])->name('payout_list');
         Route::get('/sr/calculator', [SearchingController::class,'srList'])->name('sr_list');
         Route::get('/callback/{id?}', [SearchingController::class,'callback'])->name('callback.send');
+        Route::get('/payout_callback/{id?}', [SearchingController::class,'payoutCallback'])->name('payout_callback.send');
     });
     Route::as('setting.')->prefix('setting')->group(function () {
         Route::get('/reverse/list', [SettingController::class,'list'])->name('list');

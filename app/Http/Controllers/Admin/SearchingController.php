@@ -6,7 +6,7 @@ use App\DataTables\Admin\SearchingDataTable;
 use App\DataTables\Admin\PayoutSearchingDataTable;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
-use App\Models\{Transaction,ArcheiveTransaction,BackupTransaction,User,SurplusAmount};
+use App\Models\{Transaction,ArcheiveTransaction,BackupTransaction,User,Payout,ArcheivePayout};
 use Illuminate\Http\Request;
 use App\Service\StatusService;
 use Carbon\Carbon;
@@ -254,6 +254,22 @@ class SearchingController extends Controller
                 $response = Http::timeout(60)->post($url, $data);
             }
         }
+        return redirect()->back()->with('message','Callback send manually successfully!');
+    }
+    public function payoutCallback($id)
+    {
+       $item=Payout::find($id);
+        if (!$item) {
+            $item = ArcheivePayout::find($id);
+        }
+        $data = [
+            'orderId' => $item->orderId,
+            'tid' => $item->transaction_reference,
+            'amount' => $item->amount,
+            'status' => $item->status,
+        ];
+        $response = Http::timeout(60)->post($item->url, $data);
+
         return redirect()->back()->with('message','Callback send manually successfully!');
     }
     protected function getCredentials() {
