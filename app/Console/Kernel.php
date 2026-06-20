@@ -127,7 +127,9 @@ class Kernel extends ConsoleKernel
         */
         $event = $schedule->command('transactions:jazzcash-recheck-status')->everyMinute();
         $wrapSchedule($event, 'transactions:jazzcash-recheck-status');
-        $event = $schedule->command('report:generate')->everyMinute();
+        $event = $schedule->command('report:generate')
+            ->everyTenMinutes()
+            ->withoutOverlapping(15);
         $wrapSchedule($event, 'report:generate');
         $schedule->command('suplus:addition')->everyFiveMinutes();
         $event = $schedule->command('transactions:archive')->dailyAt('02:00');
