@@ -93,7 +93,7 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
     //Route::post('payment-checkout', [TestPayinController::class, 'checkout']);// testing purpose only
     // payin route
     Route::post('payment-checkout', [PayinController::class, 'checkout'])
-        ->middleware(['throttle.payin.global', 'payin.pending.limit']);
+        ->middleware(['throttle.payin.global', 'payin.pending.limit', 'phone.verified']);
 
     // Payout Route
     Route::post('payout/checkout', [PayoutController::class, 'checkout'])
