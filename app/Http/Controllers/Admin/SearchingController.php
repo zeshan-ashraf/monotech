@@ -90,6 +90,10 @@ class SearchingController extends Controller
             $successfulTransactions = (clone $query)
                 ->where('status', 'success')
                 ->count();
+
+            $pendingTransactions = (clone $query)
+                ->where('status', 'pending')
+                ->count();
             
             $totalAmount = (clone $query)
                 ->where('status', 'success')

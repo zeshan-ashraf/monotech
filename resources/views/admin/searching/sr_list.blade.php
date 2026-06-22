@@ -137,7 +137,8 @@
                                 <p class="mt-3">
                                     <span class="text-primary me-5"><strong>Total:</strong> {{ $totalTransactions }}</span>
                                     <span class="text-success me-5"><strong>Success:</strong> {{ $successfulTransactions }}</span>
-                                    <span class="text-danger me-5"><strong>Fail:</strong> {{ $totalTransactions - $successfulTransactions }}</span>
+                                    <span class="text-info me-5"><strong>Pending:</strong> {{ $pendingTransactions }}</span>
+                                    <span class="text-danger me-5"><strong>Fail:</strong> {{ $totalTransactions - $successfulTransactions - $pendingTransactions}}</span>
                                 </p>
                                 <p class="watermark">
                                     Dated: {{ now()->format('d-m-Y H:i') }}
