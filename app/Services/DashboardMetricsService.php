@@ -92,9 +92,7 @@ class DashboardMetricsService
     // }
     public function getSuccessRate(int $userId, string $txnType): float
     {
-        $since = Carbon::now()->subMinutes(
-            (int) config('dashboard_metrics.success_rate_window_minutes', 10)
-        );
+        $since = Carbon::now()->subMinutes(10);
 
         $counts = Transaction::query()
             ->where('user_id', $userId)
