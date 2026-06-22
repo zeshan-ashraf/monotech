@@ -18,7 +18,7 @@
     <span class="badge bg-secondary text-capitalize text-status">{{$type}}</span>
 @elseif($type == 'blocked')
     <span class="badge bg-info text-capitalize text-status" data-bs-toggle="tooltip" data-bs-placement="top" title="{{$reason}}">{{$type}}</span>
-@else
+@else 
     <span class="badge bg-warning text-capitalize text-status">{{$type}}</span>
 @endif
 
