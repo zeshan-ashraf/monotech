@@ -35,6 +35,8 @@ class User extends Authenticatable
         'jc_payin_limit',
         'ep_payin_limit',
         'payout_ep_fee',
+        'enable_db_metrics',
+        'db_metrics_order',
     ];
 
     /**
@@ -56,6 +58,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'new_user_verification' => 'boolean',
+        'enable_db_metrics' => 'boolean',
     ];
 
 

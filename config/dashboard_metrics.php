@@ -24,6 +24,8 @@ return [
     | Excluded client user IDs
     |--------------------------------------------------------------------------
     | Active clients in this list will not appear on the dashboard metrics panel.
+    | Per-client visibility and order are also controlled via users.enable_db_metrics
+    | and users.db_metrics_order (managed on the suspend-setting page).
     */
     'exclude_user_ids' => [
         // 5,  // example: PK9

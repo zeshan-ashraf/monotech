@@ -277,7 +277,67 @@ class SettingController extends Controller
             ->select('id', 'name', 'email', 'new_user_verification')
             ->orderBy('name')
             ->get();
+        $metricsClients = $this->canManageDbMetrics()
+            ? User::query()
+                ->whereRaw('LOWER(user_role) = ?', ['client'])
+                ->where('active', 1)
+                ->orderBy('db_metrics_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'enable_db_metrics', 'db_metrics_order'])
+            : collect();
         return view("admin.setting.api_setting",get_defined_vars());
+    }
+
+    public function toggleDbMetrics(Request $request)
+    {
+        $this->authorizeDbMetricsManagement();
+
+        $validated = $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+            'status' => 'required|in:0,1',
+        ]);
+
+        $user = User::findOrFail($validated['user_id']);
+        $user->enable_db_metrics = (int) $validated['status'];
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dashboard metrics visibility updated successfully.',
+        ]);
+    }
+
+    public function saveDbMetricsOrder(Request $request)
+    {
+        $this->authorizeDbMetricsManagement();
+
+        $validated = $request->validate([
+            'order' => 'required|array|min:1',
+            'order.*' => 'integer|exists:users,id',
+        ]);
+
+        foreach ($validated['order'] as $position => $userId) {
+            User::where('id', $userId)->update([
+                'db_metrics_order' => $position + 1,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dashboard metrics order saved successfully.',
+        ]);
+    }
+
+    private function canManageDbMetrics(): bool
+    {
+        return in_array(auth()->user()->user_role, ['Super Admin', 'Admin', 'Manager'], true);
+    }
+
+    private function authorizeDbMetricsManagement(): void
+    {
+        if (!$this->canManageDbMetrics()) {
+            abort(403);
+        }
     }
 
     public function toggleNewUserVerification(Request $request)

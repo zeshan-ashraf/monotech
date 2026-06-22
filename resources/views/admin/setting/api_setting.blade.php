@@ -198,6 +198,61 @@
                         </div>
                     </div>
                 </div>
+                @if(isset($metricsClients) && $metricsClients->isNotEmpty())
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header border-bottom">
+                                <h4 class="card-title text-capitalize mb-0">Dashboard Metrics</h4>
+                                <small class="text-muted">Drag rows to set display order on the admin dashboard. Toggle to show or hide each client.</small>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="material-datatables">
+                                    <table class="table table-hover m-b-0" cellspacing="0" width="100%" style="width:100%">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th style="width: 40px;"></th>
+                                                <th style="width: 50px;">#</th>
+                                                <th>Client Name</th>
+                                                <th>Show on Dashboard</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="db-metrics-sortable">
+                                            @foreach($metricsClients as $item)
+                                            <tr
+                                                data-user-id="{{ $item->id }}"
+                                                @class(['table-secondary' => !$item->enable_db_metrics])
+                                            >
+                                                <td class="align-middle text-center">
+                                                    <span class="drag-handle text-muted" title="Drag to reorder" style="cursor: grab;">&#9776;</span>
+                                                </td>
+                                                <td class="align-middle metrics-order-index">{{ $loop->iteration }}</td>
+                                                <td class="align-middle">{{ $item->name }}</td>
+                                                <td class="align-middle">
+                                                    <div class="form-check form-switch">
+                                                        <input
+                                                            class="form-check-input toggle-db-metrics"
+                                                            type="checkbox"
+                                                            data-id="{{ $item->id }}"
+                                                            @if($item->enable_db_metrics) checked @endif
+                                                        >
+                                                        <label class="form-check-label">
+                                                            <span class="status-label">
+                                                                {{ $item->enable_db_metrics ? 'ON' : 'OFF' }}
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
@@ -405,6 +460,94 @@ $(document).ready(function () {
     }
 });
 </script>
+@if(isset($metricsClients) && $metricsClients->isNotEmpty())
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const sortableBody = document.getElementById('db-metrics-sortable');
+    if (!sortableBody || typeof Sortable === 'undefined') {
+        return;
+    }
+
+    function refreshOrderIndexes() {
+        sortableBody.querySelectorAll('tr').forEach(function (row, index) {
+            const cell = row.querySelector('.metrics-order-index');
+            if (cell) {
+                cell.textContent = index + 1;
+            }
+        });
+    }
+
+    function saveMetricsOrder() {
+        const order = Array.from(sortableBody.querySelectorAll('tr[data-user-id]')).map(function (row) {
+            return parseInt(row.getAttribute('data-user-id'), 10);
+        });
+
+        return $.ajax({
+            url: '{{ route("admin.setting.db_metrics.order") }}',
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+            contentType: 'application/json',
+            data: JSON.stringify({ order: order }),
+        });
+    }
+
+    Sortable.create(sortableBody, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: function () {
+            refreshOrderIndexes();
+            saveMetricsOrder().fail(function () {
+                alert('Unable to save dashboard metrics order. Please refresh and try again.');
+            });
+        },
+    });
+
+    $('.toggle-db-metrics').on('change', function () {
+        const toggle = $(this);
+        const userId = toggle.data('id');
+        const isChecked = toggle.is(':checked');
+        const status = isChecked ? 1 : 0;
+        const statusLabel = toggle.siblings('.form-check-label').find('.status-label');
+        const row = toggle.closest('tr');
+        const previousState = !isChecked;
+
+        statusLabel.text(isChecked ? 'ON' : 'OFF');
+        row.toggleClass('table-secondary', !isChecked);
+        toggle.prop('disabled', true);
+
+        $.ajax({
+            url: '{{ route("admin.setting.db_metrics.toggle") }}',
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+            contentType: 'application/json',
+            data: JSON.stringify({
+                user_id: userId,
+                status: status,
+            }),
+            success: function (response) {
+                if (response.message) {
+                    console.log(response.message);
+                }
+            },
+            error: function (xhr) {
+                toggle.prop('checked', previousState);
+                statusLabel.text(previousState ? 'ON' : 'OFF');
+                row.toggleClass('table-secondary', !previousState);
+                alert(xhr.responseJSON?.message || 'Unable to update dashboard metrics setting.');
+            },
+            complete: function () {
+                toggle.prop('disabled', false);
+            },
+        });
+    });
+});
+</script>
+@endif
 <script>
 $(document).ready(function () {
     $('.toggle-new-user-verification').on('change', function () {

@@ -14,7 +14,11 @@ class DashboardMetricsService
         $exclude = config('dashboard_metrics.exclude_user_ids', []);
 
         if ($viewer->user_role === 'Client') {
-            if (!$viewer->active || in_array($viewer->id, $exclude, true)) {
+            if (
+                !$viewer->active
+                || !$viewer->enable_db_metrics
+                || in_array($viewer->id, $exclude, true)
+            ) {
                 return collect();
             }
 
@@ -25,8 +29,10 @@ class DashboardMetricsService
             return User::query()
                 ->where('user_role', 'Client')
                 ->where('active', 1)
+                ->where('enable_db_metrics', true)
                 ->whereNotIn('id', $exclude)
-                ->orderBy('name', 'asc')
+                ->orderBy('db_metrics_order')
+                ->orderBy('name')
                 ->get();
         }
 
