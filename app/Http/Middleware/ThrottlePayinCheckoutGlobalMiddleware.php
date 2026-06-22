@@ -21,7 +21,7 @@ class ThrottlePayinCheckoutGlobalMiddleware
             return $next($request);
         }
 
-        $maxAttempts = (int) config('throttle_phone.global_checkout_per_minute', 40);
+        $maxAttempts = (int) config('throttle_phone.global_checkout_per_minute', 80);
         $decaySeconds = 60;
 
         if (RateLimiter::tooManyAttempts(self::LIMITER_KEY, $maxAttempts)) {

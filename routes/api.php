@@ -63,7 +63,7 @@ Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProc
 */
 
 Route::as('payout.')->prefix('payout')->group(function () {
-    Route::middleware(['whitelist.ip'])->group(function () {
+    Route::middleware(['throttle:api', 'whitelist.ip'])->group(function () {
         Route::post('/checkout', [PayoutController::class, 'checkout']);
     });
 });
@@ -97,7 +97,7 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
 
     // Payout Route
     Route::post('payout/checkout', [PayoutController::class, 'checkout'])
-        ->middleware(['payout.daily.limit', 'whitelist.ip']);
+        ->middleware(['throttle:api', 'payout.daily.limit', 'whitelist.ip']);
 });
 
 Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);
@@ -107,9 +107,11 @@ Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCal
 |--------------------------------------------------------------------------
 |    
 */
-Route::post('/payout/demo-checkout', [PayoutCheckoutController::class, 'payoutProceed']);
+Route::post('/payout/demo-checkout', [PayoutCheckoutController::class, 'payoutProceed'])
+    ->middleware('throttle:api');
 Route::get('/get-payin-data', [GeneralController::class , 'getPayinData']);
 
 Route::as('ibft-payout.')->prefix('ibft-payout')->group(function () {
-    Route::post('/checkout',[IbftController::class, 'checkout']);
+    Route::post('/checkout', [IbftController::class, 'checkout'])
+        ->middleware('throttle:api');
 });
