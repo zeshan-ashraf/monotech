@@ -406,6 +406,54 @@ class SettingController extends Controller
             'message' => 'Payin limits reset to 0 successfully'
         ]);
     }
+
+    public function saveEpAmountLimits(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'ep_min_amount' => 'required|numeric|min:0',
+            'ep_max_amount' => 'required|numeric|min:0',
+        ]);
+
+        if (
+            $validated['ep_min_amount'] > 0
+            && $validated['ep_max_amount'] > 0
+            && $validated['ep_min_amount'] > $validated['ep_max_amount']
+        ) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'EP min amount cannot be greater than EP max amount.',
+            ], 422);
+        }
+
+        User::where('id', $validated['user_id'])->update([
+            'ep_min_amount' => $validated['ep_min_amount'],
+            'ep_max_amount' => $validated['ep_max_amount'],
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Easypaisa amount limits updated successfully',
+        ]);
+    }
+
+    public function resetEpAmountLimits(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        User::where('id', $request->user_id)->update([
+            'ep_min_amount' => 0,
+            'ep_max_amount' => 0,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Easypaisa amount limits reset successfully',
+        ]);
+    }
+
     public function payoutSetting(Request $request)
     {
         $setting = PayoutSetting::first();
