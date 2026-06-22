@@ -98,7 +98,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:recount-report-generate')->dailyAt('01:00');
         $schedule->command('transactions:auto-fail')->everyFiveMinutes();
         */
-        $event = $schedule->command('transactions:jazzcash-recheck-status')->everyMinute();
+        $event = $schedule->command('transactions:jazzcash-recheck-status')->everyTenMinutes();
         $wrapSchedule($event, 'transactions:jazzcash-recheck-status');
         $event = $schedule->command('report:generate')
             ->everyTenMinutes()
