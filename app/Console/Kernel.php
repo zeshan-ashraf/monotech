@@ -115,9 +115,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('suplus:addition')->everyTenMinutes();
         $event = $schedule->command('transactions:archive')->dailyAt('02:00');
         $wrapSchedule($event, 'transactions:archive');
-        $event = $schedule->command('transactions:backup')->dailyAt('18:10');
+        $event = $schedule->command('transactions:backup')->dailyAt('02:30');
         $wrapSchedule($event, 'transactions:backup');
-        $event = $schedule->command('payouts:archive')->dailyAt('18:15');
+        $event = $schedule->command('payouts:archive')->dailyAt('03:00');
         $wrapSchedule($event, 'payouts:archive');
         // $schedule->command('transactions:old')->dailyAt('04:25');
         $event = $schedule->command('app:recount-report-generate')->dailyAt('01:00');
