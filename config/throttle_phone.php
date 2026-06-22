@@ -41,6 +41,6 @@ return [
     |
     */
 
-    'global_checkout_per_minute' => 40,
+    'global_checkout_per_minute' => 80,
 
 ];
