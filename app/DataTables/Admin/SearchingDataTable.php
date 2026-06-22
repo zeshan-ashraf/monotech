@@ -91,13 +91,13 @@ class SearchingDataTable extends DataTable
     }
 
     /**
-     * Tiered order lookup: exact (indexed) → prefix → contains (last resort only).
-     * Also searches txn_ref_no and transactionId — admins often paste those into Order Id.
+     * Tiered orderId lookup: exact → prefix → contains (last resort).
+     * Stops at the first table that returns rows.
      */
     private function searchByOrderReference(array $filters): Collection
     {
         foreach (['exact', 'prefix', 'contains'] as $matchMode) {
-            $results = $this->searchWithFilters($filters, $matchMode);
+            $results = $this->searchWithFilters($filters, $matchMode, stopOnFirstTableWithResults: true);
 
             if ($results->isNotEmpty()) {
                 return $results;
@@ -107,8 +107,15 @@ class SearchingDataTable extends DataTable
         return collect();
     }
 
-    private function searchWithFilters(array $filters, string $orderMatchMode): Collection
-    {
+    /**
+     * Search live → archive → backup in order. When $stopOnFirstTableWithResults
+     * is true, skip remaining tables as soon as any rows are found.
+     */
+    private function searchWithFilters(
+        array $filters,
+        string $orderMatchMode,
+        bool $stopOnFirstTableWithResults = true
+    ): Collection {
         $results = collect();
 
         foreach ($this->sources() as $source) {
@@ -120,6 +127,10 @@ class SearchingDataTable extends DataTable
             foreach ($rows as $row) {
                 $row->table_type = $source['type'];
                 $results->push($row);
+            }
+
+            if ($stopOnFirstTableWithResults && $results->isNotEmpty()) {
+                return $results;
             }
         }
 
@@ -139,12 +150,12 @@ class SearchingDataTable extends DataTable
     }
 
     /**
-     * @return array{transaction_id: ?string, phone: ?string, order_id: ?string, start_date: ?string, amount: ?float}
+     * @return array{txn_ref_no: ?string, phone: ?string, order_id: ?string, start_date: ?string, amount: ?float}
      */
     private function resolveFilters(): array
     {
         return [
-            'transaction_id' => $this->trimFilter('transaction_Id'),
+            'txn_ref_no' => $this->trimFilter('transaction_Id'),
             'phone' => $this->trimFilter('phone'),
             'order_id' => $this->trimFilter('order_id'),
             'start_date' => request()->start_date
@@ -164,14 +175,14 @@ class SearchingDataTable extends DataTable
     private function applySearchFilters(Builder $query, array $filters, string $orderMatchMode = 'exact'): Builder
     {
         return $query
-            ->when($filters['transaction_id'], function (Builder $q) use ($filters) {
-                $q->where('transactionId', 'like', $filters['transaction_id'] . '%');
+            ->when($filters['txn_ref_no'], function (Builder $q) use ($filters) {
+                $q->where('txn_ref_no', 'like', $filters['txn_ref_no'] . '%');
             })
             ->when($filters['phone'], function (Builder $q) use ($filters) {
                 $q->where('phone', 'like', $filters['phone'] . '%');
             })
             ->when($filters['order_id'], function (Builder $q) use ($filters, $orderMatchMode) {
-                $this->applyOrderReferenceFilter($q, $filters['order_id'], $orderMatchMode);
+                $this->applyOrderIdFilter($q, $filters['order_id'], $orderMatchMode);
             })
             ->when($filters['start_date'], function (Builder $q) use ($filters) {
                 $q->whereBetween('created_at', [
@@ -184,29 +195,17 @@ class SearchingDataTable extends DataTable
             });
     }
 
-    /**
-     * Match merchant order id, internal txn ref, or gateway transaction id.
-     */
-    private function applyOrderReferenceFilter(Builder $query, string $term, string $matchMode): void
+    /** Form field order_id → column orderId only. */
+    private function applyOrderIdFilter(Builder $query, string $term, string $matchMode): void
     {
-        $query->where(function (Builder $q) use ($term, $matchMode) {
-            $apply = function (Builder $inner, string $column, string $term, string $matchMode, bool $first): void {
-                if ($matchMode === 'exact') {
-                    $first ? $inner->where($column, $term) : $inner->orWhere($column, $term);
+        if ($matchMode === 'exact') {
+            $query->where('orderId', $term);
 
-                    return;
-                }
+            return;
+        }
 
-                $pattern = $matchMode === 'prefix' ? $term . '%' : '%' . $term . '%';
-                $first
-                    ? $inner->where($column, 'like', $pattern)
-                    : $inner->orWhere($column, 'like', $pattern);
-            };
-
-            $apply($q, 'orderId', $term, $matchMode, true);
-            $apply($q, 'txn_ref_no', $term, $matchMode, false);
-            $apply($q, 'transactionId', $term, $matchMode, false);
-        });
+        $pattern = $matchMode === 'prefix' ? $term . '%' : '%' . $term . '%';
+        $query->where('orderId', 'like', $pattern);
     }
 
     public function html()
