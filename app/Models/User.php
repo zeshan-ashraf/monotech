@@ -34,6 +34,8 @@ class User extends Authenticatable
         'payout_ep_api',
         'jc_payin_limit',
         'ep_payin_limit',
+        'ep_min_amount',
+        'ep_max_amount',
         'payout_ep_fee',
         'enable_db_metrics',
         'db_metrics_order',

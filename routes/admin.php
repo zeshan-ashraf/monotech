@@ -106,6 +106,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::post('payout/setting', [SettingController::class,'payoutSetting'])->name('payout_setting');
         Route::post('/db-metrics/toggle', [SettingController::class, 'toggleDbMetrics'])->name('db_metrics.toggle');
         Route::post('/db-metrics/order', [SettingController::class, 'saveDbMetricsOrder'])->name('db_metrics.order');
+        Route::post('/ep-amount-limits/save', [SettingController::class, 'saveEpAmountLimits'])->name('ep_amount_limits.save');
+        Route::post('/ep-amount-limits/reset', [SettingController::class, 'resetEpAmountLimits'])->name('ep_amount_limits.reset');
     });
     Route::as('settlement.')->prefix('settlement')->group(function () {
         // Unified route for all settlement types

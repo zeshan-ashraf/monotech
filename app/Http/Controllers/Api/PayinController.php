@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use DB;
 use App\Services\Payin\InstrumentedEasypaisaPayinClient;
 use App\Services\PhoneVerificationService;
-use Ramsey\Uuid\Uuid;
+use App\Support\PayinAmountRules;
 
 class PayinController extends Controller
 {
@@ -283,12 +283,17 @@ class PayinController extends Controller
             'timestamp' => now()->toDateTimeString()
         ]);
 
+        $user = $request->user_model ?? User::where('email', $request->client_email)->first();
+
         $validator = Validator::make($request->all(), [
             'phone' => ['required', 'regex:/^03[0-9]{9}$/'],
             'email' => 'required|email',
             'client_email' => 'required|email',
             'payment_method' => 'required|in:jazzcash,easypaisa',
-            'amount' => 'required|numeric|min:1',
+            'amount' => PayinAmountRules::forPaymentMethod(
+                (string) $request->payment_method,
+                $user
+            ),
             'orderId'=> 'required|unique:transactions,orderId',
         ]);
     
@@ -337,10 +342,6 @@ class PayinController extends Controller
             return response()->json($restrictionCheck, $restrictionCheck['code']);
         }
 
-        $user = User::where('email', $request->client_email)->first();
-        
-        
-        
         if(($request->payment_method == "jazzcash" && $user->jc_api == 0) || ($request->payment_method == "easypaisa" && $user->ep_api == 0)){
             $this->logger->warning('API suspended', [
                 'request_id' => $requestId,

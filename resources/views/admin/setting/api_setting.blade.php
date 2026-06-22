@@ -419,6 +419,48 @@
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header border-bottom d-flex justify-content-between">
+                                <h4 class="card-title text-capitalize mb-0">Easypaisa Payin Amount Limits <small class="text-muted">(Per transaction min/max. Zero means <mark>no limit</mark>.)</small></h4>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="material-datatables">
+                                    <table class="table table-hover m-b-0 datatables" cellspacing="0" width="100%" style="width:100%">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Client Name</th>
+                                                <th>EP Min Amount</th>
+                                                <th>EP Max Amount</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($list as $item)
+                                            <tr>
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>{{ $item->name }}</td>
+                                                <td>
+                                                    <input class="form-control" type="number" min="0" step="0.01" value="{{ $item->ep_min_amount ?? 0 }}" id="ep-min-amount-{{ $item->id }}">
+                                                </td>
+                                                <td>
+                                                    <input class="form-control" type="number" min="0" step="0.01" value="{{ $item->ep_max_amount ?? 0 }}" id="ep-max-amount-{{ $item->id }}">
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn rounded-pill btn-primary btn-sm waves-effect waves-light save-ep-amount-limits" data-user-id="{{ $item->id }}">Save</button>
+                                                    <button type="button" class="btn rounded-pill btn-danger btn-sm waves-effect waves-light reset-ep-amount-limits" data-user-id="{{ $item->id }}">Reset</button>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </div>
     </div>
@@ -745,6 +787,93 @@ $(document).ready(function () {
                 error: function (xhr, status, error) {
                     console.error('Error resetting payin limits:', error);
                     alert('Error resetting payin limits. Please try again.');
+                    resetBtn.prop('disabled', false).text(originalText);
+                }
+            });
+        });
+    });
+</script>
+<script>
+    $(document).ready(function () {
+        $('.save-ep-amount-limits').on('click', function () {
+            const userId = $(this).data('user-id');
+            const epMin = parseFloat($('#ep-min-amount-' + userId).val());
+            const epMax = parseFloat($('#ep-max-amount-' + userId).val());
+
+            if (epMin < 0 || epMax < 0) {
+                alert('Easypaisa amount limits cannot be negative');
+                return;
+            }
+
+            if (epMin > 0 && epMax > 0 && epMin > epMax) {
+                alert('EP min amount cannot be greater than EP max amount');
+                return;
+            }
+
+            const saveBtn = $(this);
+            const originalText = saveBtn.text();
+            saveBtn.prop('disabled', true).text('Saving...');
+
+            $.ajax({
+                url: '{{ route("admin.setting.ep_amount_limits.save") }}',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId,
+                    ep_min_amount: epMin,
+                    ep_max_amount: epMax,
+                }),
+                success: function (response) {
+                    if (response.status === 'success') {
+                        saveBtn.removeClass('btn-primary').addClass('btn-info').text('Saved!');
+                        setTimeout(function () {
+                            saveBtn.removeClass('btn-info').addClass('btn-primary').text(originalText).prop('disabled', false);
+                        }, 2000);
+                    }
+                },
+                error: function (xhr) {
+                    alert(xhr.responseJSON?.message || 'Error saving Easypaisa amount limits. Please try again.');
+                    saveBtn.prop('disabled', false).text(originalText);
+                }
+            });
+        });
+
+        $('.reset-ep-amount-limits').on('click', function () {
+            const userId = $(this).data('user-id');
+
+            if (!confirm('Reset Easypaisa min/max amounts to 0 (no limit) for this client?')) {
+                return;
+            }
+
+            const resetBtn = $(this);
+            const originalText = resetBtn.text();
+            resetBtn.prop('disabled', true).text('Resetting...');
+
+            $.ajax({
+                url: '{{ route("admin.setting.ep_amount_limits.reset") }}',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId,
+                }),
+                success: function (response) {
+                    if (response.status === 'success') {
+                        $('#ep-min-amount-' + userId).val(0);
+                        $('#ep-max-amount-' + userId).val(0);
+                        resetBtn.removeClass('btn-danger').addClass('btn-info').text('Reset!');
+                        setTimeout(function () {
+                            resetBtn.removeClass('btn-info').addClass('btn-danger').text(originalText).prop('disabled', false);
+                        }, 2000);
+                    }
+                },
+                error: function () {
+                    alert('Error resetting Easypaisa amount limits. Please try again.');
                     resetBtn.prop('disabled', false).text(originalText);
                 }
             });
