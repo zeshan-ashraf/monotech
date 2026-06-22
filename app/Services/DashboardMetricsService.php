@@ -70,51 +70,25 @@ class DashboardMetricsService
         })->values()->all();
     }
 
-    // public function getSuccessRate(int $userId, string $txnType): float
-    // {
-    //     $since = Carbon::now()->subMinutes(
-    //         (int) config('dashboard_metrics.success_rate_window_minutes', 5)
-    //     );
-
-    //     $successCount = Transaction::query()
-    //         ->where('user_id', $userId)
-    //         ->where('created_at', '>=', $since)
-    //         ->where('status', 'success')
-    //         ->where('txn_type', $txnType)
-    //         ->count();
-
-    //     $failedCount = Transaction::query()
-    //         ->where('user_id', $userId)
-    //         ->where('created_at', '>=', $since)
-    //         ->where('status', 'failed')
-    //         ->where('txn_type', $txnType)
-    //         ->count();
-
-    //     $total = $successCount + $failedCount;
-
-    //     return $total > 0
-    //         ? round(($successCount / $total) * 100, 2)
-    //         : 0.0;
-    // }
     public function getSuccessRate(int $userId, string $txnType): float
     {
         $since = Carbon::now()->subMinutes(
             (int) config('dashboard_metrics.success_rate_window_minutes', 5)
         );
 
-        $counts = Transaction::query()
+        $successCount = Transaction::query()
             ->where('user_id', $userId)
-            ->where('txn_type', $txnType)
             ->where('created_at', '>=', $since)
-            ->whereIn('status', ['success', 'failed'])
-            ->selectRaw("
-                SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) AS success_count,
-                SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed_count
-            ")
-            ->first();
+            ->where('status', 'success')
+            ->where('txn_type', $txnType)
+            ->count();
 
-        $successCount = $counts->success_count ?? 0;
-        $failedCount = $counts->failed_count ?? 0;
+        $failedCount = Transaction::query()
+            ->where('user_id', $userId)
+            ->where('created_at', '>=', $since)
+            ->where('status', 'failed')
+            ->where('txn_type', $txnType)
+            ->count();
 
         $total = $successCount + $failedCount;
 
