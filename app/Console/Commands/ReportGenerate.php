@@ -234,6 +234,8 @@ class ReportGenerate extends Command
 
             $this->info('Daily report generated successfully.');
 
+            Cache::put('report:generate:last_completed_at', now(), now()->addDay());
+
             return Command::SUCCESS;
         } finally {
             $lock->release();

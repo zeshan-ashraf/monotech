@@ -6,6 +6,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Models\ScheduleSetting;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Kernel extends ConsoleKernel
@@ -100,9 +101,16 @@ class Kernel extends ConsoleKernel
         */
         $event = $schedule->command('transactions:jazzcash-recheck-status')->everyTenMinutes();
         $wrapSchedule($event, 'transactions:jazzcash-recheck-status');
+        // Every 3+ minutes: no overlap; after a run finishes, next run on the next minute tick once 3 min have passed.
         $event = $schedule->command('report:generate')
-            ->cron('*/3 * * * *')
-            ->withoutOverlapping(30);
+            ->everyMinute()
+            ->withoutOverlapping(3)
+            ->when(function () {
+                $lastCompleted = Cache::get('report:generate:last_completed_at');
+
+                return $lastCompleted === null
+                    || now()->diffInSeconds($lastCompleted) >= 120;
+            });
         $wrapSchedule($event, 'report:generate');
         $schedule->command('suplus:addition')->everyTenMinutes();
         // $event = $schedule->command('transactions:archive')->dailyAt('02:00');
