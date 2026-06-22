@@ -33,7 +33,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::as('payin.')->prefix('payin')->group(function () {
     Route::post('/checkout',[PayinController::class, 'checkout'])
-        ->middleware(['log.rejected', 'payin.pending.limit', 'throttle.phone', 'phone.verified']);
+        ->middleware(['log.rejected', 'throttle.payin.global', 'payin.pending.limit', 'throttle.phone', 'phone.verified']);
     Route::get('/test-trait',[PayinController::class, 'testTrait']); // Test route for trait
 });
 
@@ -93,7 +93,7 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
     //Route::post('payment-checkout', [TestPayinController::class, 'checkout']);// testing purpose only
     // payin route
     Route::post('payment-checkout', [PayinController::class, 'checkout'])
-        ->middleware('payin.pending.limit');
+        ->middleware(['throttle.payin.global', 'payin.pending.limit']);
 
     // Payout Route
     Route::post('payout/checkout', [PayoutController::class, 'checkout'])
