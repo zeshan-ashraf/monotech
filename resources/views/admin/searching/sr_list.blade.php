@@ -107,7 +107,7 @@
                 </div>
                 @if(request()->params)
                 <div class="row invoice-preview mt-3">
-                    <div class="col-md-5 m-auto">
+                    <div class="col-md-7 m-auto">
                         <div class="card" style="border-radius: 15px; overflow: hidden; box-shadow: 0px 0px 10px rgba(0,0,0,0.1);">
                             <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #6a64ae; color: white;">
                                 <h3 class="mb-0">{{ $client->name ?? "All"}} 
