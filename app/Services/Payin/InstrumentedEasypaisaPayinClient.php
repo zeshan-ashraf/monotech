@@ -10,7 +10,7 @@ use Zfhassaan\Easypaisa\Easypaisa;
 
 class InstrumentedEasypaisaPayinClient
 {
-    private const HTTP_TIMEOUT_SECONDS = 120;
+    private const HTTP_TIMEOUT_SECONDS = 60;
 
     public function __construct(
         private readonly PayinEasypaisaDiagnosticsLogger $diagnosticsLogger
