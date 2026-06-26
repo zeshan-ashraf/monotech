@@ -19,10 +19,12 @@
                         class="d-flex align-items-center" href="{{ route('admin.dashboard') }}">
                         <i data-feather="home"></i>Dashboard</a>
                 </li>
+                {{-- OPS Dashboard — hidden until feature is complete
                 <li class="@if(Route::is('admin.ops.dashboard')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.ops.dashboard') }}">
                         <i data-feather="activity"></i>OPS Dashboard</a>
                 </li>
+                --}}
                 {{--<li class="@if(url()->current() == route('admin.profile')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.profile') }}">
                         <i data-feather="user-check"></i>Profile</a>

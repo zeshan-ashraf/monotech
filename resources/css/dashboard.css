@@ -104,7 +104,129 @@ body.dark-layout .ops-dashboard {
 }
 
 /* ==========================================================================
-   Server info strip
+   Server information panel (Phase 2)
+   ========================================================================== */
+
+.ops-server-panel__header {
+    padding: 1.15rem 1.25rem;
+    border-bottom: 1px solid var(--ops-border);
+}
+
+.ops-server-panel__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--bs-body-color);
+}
+
+.ops-server-panel__body {
+    padding: 1.25rem;
+}
+
+.ops-server-info__grid--host {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--ops-border);
+}
+
+.ops-server-metrics {
+    margin-top: 0.25rem;
+}
+
+.ops-server-metric {
+    display: flex;
+    gap: 0.85rem;
+    padding: 1rem;
+    background: var(--ops-surface-2);
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+    transition: border-color var(--ops-transition), transform var(--ops-transition), box-shadow var(--ops-transition);
+}
+
+.ops-server-metric:hover {
+    border-color: rgba(var(--bs-primary-rgb), 0.25);
+    transform: translateY(-2px);
+    box-shadow: var(--ops-shadow);
+}
+
+.ops-server-metric__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--ops-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.ops-server-metric__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.ops-server-metric__title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ops-text-muted);
+    font-weight: 600;
+}
+
+.ops-server-metric__value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--bs-body-color);
+    line-height: 1.2;
+}
+
+.ops-server-metric__subtitle {
+    font-size: 0.75rem;
+    color: var(--ops-text-muted);
+}
+
+.ops-load-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.ops-load-grid__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.ops-load-grid__label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ops-text-muted);
+}
+
+.ops-load-grid__value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--bs-body-color);
+}
+
+.ops-network-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.ops-network-stats__item {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ==========================================================================
+   Server info strip (legacy host grid cells)
    ========================================================================== */
 
 .ops-server-info {
@@ -166,6 +288,16 @@ body.dark-layout .ops-dashboard {
 .ops-health-badge--success {
     color: var(--bs-success);
     background: rgba(var(--bs-success-rgb), 0.12);
+}
+
+.ops-health-badge--warning {
+    color: var(--bs-warning);
+    background: rgba(var(--bs-warning-rgb), 0.12);
+}
+
+.ops-health-badge--danger {
+    color: var(--bs-danger);
+    background: rgba(var(--bs-danger-rgb), 0.12);
 }
 
 @keyframes ops-pulse {

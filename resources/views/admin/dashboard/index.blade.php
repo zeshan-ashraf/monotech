@@ -11,55 +11,9 @@
         <div class="content-wrapper container-xxl pt-0 px-0 pb-sm-0 pb-5">
             <div class="content-body">
                 <div class="ops-dashboard" id="ops-dashboard">
-
-                    {{-- Dashboard toolbar (refresh controls) --}}
-                    @include('admin.dashboard.navbar', ['refreshIntervals' => $refreshIntervals])
-
-                    <div class="ops-dashboard__main">
-
-                        {{-- Server info strip --}}
-                        @include('admin.dashboard.server-info', ['serverInfo' => $serverInfo])
-
-                        {{-- Overview metric cards row --}}
-                        @include('admin.dashboard.cards', ['overviewCards' => $overviewCards])
-
-                        {{-- PHP-FPM & MySQL status row --}}
-                        <div class="row g-3 mb-3">
-                            <div class="col-xl-7">
-                                @include('admin.dashboard.phpfpm', ['phpFpm' => $phpFpm])
-                            </div>
-                            <div class="col-xl-5">
-                                @include('admin.dashboard.mysql', ['mysql' => $mysql])
-                            </div>
-                        </div>
-
-                        {{-- Payments & Alerts row --}}
-                        <div class="row g-3 mb-3">
-                            <div class="col-xl-8">
-                                @include('admin.dashboard.payments', [
-                                    'payments' => $payments,
-                                    'transactions' => $transactions,
-                                    'paymentStats' => $paymentStats,
-                                ])
-                            </div>
-                            <div class="col-xl-4">
-                                @include('admin.dashboard.alerts', ['alerts' => $alerts])
-                            </div>
-                        </div>
-
-                        {{-- Bottom history charts row --}}
-                        @include('admin.dashboard.bottom-charts')
-
-                    </div>
+                    @include('admin.dashboard.server-info', ['serverInfo' => $serverInfo])
                 </div>
             </div>
         </div>
     </div>
 @endsection
-
-@push('js')
-    <script>
-        window.opsDashboardData = @json($chartData);
-    </script>
-    <script src="{{ asset('js/dashboard.js') }}"></script>
-@endpush
