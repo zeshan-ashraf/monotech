@@ -283,6 +283,24 @@ body.dark-layout .ops-dashboard {
     color: var(--bs-body-color);
 }
 
+.ops-panel__action {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--bs-primary);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ops-panel__action:hover {
+    text-decoration: underline;
+    color: var(--bs-primary);
+}
+
+.ops-panel__footer-stat strong {
+    font-weight: 600;
+}
+
 .ops-subtitle {
     font-size: 0.8rem;
     font-weight: 600;
@@ -432,34 +450,54 @@ body.dark-layout .ops-dashboard {
    Payments section
    ========================================================================== */
 
+.ops-payments-panel .ops-panel__body {
+    padding-top: 0.75rem;
+}
+
 .ops-payment-stat {
-    padding: 0.85rem;
+    padding: 0.9rem 1rem 0.75rem;
     background: var(--ops-surface-2);
     border: 1px solid var(--ops-border);
     border-radius: var(--ops-radius-sm);
     height: 100%;
-    transition: transform var(--ops-transition), border-color var(--ops-transition);
+    transition: transform var(--ops-transition), border-color var(--ops-transition), box-shadow var(--ops-transition);
 }
 
 .ops-payment-stat:hover {
     transform: translateY(-2px);
-    border-color: rgba(var(--bs-primary-rgb), 0.25);
+    border-color: rgba(var(--bs-primary-rgb), 0.2);
+    box-shadow: var(--ops-shadow);
+}
+
+.ops-payment-stat__top {
+    margin-bottom: 0.35rem;
+}
+
+.ops-payment-stat__dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
 }
 
 .ops-payment-stat__label {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--ops-text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
+    font-weight: 600;
 }
 
 .ops-payment-stat__value {
-    font-size: 1.35rem;
+    font-size: 1.4rem;
     font-weight: 700;
+    line-height: 1.2;
 }
 
 .ops-payment-stat__chart {
-    height: 40px;
+    height: 44px;
+    margin-top: 0.25rem;
 }
 
 .ops-table-wrap {
@@ -519,37 +557,62 @@ body.dark-layout .ops-dashboard {
    Alerts list
    ========================================================================== */
 
+.ops-alerts-panel .ops-panel__header {
+    padding-bottom: 0;
+}
+
 .ops-alerts-list {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
-    max-height: 420px;
+    max-height: 520px;
     overflow-y: auto;
 }
 
 .ops-alert-item {
     display: flex;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    border: 1px solid var(--ops-border);
-    border-radius: var(--ops-radius-sm);
-    background: var(--ops-surface-2);
-    transition: border-color var(--ops-transition), transform var(--ops-transition);
+    gap: 0.85rem;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--ops-border);
+    transition: background var(--ops-transition);
+}
+
+.ops-alert-item:last-child {
+    border-bottom: none;
 }
 
 .ops-alert-item:hover {
-    border-color: rgba(var(--bs-primary-rgb), 0.25);
-    transform: translateX(2px);
+    background: var(--ops-surface-2);
 }
 
-.ops-alert-item__icon {
-    font-size: 1.1rem;
+.ops-alert-item--danger {
+    border-left: 3px solid var(--bs-danger);
+}
+
+.ops-alert-item--warning {
+    border-left: 3px solid var(--bs-warning);
+}
+
+.ops-alert-item--info {
+    border-left: 3px solid var(--bs-info);
+}
+
+.ops-alert-item--success {
+    border-left: 3px solid var(--bs-success);
+}
+
+.ops-alert-item__icon-wrap {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--ops-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
     flex-shrink: 0;
-    padding-top: 0.1rem;
 }
 
 .ops-alert-item__title {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
     color: var(--bs-body-color);
 }
@@ -557,12 +620,15 @@ body.dark-layout .ops-dashboard {
 .ops-alert-item__desc {
     font-size: 0.75rem;
     color: var(--ops-text-muted);
-    margin-top: 0.2rem;
+    margin-top: 0.15rem;
+    line-height: 1.4;
 }
 
 .ops-alert-item__time {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
+    color: var(--ops-text-muted);
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* ==========================================================================

@@ -26,14 +26,12 @@ class OpsDashboardController extends Controller
         return view('admin.dashboard.index', [
             'serverInfo' => $serverInfo,
             'overviewCards' => $overviewCards,
-            'phpFpm' => $this->placeholderService->phpFpmStatus(),
-            'mysql' => $this->placeholderService->mysqlStatus(),
             'payments' => $this->placeholderService->paymentsOverview(),
             'transactions' => $this->placeholderService->recentTransactions(),
             'paymentStats' => $this->placeholderService->paymentResponseStats(),
             'alerts' => $this->placeholderService->alerts(),
             'refreshIntervals' => $this->placeholderService->refreshIntervals(),
-            'chartData' => $this->placeholderService->chartData($overviewCards),
+            'chartData' => $this->placeholderService->chartDataForMain($overviewCards),
         ]);
     }
 }

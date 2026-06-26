@@ -16,23 +16,13 @@
 
                     <div class="ops-dashboard__main">
 
-                        {{-- Live server host details --}}
+                        {{-- Live: server host details --}}
                         @include('admin.dashboard.server-info', ['serverInfo' => $serverInfo])
 
-                        {{-- Live overview metric cards --}}
+                        {{-- Live: overview metric cards --}}
                         @include('admin.dashboard.cards', ['overviewCards' => $overviewCards])
 
-                        {{-- PHP-FPM & MySQL (placeholder) --}}
-                        <div class="row g-3 mb-3">
-                            <div class="col-xl-7">
-                                @include('admin.dashboard.phpfpm', ['phpFpm' => $phpFpm])
-                            </div>
-                            <div class="col-xl-5">
-                                @include('admin.dashboard.mysql', ['mysql' => $mysql])
-                            </div>
-                        </div>
-
-                        {{-- Payments & Alerts (placeholder) --}}
+                        {{-- Payments & Alerts --}}
                         <div class="row g-3 mb-3">
                             <div class="col-xl-8">
                                 @include('admin.dashboard.payments', [
@@ -45,9 +35,6 @@
                                 @include('admin.dashboard.alerts', ['alerts' => $alerts])
                             </div>
                         </div>
-
-                        {{-- Bottom history charts (placeholder) --}}
-                        @include('admin.dashboard.bottom-charts')
 
                     </div>
                 </div>

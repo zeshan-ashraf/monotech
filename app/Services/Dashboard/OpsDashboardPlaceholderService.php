@@ -61,12 +61,12 @@ class OpsDashboardPlaceholderService
     public function recentTransactions(): array
     {
         return [
-            ['id' => 'TXN-982341', 'type' => 'PayIn', 'amount' => '₨ 4,500.00', 'status' => 'success', 'time' => '2m ago', 'response_time' => '0.84s'],
-            ['id' => 'TXN-982340', 'type' => 'PayIn', 'amount' => '₨ 12,000.00', 'status' => 'pending', 'time' => '4m ago', 'response_time' => '—'],
-            ['id' => 'TXN-982339', 'type' => 'Refund', 'amount' => '₨ 1,200.00', 'status' => 'success', 'time' => '6m ago', 'response_time' => '1.12s'],
-            ['id' => 'TXN-982338', 'type' => 'PayIn', 'amount' => '₨ 850.00', 'status' => 'failed', 'time' => '8m ago', 'response_time' => '14.32s'],
-            ['id' => 'TXN-982337', 'type' => 'PayIn', 'amount' => '₨ 3,250.00', 'status' => 'success', 'time' => '11m ago', 'response_time' => '0.92s'],
-            ['id' => 'TXN-982336', 'type' => 'PayIn', 'amount' => '₨ 7,800.00', 'status' => 'success', 'time' => '14m ago', 'response_time' => '1.05s'],
+            ['id' => 'TXN85214', 'type' => 'PayIn', 'amount' => '₨ 5,000', 'status' => 'success', 'time' => '2m ago', 'response_time' => '0.84s', 'response_slow' => false],
+            ['id' => 'TXN85213', 'type' => 'PayIn', 'amount' => '₨ 12,000', 'status' => 'pending', 'time' => '4m ago', 'response_time' => '—', 'response_slow' => false],
+            ['id' => 'TXN85212', 'type' => 'PayIn', 'amount' => '₨ 3,250', 'status' => 'success', 'time' => '6m ago', 'response_time' => '1.05s', 'response_slow' => false],
+            ['id' => 'TXN85211', 'type' => 'PayIn', 'amount' => '₨ 850', 'status' => 'failed', 'time' => '8m ago', 'response_time' => '14.32s', 'response_slow' => true],
+            ['id' => 'TXN85210', 'type' => 'Refund', 'amount' => '₨ 1,200', 'status' => 'success', 'time' => '11m ago', 'response_time' => '1.12s', 'response_slow' => false],
+            ['id' => 'TXN85209', 'type' => 'PayIn', 'amount' => '₨ 7,800', 'status' => 'success', 'time' => '14m ago', 'response_time' => '0.92s', 'response_slow' => false],
         ];
     }
 
@@ -87,11 +87,41 @@ class OpsDashboardPlaceholderService
     public function alerts(): array
     {
         return [
-            ['severity' => 'danger', 'icon' => 'fa-times-circle', 'title' => 'PayIn Gateway Timeout', 'description' => 'EasyPaisa API response exceeded 15s threshold on node-02', 'time' => '2m ago'],
-            ['severity' => 'warning', 'icon' => 'fa-exclamation-triangle', 'title' => 'High PHP-FPM Queue', 'description' => 'Worker pool reached 90% capacity during peak traffic', 'time' => '8m ago'],
-            ['severity' => 'info', 'icon' => 'fa-info-circle', 'title' => 'Scheduled Backup Completed', 'description' => 'Daily MySQL dump finished successfully (2.4 GB)', 'time' => '32m ago'],
-            ['severity' => 'success', 'icon' => 'fa-check-circle', 'title' => 'SSL Certificate Renewed', 'description' => 'Auto-renewal completed for *.monotech.pk', 'time' => '1h ago'],
-            ['severity' => 'warning', 'icon' => 'fa-exclamation-triangle', 'title' => 'Disk Usage Warning', 'description' => '/var/log partition at 78% capacity', 'time' => '2h ago'],
+            [
+                'severity' => 'danger',
+                'icon' => 'fa-times-circle',
+                'title' => 'High PHP-FPM Worker Usage',
+                'description' => 'Busy workers above 80% — consider scaling the worker pool',
+                'time' => '2m ago',
+            ],
+            [
+                'severity' => 'warning',
+                'icon' => 'fa-exclamation-triangle',
+                'title' => 'Slow PayIn API Response',
+                'description' => 'Response time above 10s on EasyPaisa gateway',
+                'time' => '7m ago',
+            ],
+            [
+                'severity' => 'warning',
+                'icon' => 'fa-exclamation-triangle',
+                'title' => 'Disk Usage Warning',
+                'description' => 'Disk usage above 80% on root partition',
+                'time' => '15m ago',
+            ],
+            [
+                'severity' => 'info',
+                'icon' => 'fa-info-circle',
+                'title' => 'MySQL Connection High',
+                'description' => 'Threads connected above 80 — monitor query load',
+                'time' => '22m ago',
+            ],
+            [
+                'severity' => 'success',
+                'icon' => 'fa-check-circle',
+                'title' => 'Backup Completed',
+                'description' => 'Database backup finished successfully (2.4 GB)',
+                'time' => '1h ago',
+            ],
         ];
     }
 
@@ -101,6 +131,24 @@ class OpsDashboardPlaceholderService
     public function refreshIntervals(): array
     {
         return ['5s', '10s', '30s', '1m', '5m'];
+    }
+
+    /**
+     * Chart payload for the main dashboard view (overview + payments sparklines).
+     *
+     * @param  array<int, array<string, mixed>>  $overviewCards
+     * @return array<string, mixed>
+     */
+    public function chartDataForMain(array $overviewCards): array
+    {
+        return [
+            'overview' => collect($overviewCards)->mapWithKeys(fn (array $card) => [
+                $card['key'] => $card['sparkline'],
+            ])->all(),
+            'payments' => collect($this->paymentsOverview())->mapWithKeys(fn (array $item) => [
+                $item['key'] => $item['sparkline'],
+            ])->all(),
+        ];
     }
 
     /**
