@@ -1,0 +1,700 @@
+/**
+ * OPS Dashboard — theme-aware monitoring UI
+ * Uses Bootstrap / Vuexy CSS variables for light & dark layout compatibility.
+ */
+
+/* ==========================================================================
+   Layout overrides — full-bleed within admin content area
+   ========================================================================== */
+
+.ops-dashboard-page {
+    margin-left: 0 !important;
+    min-height: calc(100vh - 4rem);
+}
+
+.ops-dashboard-page .content-wrapper {
+    max-width: 100% !important;
+}
+
+.ops-dashboard {
+    --ops-radius: 0.75rem;
+    --ops-radius-sm: 0.5rem;
+    --ops-gap: 1rem;
+    --ops-sidebar-width: 240px;
+    --ops-navbar-height: 64px;
+    --ops-border: rgba(var(--bs-body-color-rgb, 110, 107, 123), 0.12);
+    --ops-surface: var(--bs-card-bg, #fff);
+    --ops-surface-2: rgba(var(--bs-primary-rgb, 115, 103, 240), 0.04);
+    --ops-text-muted: var(--bs-secondary-color, #6e6b7b);
+    --ops-shadow: 0 4px 24px rgba(34, 41, 47, 0.08);
+    --ops-shadow-hover: 0 8px 32px rgba(34, 41, 47, 0.14);
+    --ops-transition: 0.2s ease;
+    min-height: calc(100vh - 6.5rem);
+    display: flex;
+    flex-direction: column;
+    background: var(--bs-body-bg, #f8f8f8);
+    border-radius: var(--ops-radius);
+    overflow: hidden;
+}
+
+.dark-layout .ops-dashboard,
+body.dark-layout .ops-dashboard {
+    --ops-border: rgba(255, 255, 255, 0.08);
+    --ops-surface: #283046;
+    --ops-surface-2: rgba(255, 255, 255, 0.03);
+    --ops-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    --ops-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.ops-dashboard__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.ops-dashboard__main {
+    flex: 1;
+    padding: var(--ops-gap);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* ==========================================================================
+   Top navbar
+   ========================================================================== */
+
+.ops-navbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: var(--ops-navbar-height);
+    padding: 0.75rem 1.25rem;
+    background: var(--ops-surface);
+    border-bottom: 1px solid var(--ops-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.ops-navbar__brand {
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    color: var(--bs-body-color);
+}
+
+.ops-search {
+    background: var(--ops-surface-2);
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+    max-width: 480px;
+    transition: border-color var(--ops-transition), box-shadow var(--ops-transition);
+}
+
+.ops-search:focus-within {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.15rem rgba(var(--bs-primary-rgb), 0.15);
+}
+
+.ops-search .form-control {
+    color: var(--bs-body-color);
+    font-size: 0.875rem;
+}
+
+.ops-search .form-control::placeholder {
+    color: var(--ops-text-muted);
+}
+
+.ops-navbar__label {
+    font-size: 0.8rem;
+    color: var(--ops-text-muted);
+    white-space: nowrap;
+}
+
+.ops-btn-ghost {
+    background: transparent;
+    border: 1px solid var(--ops-border);
+    color: var(--bs-body-color);
+    border-radius: var(--ops-radius-sm);
+    transition: background var(--ops-transition), border-color var(--ops-transition);
+}
+
+.ops-btn-ghost:hover {
+    background: var(--ops-surface-2);
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+}
+
+.ops-navbar__icon-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ops-navbar__profile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius);
+    padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+    color: var(--bs-body-color);
+    transition: background var(--ops-transition), border-color var(--ops-transition);
+}
+
+.ops-navbar__profile:hover,
+.ops-navbar__profile:focus {
+    background: var(--ops-surface-2);
+    border-color: var(--bs-primary);
+    color: var(--bs-body-color);
+}
+
+.ops-navbar__avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.ops-navbar__username {
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.ops-navbar__role {
+    font-size: 0.7rem;
+    color: var(--ops-text-muted);
+    line-height: 1.2;
+}
+
+.ops-navbar__chevron {
+    font-size: 0.65rem;
+    color: var(--ops-text-muted);
+}
+
+.ops-dropdown {
+    background: var(--ops-surface);
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+    box-shadow: var(--ops-shadow);
+    font-size: 0.875rem;
+}
+
+.ops-dropdown .dropdown-item {
+    color: var(--bs-body-color);
+}
+
+.ops-dropdown .dropdown-item:hover,
+.ops-dropdown .dropdown-item.active {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+}
+
+/* ==========================================================================
+   Sidebar
+   ========================================================================== */
+
+.ops-sidebar {
+    width: var(--ops-sidebar-width);
+    flex-shrink: 0;
+    background: var(--ops-surface);
+    border-right: 1px solid var(--ops-border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.ops-sidebar__nav {
+    padding: 0.75rem 0.5rem;
+    flex: 1;
+}
+
+.ops-sidebar__link {
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--ops-radius-sm);
+    color: var(--ops-text-muted);
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: background var(--ops-transition), color var(--ops-transition);
+}
+
+.ops-sidebar__link:hover {
+    background: var(--ops-surface-2);
+    color: var(--bs-body-color);
+}
+
+.ops-sidebar__item--active .ops-sidebar__link {
+    background: rgba(var(--bs-primary-rgb), 0.12);
+    color: var(--bs-primary);
+    font-weight: 500;
+}
+
+.ops-sidebar__icon {
+    width: 1.1rem;
+    text-align: center;
+}
+
+.ops-sidebar__chevron {
+    font-size: 0.65rem;
+    opacity: 0.6;
+}
+
+/* ==========================================================================
+   Server info block
+   ========================================================================== */
+
+.ops-server-info {
+    padding: 1rem;
+    margin: 0.5rem;
+    background: var(--ops-surface-2);
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+}
+
+.ops-server-info__title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ops-text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.ops-server-info__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    padding: 0.2rem 0;
+}
+
+.ops-server-info__row dt {
+    color: var(--ops-text-muted);
+    font-weight: 400;
+}
+
+.ops-server-info__row dd {
+    margin: 0;
+    font-weight: 500;
+    text-align: right;
+    color: var(--bs-body-color);
+}
+
+.ops-server-info__health {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--ops-border);
+}
+
+.ops-health-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2rem;
+}
+
+.ops-health-badge__dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: currentColor;
+    animation: ops-pulse 2s infinite;
+}
+
+.ops-health-badge--success {
+    color: var(--bs-success);
+    background: rgba(var(--bs-success-rgb), 0.12);
+}
+
+@keyframes ops-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ==========================================================================
+   Cards & panels
+   ========================================================================== */
+
+.ops-card {
+    background: var(--ops-surface);
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius);
+    box-shadow: var(--ops-shadow);
+    transition: box-shadow var(--ops-transition), transform var(--ops-transition);
+}
+
+.ops-card:hover {
+    box-shadow: var(--ops-shadow-hover);
+}
+
+.ops-panel__header {
+    padding: 1rem 1.25rem 0;
+}
+
+.ops-panel__body {
+    padding: 1rem 1.25rem 1.25rem;
+}
+
+.ops-panel__footer {
+    border-top: 1px solid var(--ops-border);
+}
+
+.ops-panel__title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--bs-body-color);
+}
+
+.ops-subtitle {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ops-text-muted);
+}
+
+/* ==========================================================================
+   Metric cards (overview row)
+   ========================================================================== */
+
+.ops-metric-card {
+    padding: 1rem 1.15rem 0.75rem;
+    height: 100%;
+}
+
+.ops-metric-card__icon-wrap {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--ops-radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.ops-metric-card__title {
+    font-size: 0.75rem;
+    color: var(--ops-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ops-metric-card__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--bs-body-color);
+    line-height: 1.2;
+}
+
+.ops-metric-card__subtitle {
+    font-size: 0.75rem;
+    color: var(--ops-text-muted);
+}
+
+.ops-metric-card__chart {
+    height: 48px;
+    margin: 0 -0.25rem;
+}
+
+/* ==========================================================================
+   PHP-FPM section
+   ========================================================================== */
+
+.ops-phpfpm-donut {
+    max-width: 220px;
+    margin: 0 auto;
+}
+
+.ops-legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    padding: 0.35rem 0;
+    color: var(--bs-body-color);
+}
+
+.ops-legend__dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.ops-mini-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.ops-mini-chart {
+    height: 36px;
+}
+
+/* ==========================================================================
+   MySQL metrics grid
+   ========================================================================== */
+
+.ops-mysql-metric {
+    padding: 0.75rem;
+    background: var(--ops-surface-2);
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+    transition: border-color var(--ops-transition);
+}
+
+.ops-mysql-metric:hover {
+    border-color: rgba(var(--bs-primary-rgb), 0.3);
+}
+
+.ops-mysql-metric__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--ops-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.ops-mysql-metric__label {
+    font-size: 0.7rem;
+    color: var(--ops-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ops-mysql-metric__value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--bs-body-color);
+}
+
+/* ==========================================================================
+   Payments section
+   ========================================================================== */
+
+.ops-payment-stat {
+    padding: 0.85rem;
+    background: var(--ops-surface-2);
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+    height: 100%;
+    transition: transform var(--ops-transition), border-color var(--ops-transition);
+}
+
+.ops-payment-stat:hover {
+    transform: translateY(-2px);
+    border-color: rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.ops-payment-stat__label {
+    font-size: 0.7rem;
+    color: var(--ops-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ops-payment-stat__value {
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.ops-payment-stat__chart {
+    height: 40px;
+}
+
+.ops-table-wrap {
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+    overflow: hidden;
+}
+
+.ops-table {
+    margin-bottom: 0;
+    color: var(--bs-body-color);
+    font-size: 0.8rem;
+}
+
+.ops-table thead th {
+    background: var(--ops-surface-2);
+    color: var(--ops-text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--ops-border);
+    font-weight: 600;
+    padding: 0.65rem 0.75rem;
+}
+
+.ops-table tbody td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--ops-border);
+    vertical-align: middle;
+}
+
+.ops-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.ops-table tbody tr:hover {
+    background: var(--ops-surface-2);
+}
+
+.ops-link {
+    color: var(--bs-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.ops-link:hover {
+    text-decoration: underline;
+}
+
+.ops-status-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3em 0.65em;
+}
+
+/* ==========================================================================
+   Alerts list
+   ========================================================================== */
+
+.ops-alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.ops-alert-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+    background: var(--ops-surface-2);
+    transition: border-color var(--ops-transition), transform var(--ops-transition);
+}
+
+.ops-alert-item:hover {
+    border-color: rgba(var(--bs-primary-rgb), 0.25);
+    transform: translateX(2px);
+}
+
+.ops-alert-item__icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    padding-top: 0.1rem;
+}
+
+.ops-alert-item__title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--bs-body-color);
+}
+
+.ops-alert-item__desc {
+    font-size: 0.75rem;
+    color: var(--ops-text-muted);
+    margin-top: 0.2rem;
+}
+
+.ops-alert-item__time {
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   Badges
+   ========================================================================== */
+
+.ops-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    border-radius: 2rem;
+    line-height: 1;
+}
+
+.ops-badge--danger {
+    background: var(--bs-danger);
+    color: #fff;
+}
+
+.ops-navbar__icon-btn .ops-badge--danger {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+}
+
+/* ==========================================================================
+   Bottom history charts
+   ========================================================================== */
+
+.ops-chart-panel .ops-panel__body {
+    padding-top: 0.5rem;
+}
+
+.ops-history-chart {
+    min-height: 220px;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 1199.98px) {
+    .ops-sidebar {
+        display: none;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .ops-navbar {
+        flex-wrap: wrap;
+        padding: 0.65rem;
+    }
+
+    .ops-navbar__search {
+        order: 3;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 !important;
+    }
+
+    .ops-dashboard__main {
+        padding: 0.65rem;
+    }
+
+    .ops-metric-card__value {
+        font-size: 1.25rem;
+    }
+
+    .ops-history-chart {
+        min-height: 180px;
+    }
+}
+
+/* Form switch accent */
+.ops-dashboard .form-check-input:checked {
+    background-color: var(--bs-success);
+    border-color: var(--bs-success);
+}
