@@ -104,129 +104,73 @@ body.dark-layout .ops-dashboard {
 }
 
 /* ==========================================================================
-   Server information panel (Phase 2)
+   Server host strip (live host details)
    ========================================================================== */
 
-.ops-server-panel__header {
-    padding: 1.15rem 1.25rem;
+.ops-server-host {
+    padding: 1rem 1.25rem;
+}
+
+.ops-server-host__header {
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.85rem;
     border-bottom: 1px solid var(--ops-border);
 }
 
-.ops-server-panel__title {
-    font-size: 1rem;
+.ops-server-host__title {
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--bs-body-color);
 }
 
-.ops-server-panel__body {
-    padding: 1.25rem;
+.ops-server-host__grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
 }
 
-.ops-server-info__grid--host {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-    margin-bottom: 1.25rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid var(--ops-border);
-}
-
-.ops-server-metrics {
-    margin-top: 0.25rem;
-}
-
-.ops-server-metric {
+.ops-server-host__item {
     display: flex;
-    gap: 0.85rem;
-    padding: 1rem;
-    background: var(--ops-surface-2);
-    border: 1px solid var(--ops-border);
-    border-radius: var(--ops-radius-sm);
-    transition: border-color var(--ops-transition), transform var(--ops-transition), box-shadow var(--ops-transition);
-}
-
-.ops-server-metric:hover {
-    border-color: rgba(var(--bs-primary-rgb), 0.25);
-    transform: translateY(-2px);
-    box-shadow: var(--ops-shadow);
-}
-
-.ops-server-metric__icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: var(--ops-radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-}
-
-.ops-server-metric__content {
-    flex: 1;
+    flex-direction: column;
+    gap: 0.2rem;
     min-width: 0;
 }
 
-.ops-server-metric__title {
-    font-size: 0.7rem;
+.ops-server-host__label {
+    font-size: 0.68rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--ops-text-muted);
     font-weight: 600;
 }
 
-.ops-server-metric__value {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--bs-body-color);
-    line-height: 1.2;
-}
-
-.ops-server-metric__subtitle {
-    font-size: 0.75rem;
-    color: var(--ops-text-muted);
-}
-
-.ops-load-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-}
-
-.ops-load-grid__item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-}
-
-.ops-load-grid__label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ops-text-muted);
-}
-
-.ops-load-grid__value {
+.ops-server-host__value {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--bs-body-color);
+    word-break: break-word;
 }
 
-.ops-network-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    font-size: 0.8rem;
-    font-weight: 500;
+@media (max-width: 1199.98px) {
+    .ops-server-host__grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
-.ops-network-stats__item {
-    display: inline-flex;
-    align-items: center;
+@media (max-width: 767.98px) {
+    .ops-server-host__grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 479.98px) {
+    .ops-server-host__grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ==========================================================================
-   Server info strip (legacy host grid cells)
+   Server info strip (legacy)
    ========================================================================== */
 
 .ops-server-info {
@@ -354,6 +298,25 @@ body.dark-layout .ops-dashboard {
 .ops-metric-card {
     padding: 1rem 1.15rem 0.75rem;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.ops-metric-card__header {
+    margin-bottom: 0.5rem;
+}
+
+.ops-metric-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.ops-metric-card__chart {
+    height: 48px;
+    margin-top: auto;
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
 }
 
 .ops-metric-card__icon-wrap {
@@ -383,11 +346,11 @@ body.dark-layout .ops-dashboard {
 .ops-metric-card__subtitle {
     font-size: 0.75rem;
     color: var(--ops-text-muted);
+    line-height: 1.35;
 }
 
-.ops-metric-card__chart {
-    height: 48px;
-    margin: 0 -0.25rem;
+.ops-section {
+    margin-bottom: 1rem;
 }
 
 /* ==========================================================================

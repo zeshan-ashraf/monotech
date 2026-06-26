@@ -113,4 +113,82 @@ class SystemService
     {
         return rtrim(rtrim(number_format($value, 1, '.', ''), '0'), '.') . ' MB/s';
     }
+
+  /**
+   * Build overview metric cards from live server info for the top dashboard row.
+   *
+   * @param  array<string, mixed>  $info
+   * @return array<int, array<string, mixed>>
+   */
+    public function overviewCards(array $info): array
+    {
+        $load = $info['load_average'];
+        $network = $info['network'];
+
+        return [
+            [
+                'key' => 'cpu',
+                'title' => 'CPU Usage',
+                'value' => $info['cpu']['usage'],
+                'subtitle' => $info['cpu']['cores'],
+                'icon' => 'fa-microchip',
+                'color' => 'primary',
+                'sparkline' => $this->placeholderSparkline(12, 5),
+            ],
+            [
+                'key' => 'ram',
+                'title' => 'RAM Usage',
+                'value' => $info['ram']['used'],
+                'subtitle' => $info['ram']['percentage'] . ' of ' . $info['ram']['total'],
+                'icon' => 'fa-server',
+                'color' => 'success',
+                'sparkline' => $this->placeholderSparkline(12, 8),
+            ],
+            [
+                'key' => 'disk',
+                'title' => 'Disk Usage',
+                'value' => $info['disk']['used'],
+                'subtitle' => $info['disk']['percentage'] . ' of ' . $info['disk']['total'],
+                'icon' => 'fa-hdd-o',
+                'color' => 'info',
+                'sparkline' => $this->placeholderSparkline(12, 3),
+            ],
+            [
+                'key' => 'load',
+                'title' => 'Load Average',
+                'value' => $load['current'],
+                'subtitle' => sprintf('1m: %s  5m: %s  15m: %s', $load['1m'], $load['5m'], $load['15m']),
+                'icon' => 'fa-tachometer',
+                'color' => 'warning',
+                'sparkline' => $this->placeholderSparkline(12, 2),
+            ],
+            [
+                'key' => 'network',
+                'title' => 'Network I/O',
+                'value' => $network['total'],
+                'subtitle' => '↓ ' . $network['download'] . '  ↑ ' . $network['upload'],
+                'icon' => 'fa-exchange',
+                'color' => 'secondary',
+                'sparkline' => $this->placeholderSparkline(12, 4),
+            ],
+        ];
+    }
+
+  /**
+   * Decorative sparkline until historical metrics are available.
+   *
+   * @return array<int, int>
+   */
+    private function placeholderSparkline(int $points, int $seed): array
+    {
+        $series = [];
+        $value = 15 + ($seed * 4);
+
+        for ($i = 0; $i < $points; $i++) {
+            $value = max(1, $value + (($i + $seed) % 5) - 2);
+            $series[] = $value;
+        }
+
+        return $series;
+    }
 }
