@@ -21,7 +21,6 @@ class OpsDashboardController extends Controller
             'paymentStats' => $this->paymentResponseStats(),
             'alerts' => $this->alerts(),
             'serverInfo' => $this->serverInfo(),
-            'sidebarNav' => $this->sidebarNav(),
             'chartData' => $this->chartData(),
             'refreshIntervals' => ['5s', '10s', '30s', '1m', '5m'],
         ]);
@@ -198,26 +197,6 @@ class OpsDashboardController extends Controller
             'uptime' => '27d 14h 23m',
             'health' => 'Healthy',
             'health_color' => 'success',
-        ];
-    }
-
-    /**
-     * OPS dashboard sidebar navigation items.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function sidebarNav(): array
-    {
-        return [
-            ['label' => 'Overview', 'icon' => 'fa-th-large', 'active' => true, 'badge' => null],
-            ['label' => 'Servers', 'icon' => 'fa-server', 'active' => false, 'badge' => null],
-            ['label' => 'PHP-FPM', 'icon' => 'fa-code', 'active' => false, 'badge' => null],
-            ['label' => 'MySQL', 'icon' => 'fa-database', 'active' => false, 'badge' => null],
-            ['label' => 'Payments', 'icon' => 'fa-credit-card', 'active' => false, 'badge' => null, 'has_children' => true],
-            ['label' => 'Queues', 'icon' => 'fa-list', 'active' => false, 'badge' => null],
-            ['label' => 'Logs', 'icon' => 'fa-file-text-o', 'active' => false, 'badge' => null],
-            ['label' => 'Alerts', 'icon' => 'fa-bell', 'active' => false, 'badge' => '5'],
-            ['label' => 'Reports', 'icon' => 'fa-bar-chart', 'active' => false, 'badge' => null],
         ];
     }
 

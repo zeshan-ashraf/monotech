@@ -6,24 +6,19 @@
 @endpush
 
 @section('content')
-    {{-- OPS Dashboard: full-bleed monitoring layout inside admin panel --}}
-    <div class="app-content content ops-dashboard-page p-0">
-        <div class="content-wrapper p-0 m-0 w-100">
-            <div class="ops-dashboard" id="ops-dashboard">
+    <div class="app-content content">
+        <div class="content-overlay"></div>
+        <div class="content-wrapper container-xxl pt-0 px-0 pb-sm-0 pb-5">
+            <div class="content-body">
+                <div class="ops-dashboard" id="ops-dashboard">
 
-                {{-- Top navigation bar --}}
-                @include('admin.dashboard.navbar', ['refreshIntervals' => $refreshIntervals])
+                    {{-- Dashboard toolbar (refresh controls) --}}
+                    @include('admin.dashboard.navbar', ['refreshIntervals' => $refreshIntervals])
 
-                <div class="ops-dashboard__body">
+                    <div class="ops-dashboard__main">
 
-                    {{-- Left sidebar navigation + server info --}}
-                    @include('admin.dashboard.sidebar', [
-                        'sidebarNav' => $sidebarNav,
-                        'serverInfo' => $serverInfo,
-                    ])
-
-                    {{-- Main dashboard content --}}
-                    <main class="ops-dashboard__main">
+                        {{-- Server info strip --}}
+                        @include('admin.dashboard.server-info', ['serverInfo' => $serverInfo])
 
                         {{-- Overview metric cards row --}}
                         @include('admin.dashboard.cards', ['overviewCards' => $overviewCards])
@@ -55,7 +50,7 @@
                         {{-- Bottom history charts row --}}
                         @include('admin.dashboard.bottom-charts')
 
-                    </main>
+                    </div>
                 </div>
             </div>
         </div>

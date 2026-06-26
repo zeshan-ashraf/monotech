@@ -1,30 +1,31 @@
-{{-- Server information block (sidebar footer) --}}
-<div class="ops-server-info">
-    <h6 class="ops-server-info__title">Server Info</h6>
-    <dl class="ops-server-info__list mb-0">
-        <div class="ops-server-info__row">
-            <dt>Hostname</dt>
-            <dd>{{ $serverInfo['hostname'] }}</dd>
-        </div>
-        <div class="ops-server-info__row">
-            <dt>OS</dt>
-            <dd>{{ $serverInfo['os'] }}</dd>
-        </div>
-        <div class="ops-server-info__row">
-            <dt>Uptime</dt>
-            <dd>{{ $serverInfo['uptime'] }}</dd>
-        </div>
-        <div class="ops-server-info__row">
-            <dt>IP Address</dt>
-            <dd>{{ $serverInfo['ip'] }}</dd>
-        </div>
-        <div class="ops-server-info__row">
-            <dt>Kernel</dt>
-            <dd>{{ $serverInfo['kernel'] }}</dd>
-        </div>
-    </dl>
-    <div class="ops-server-info__health mt-2">
-        <span class="text-muted small">System Health</span>
+{{-- Server information strip --}}
+<div class="ops-card ops-server-info mb-3">
+    <div class="ops-server-info__header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h6 class="ops-server-info__title mb-0">
+            <i class="fa fa-server text-primary me-1"></i> Server Info
+        </h6>
         <x-ops-dashboard.health-badge :status="$serverInfo['health']" :color="$serverInfo['health_color']" />
+    </div>
+    <div class="ops-server-info__grid">
+        <div class="ops-server-info__item">
+            <span class="ops-server-info__label">Hostname</span>
+            <span class="ops-server-info__value">{{ $serverInfo['hostname'] }}</span>
+        </div>
+        <div class="ops-server-info__item">
+            <span class="ops-server-info__label">OS</span>
+            <span class="ops-server-info__value">{{ $serverInfo['os'] }}</span>
+        </div>
+        <div class="ops-server-info__item">
+            <span class="ops-server-info__label">Uptime</span>
+            <span class="ops-server-info__value">{{ $serverInfo['uptime'] }}</span>
+        </div>
+        <div class="ops-server-info__item">
+            <span class="ops-server-info__label">IP Address</span>
+            <span class="ops-server-info__value">{{ $serverInfo['ip'] }}</span>
+        </div>
+        <div class="ops-server-info__item">
+            <span class="ops-server-info__label">Kernel</span>
+            <span class="ops-server-info__value">{{ $serverInfo['kernel'] }}</span>
+        </div>
     </div>
 </div>
