@@ -46,11 +46,15 @@
 
     function sparklineOptions(series, color) {
         var colors = themeColors();
+        var safeSeries = (series && series.length) ? series : [1, 2, 3, 4, 5, 4, 3, 4, 5, 4, 3, 2];
+        var chartColor = color || colors.primary || '#7367f0';
+
         return {
-            series: [{ data: series }],
+            series: [{ name: 'value', data: safeSeries }],
             chart: {
                 type: 'area',
-                height: '100%',
+                height: 48,
+                width: '100%',
                 sparkline: { enabled: true },
                 animations: { enabled: true, speed: 400 },
             },
@@ -60,29 +64,41 @@
                 gradient: {
                     shadeIntensity: 0.5,
                     opacityFrom: 0.45,
-                    opacityTo: 0.05,
+                    opacityTo: 0.08,
                 },
             },
-            colors: [color || colors.primary],
+            colors: [chartColor],
             tooltip: { enabled: false },
+            yaxis: {
+                min: 0,
+                show: false,
+            },
         };
     }
 
     function overviewSparklines(data) {
         var colors = themeColors();
         var colorMap = {
-            cpu: colors.primary,
-            ram: colors.success,
-            disk: colors.info,
-            load: colors.warning,
-            network: colors.secondary,
+            cpu: colors.primary || '#7367f0',
+            ram: colors.success || '#28c76f',
+            disk: colors.info || '#00cfe8',
+            load: colors.warning || '#ff9f43',
+            network: colors.secondary || '#82868b',
         };
 
         Object.keys(colorMap).forEach(function (key) {
-            if (!data[key]) {
+            var chartId = 'ops-spark-' + key;
+            var el = document.getElementById(chartId);
+
+            if (!el || !data[key]) {
                 return;
             }
-            renderChart('ops-spark-' + key, sparklineOptions(data[key], colorMap[key]));
+
+            try {
+                renderChart(chartId, sparklineOptions(data[key], colorMap[key]));
+            } catch (error) {
+                console.warn('OPS dashboard sparkline failed:', chartId, error);
+            }
         });
     }
 

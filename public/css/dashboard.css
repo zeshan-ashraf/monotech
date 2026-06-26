@@ -332,9 +332,11 @@ body.dark-layout .ops-dashboard {
 
 .ops-metric-card__chart {
     height: 48px;
+    min-height: 48px;
     margin-top: auto;
     margin-left: -0.25rem;
     margin-right: -0.25rem;
+    overflow: hidden;
 }
 
 .ops-metric-card__icon-wrap {

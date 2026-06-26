@@ -124,6 +124,7 @@ class SystemService
     {
         $load = $info['load_average'];
         $network = $info['network'];
+        $cpuPercent = (float) rtrim($info['cpu']['usage'], '%');
 
         return [
             [
@@ -133,7 +134,7 @@ class SystemService
                 'subtitle' => $info['cpu']['cores'],
                 'icon' => 'fa-microchip',
                 'color' => 'primary',
-                'sparkline' => $this->placeholderSparkline(12, 5),
+                'sparkline' => $this->metricSparkline($cpuPercent, 12),
             ],
             [
                 'key' => 'ram',
@@ -142,7 +143,7 @@ class SystemService
                 'subtitle' => $info['ram']['percentage'] . ' of ' . $info['ram']['total'],
                 'icon' => 'fa-server',
                 'color' => 'success',
-                'sparkline' => $this->placeholderSparkline(12, 8),
+                'sparkline' => $this->metricSparkline((float) rtrim($info['ram']['percentage'], '%'), 12),
             ],
             [
                 'key' => 'disk',
@@ -151,7 +152,7 @@ class SystemService
                 'subtitle' => $info['disk']['percentage'] . ' of ' . $info['disk']['total'],
                 'icon' => 'fa-hdd-o',
                 'color' => 'info',
-                'sparkline' => $this->placeholderSparkline(12, 3),
+                'sparkline' => $this->metricSparkline((float) rtrim($info['disk']['percentage'], '%'), 12),
             ],
             [
                 'key' => 'load',
@@ -160,7 +161,7 @@ class SystemService
                 'subtitle' => sprintf('1m: %s  5m: %s  15m: %s', $load['1m'], $load['5m'], $load['15m']),
                 'icon' => 'fa-tachometer',
                 'color' => 'warning',
-                'sparkline' => $this->placeholderSparkline(12, 2),
+                'sparkline' => $this->metricSparkline((float) $load['current'] * 10, 12),
             ],
             [
                 'key' => 'network',
@@ -169,25 +170,29 @@ class SystemService
                 'subtitle' => '↓ ' . $network['download'] . '  ↑ ' . $network['upload'],
                 'icon' => 'fa-exchange',
                 'color' => 'secondary',
-                'sparkline' => $this->placeholderSparkline(12, 4),
+                'sparkline' => $this->metricSparkline((float) rtrim($network['total'], ' MB/s'), 12),
             ],
         ];
     }
 
   /**
-   * Decorative sparkline until historical metrics are available.
+   * Build a sparkline series ending at the current metric value.
    *
-   * @return array<int, int>
+   * @return array<int, float>
    */
-    private function placeholderSparkline(int $points, int $seed): array
+    private function metricSparkline(float $current, int $points): array
     {
         $series = [];
-        $value = 15 + ($seed * 4);
+        $baseline = max(1.0, $current > 0 ? $current * 0.85 : 5.0);
+        $value = $baseline;
 
-        for ($i = 0; $i < $points; $i++) {
-            $value = max(1, $value + (($i + $seed) % 5) - 2);
-            $series[] = $value;
+        for ($i = 0; $i < $points - 1; $i++) {
+            $delta = (($i % 4) - 1.5) * max(1.0, $current * 0.05);
+            $value = max(1.0, $value + $delta);
+            $series[] = round($value, 1);
         }
+
+        $series[] = round(max(1.0, $current), 1);
 
         return $series;
     }

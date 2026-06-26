@@ -103,22 +103,32 @@ class SystemHelper
             return 0.0;
         }
 
-        usleep(100_000);
+        $second = null;
+        $totalDiff = 0;
 
-        $second = self::readCpuTimes();
+        // Sample until jiffies advance (usleep may be restricted on some hosts).
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            usleep(200_000);
+            $second = self::readCpuTimes();
 
-        if ($second === null) {
+            if ($second === null) {
+                continue;
+            }
+
+            $totalDiff = $second['total'] - $first['total'];
+
+            if ($totalDiff > 0) {
+                break;
+            }
+        }
+
+        if ($second === null || $totalDiff <= 0) {
             return 0.0;
         }
 
-        $totalDiff = array_sum($second) - array_sum($first);
         $idleDiff = $second['idle'] - $first['idle'];
 
-        if ($totalDiff <= 0) {
-            return 0.0;
-        }
-
-        return round((1 - ($idleDiff / $totalDiff)) * 100, 1);
+        return round(max(0, min(100, (1 - ($idleDiff / $totalDiff)) * 100)), 1);
     }
 
     public static function getCpuCores(): int
@@ -255,7 +265,7 @@ class SystemHelper
     }
 
   /**
-   * @return array{idle: int, user: int, nice: int, system: int}|null
+   * @return array{idle: int, total: int}|null
    */
     private static function readCpuTimes(): ?array
     {
@@ -265,25 +275,35 @@ class SystemHelper
             return null;
         }
 
-        $line = strtok($stat, "\n");
+        foreach (explode("\n", $stat) as $line) {
+            if (! str_starts_with($line, 'cpu ')) {
+                continue;
+            }
 
-        if ($line === false || ! str_starts_with($line, 'cpu ')) {
-            return null;
+            $parts = preg_split('/\s+/', trim($line));
+            array_shift($parts);
+
+            if (count($parts) < 4) {
+                return null;
+            }
+
+            $values = array_map('intval', $parts);
+
+            // guest / guest_nice are already counted in user / nice — exclude from totals.
+            if (count($values) > 10) {
+                $values[8] = 0;
+                $values[9] = 0;
+            }
+
+            $idle = ($values[3] ?? 0) + ($values[4] ?? 0);
+
+            return [
+                'idle' => $idle,
+                'total' => array_sum($values),
+            ];
         }
 
-        $parts = preg_split('/\s+/', trim($line));
-        array_shift($parts);
-
-        if (count($parts) < 4) {
-            return null;
-        }
-
-        return [
-            'user' => (int) $parts[0],
-            'nice' => (int) $parts[1],
-            'system' => (int) $parts[2],
-            'idle' => (int) $parts[3],
-        ];
+        return null;
     }
 
   /**
