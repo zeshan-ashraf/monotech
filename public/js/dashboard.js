@@ -262,8 +262,128 @@
     }
 
   /**
-   * Refresh interval dropdown UI (no live polling in Phase 1).
+   * Refresh interval dropdown UI and live payment metrics polling.
    */
+    function parseIntervalMs(intervalLabel) {
+        if (!intervalLabel || typeof intervalLabel !== 'string') {
+            return 10000;
+        }
+
+        var value = parseInt(intervalLabel, 10);
+        if (Number.isNaN(value)) {
+            return 10000;
+        }
+
+        if (intervalLabel.indexOf('m') !== -1) {
+            return value * 60000;
+        }
+
+        return value * 1000;
+    }
+
+    function getSelectedRefreshInterval() {
+        var active = document.querySelector('.ops-refresh-option.active');
+
+        return active ? active.getAttribute('data-interval') : '10s';
+    }
+
+    function updatePaymentStatValue(key, value) {
+        var chartEl = document.getElementById('ops-payment-' + key);
+
+        if (!chartEl) {
+            return;
+        }
+
+        var stat = chartEl.closest('.ops-payment-stat');
+
+        if (!stat) {
+            return;
+        }
+
+        var valueEl = stat.querySelector('.ops-payment-stat__value');
+
+        if (valueEl) {
+            valueEl.textContent = Number(value || 0).toLocaleString();
+        }
+    }
+
+    function updatePaymentResponseStats(stats) {
+        if (!stats) {
+            return;
+        }
+
+        var footerStats = document.querySelectorAll('.ops-payments-panel .ops-panel__footer-stat strong');
+
+        if (footerStats.length >= 2) {
+            footerStats[0].textContent = stats.avg || '0.00 sec';
+            footerStats[1].textContent = stats.max || '0.00 sec';
+        }
+    }
+
+    function updatePaymentSparklines(sparklines) {
+        if (!sparklines) {
+            return;
+        }
+
+        paymentSparklines(sparklines);
+    }
+
+    function refreshPaymentMetrics() {
+        var url = window.opsDashboardPaymentMetricsUrl;
+
+        if (!url) {
+            return;
+        }
+
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Payment metrics request failed');
+                }
+
+                return response.json();
+            })
+            .then(function (payload) {
+                if (!payload || !payload.payments) {
+                    return;
+                }
+
+                payload.payments.forEach(function (payment) {
+                    updatePaymentStatValue(payment.key, payment.value);
+                });
+
+                updatePaymentSparklines(payload.sparklines);
+                updatePaymentResponseStats(payload.payment_stats);
+            })
+            .catch(function (error) {
+                console.warn('OPS dashboard payment metrics refresh failed:', error);
+            });
+    }
+
+    var paymentMetricsTimer = null;
+
+    function schedulePaymentMetricsRefresh() {
+        if (paymentMetricsTimer) {
+            clearInterval(paymentMetricsTimer);
+            paymentMetricsTimer = null;
+        }
+
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (autoRefresh && !autoRefresh.checked) {
+            return;
+        }
+
+        var intervalMs = parseIntervalMs(getSelectedRefreshInterval());
+        paymentMetricsTimer = setInterval(refreshPaymentMetrics, intervalMs);
+    }
+
     function bindNavbarControls() {
         document.querySelectorAll('.ops-refresh-option').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -275,8 +395,15 @@
                 if (label) {
                     label.textContent = btn.getAttribute('data-interval');
                 }
+                schedulePaymentMetricsRefresh();
             });
         });
+
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (autoRefresh) {
+            autoRefresh.addEventListener('change', schedulePaymentMetricsRefresh);
+        }
     }
 
     function init() {
@@ -303,13 +430,19 @@
         }
 
         bindNavbarControls();
+        schedulePaymentMetricsRefresh();
     }
 
     document.addEventListener('DOMContentLoaded', init);
 
     window.OpsDashboard = {
         init: init,
+        refreshPaymentMetrics: refreshPaymentMetrics,
         destroy: function () {
+            if (paymentMetricsTimer) {
+                clearInterval(paymentMetricsTimer);
+                paymentMetricsTimer = null;
+            }
             Object.keys(charts).forEach(destroyChart);
         },
     };

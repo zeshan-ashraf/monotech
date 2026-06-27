@@ -23,105 +23,115 @@ class GatewayMetricService
     ) {
     }
 
-    public function recordRequest(string $gateway): void
+    public function recordRequest(string $gateway, ?string $flow = null): void
     {
-        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_TOTAL_REQUESTS);
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_REQUESTS, $flow);
     }
 
-    public function recordSuccess(string $gateway): void
+    public function recordSuccess(string $gateway, ?string $flow = null): void
     {
-        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_SUCCESSFUL_REQUESTS);
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_SUCCESS, $flow);
     }
 
-    public function recordPending(string $gateway): void
+    public function recordPending(string $gateway, ?string $flow = null): void
     {
-        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_PENDING);
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_PENDING, $flow);
     }
 
-    public function recordFailure(string $gateway): void
+    public function recordFailed(string $gateway, ?string $flow = null): void
     {
-        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_REJECTED_REQUESTS);
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_FAILED, $flow);
     }
 
-    public function recordTimeout(string $gateway): void
+    public function recordRejected(string $gateway, ?string $flow = null): void
     {
-        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_TIMEOUTS);
-        $this->recordFailure($gateway);
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_REJECTED, $flow);
     }
 
-    public function recordInfrastructureError(string $gateway, string $infrastructureErrorType): void
+    public function recordRefund(string $gateway, ?string $flow = null): void
     {
-        $field = GatewayMetricHelper::hashFieldForInfrastructureError($infrastructureErrorType);
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_REFUNDS, $flow);
+    }
+
+    public function recordGatewayError(string $gateway, string $type, ?string $flow = null): void
+    {
+        $field = GatewayMetricHelper::hashFieldForGatewayError($type);
 
         if ($field !== null) {
-            $this->incrementCounter($gateway, $field);
+            $this->incrementCounter($gateway, $field, $flow);
         }
 
-        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_INFRASTRUCTURE_ERRORS);
-        $this->recordFailure($gateway);
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_GATEWAY_ERRORS, $flow);
     }
 
-    public function recordGatewayError(string $gateway, string $gatewayErrorType): void
+    public function recordApplicationError(string $gateway, string $type, ?string $flow = null): void
     {
-        $field = GatewayMetricHelper::hashFieldForGatewayError($gatewayErrorType);
+        $field = GatewayMetricHelper::hashFieldForApplicationError($type);
 
-        if ($field !== null) {
-            $this->incrementCounter($gateway, $field);
-        }
+        if ($field === GatewayMetricHelper::FIELD_INFRASTRUCTURE_ERRORS) {
+            $this->recordInfrastructureError($gateway, $type, $flow);
 
-        $this->recordFailure($gateway);
-    }
-
-    public function recordApplicationError(string $gateway, string $applicationErrorType): void
-    {
-        $field = GatewayMetricHelper::hashFieldForApplicationError($applicationErrorType);
-
-        if ($field !== null) {
-            $this->incrementCounter($gateway, $field);
-        }
-
-        if ($field !== GatewayMetricHelper::FIELD_VALIDATION_ERRORS) {
-            $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_APPLICATION_ERRORS);
-        }
-
-        $this->recordFailure($gateway);
-    }
-
-    public function recordResponseTime(string $gateway, float $durationMs): void
-    {
-        if ($durationMs < 0) {
             return;
         }
 
-        $roundedDuration = (int) round($durationMs);
+        if ($field !== null) {
+            $this->incrementCounter($gateway, $field, $flow);
+        }
 
-        $this->safeRedis(function () use ($gateway, $roundedDuration): void {
-            $key = GatewayMetricHelper::buildRedisKey($gateway);
+        if ($field !== GatewayMetricHelper::FIELD_APPLICATION_ERRORS) {
+            $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_APPLICATION_ERRORS, $flow);
+        }
+    }
+
+    public function recordInfrastructureError(string $gateway, string $type, ?string $flow = null): void
+    {
+        $field = GatewayMetricHelper::hashFieldForInfrastructureError($type);
+
+        if ($field !== null && $field !== GatewayMetricHelper::FIELD_INFRASTRUCTURE_ERRORS) {
+            $this->incrementCounter($gateway, $field, $flow);
+        }
+
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_INFRASTRUCTURE_ERRORS, $flow);
+    }
+
+    public function recordResponseTime(string $gateway, int $milliseconds, ?string $flow = null): void
+    {
+        if ($milliseconds < 0) {
+            return;
+        }
+
+        $this->safeRedis(function () use ($gateway, $milliseconds, $flow): void {
+            $key = GatewayMetricHelper::buildRedisKey($gateway, $flow);
             $connection = $this->connection();
 
-            $connection->hincrby($key, GatewayMetricHelper::FIELD_RESPONSE_TIME_TOTAL_MS, $roundedDuration);
-            $connection->hincrby($key, GatewayMetricHelper::FIELD_RESPONSE_TIME_COUNT, 1);
-            $this->updateMaxResponseTime($connection, $key, $roundedDuration);
+            $connection->hincrby($key, GatewayMetricHelper::FIELD_TOTAL_RESPONSE_TIME, $milliseconds);
+            $connection->hincrby($key, GatewayMetricHelper::FIELD_RESPONSE_SAMPLES, 1);
+            $this->updateMaxResponseTime($connection, $key, $milliseconds);
             $this->refreshKeyTtl($connection, $key);
         }, 'recordResponseTime', $gateway);
 
-        if ($roundedDuration > GatewayMetricHelper::slowThresholdMs()) {
-            $this->recordSlowRequest($gateway);
+        if ($milliseconds > GatewayMetricHelper::slowThresholdMs()) {
+            $this->recordSlowRequest($gateway, $flow);
         }
 
-        if ($roundedDuration > GatewayMetricHelper::verySlowThresholdMs()) {
-            $this->recordVerySlowRequest($gateway);
+        if ($milliseconds > GatewayMetricHelper::verySlowThresholdMs()) {
+            $this->recordVerySlowRequest($gateway, $flow);
         }
     }
 
-    public function recordSlowRequest(string $gateway): void
+    public function recordTimeout(string $gateway, ?string $flow = null): void
     {
-        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_SLOW_REQUESTS);
+        $this->recordInfrastructureError($gateway, GatewayMetricHelper::INFRASTRUCTURE_ERROR_TIMEOUT, $flow);
     }
 
-    public function recordVerySlowRequest(string $gateway): void
+    public function recordSlowRequest(string $gateway, ?string $flow = null): void
     {
-        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_VERY_SLOW_REQUESTS);
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_SLOW_REQUESTS, $flow);
+    }
+
+    public function recordVerySlowRequest(string $gateway, ?string $flow = null): void
+    {
+        $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_VERY_SLOW_REQUESTS, $flow);
     }
 
     /**
@@ -130,21 +140,20 @@ class GatewayMetricService
     public function recordGatewayResponseFailure(
         string $gateway,
         ?string $responseCode,
-        ?string $responseDescription
+        ?string $responseDescription,
+        ?string $flow = null
     ): void {
+        $this->recordFailed($gateway, $flow);
+
         $classification = GatewayMetricHelper::classifyGatewayResponse(
             $gateway,
             $responseCode,
             $responseDescription
         );
 
-        if ($classification === null) {
-            $this->recordFailure($gateway);
-
-            return;
+        if ($classification !== null) {
+            $this->recordGatewayError($gateway, $classification['error_type'], $flow);
         }
-
-        $this->recordGatewayError($gateway, $classification['error_type']);
     }
 
     /**
@@ -153,67 +162,190 @@ class GatewayMetricService
     public function recordMiddlewareRejection(
         string $gateway,
         Request $request,
-        Response $response
+        Response $response,
+        ?string $flow = null
     ): void {
+        $this->recordRejected($gateway, $flow);
+
         $classification = GatewayMetricHelper::classifyMiddlewareRejection($request, $response);
 
         if ($classification === null) {
-            $this->recordFailure($gateway);
-
             return;
         }
 
-        $this->recordClassifiedError(
-            $gateway,
-            $classification['category'],
-            $classification['error_type']
-        );
+        match ($classification['category']) {
+            GatewayMetricHelper::CATEGORY_INFRASTRUCTURE => $this->recordInfrastructureError(
+                $gateway,
+                $classification['error_type'],
+                $flow
+            ),
+            GatewayMetricHelper::CATEGORY_GATEWAY => $this->recordGatewayError(
+                $gateway,
+                $classification['error_type'],
+                $flow
+            ),
+            GatewayMetricHelper::CATEGORY_APPLICATION => $this->recordApplicationError(
+                $gateway,
+                $classification['error_type'],
+                $flow
+            ),
+            default => null,
+        };
     }
 
     /**
      * Record checkout timing and mark the request outcome on the request object.
      */
-    public function finalizeCheckoutMetrics(Request $request, string $gateway, float $startTime): void
+    public function finalizeCheckoutMetrics(Request $request, string $gateway, float $startTime, ?string $flow = null): void
     {
-        $durationMs = (microtime(true) - $startTime) * 1000;
-        $this->recordResponseTime($gateway, $durationMs);
+        $durationMs = (int) round((microtime(true) - $startTime) * 1000);
+        $this->recordResponseTime($gateway, $durationMs, $flow);
         $request->attributes->set(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED, true);
     }
 
     /**
-     * @return array<string, int|string>|null
+     * @return array<string, int>
      */
-    public function getMinuteMetrics(string $gateway, ?\DateTimeInterface $minute = null): ?array
+    public function getMinuteMetrics(string $gateway, ?\DateTimeInterface $minute = null, ?string $flow = null): array
     {
         $gateway = GatewayMetricHelper::normalizeGateway($gateway);
 
         if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
-            return null;
+            return $this->emptyMetrics();
         }
 
         try {
-            $key = GatewayMetricHelper::buildRedisKey($gateway, $minute);
+            $key = GatewayMetricHelper::buildRedisKey($gateway, $flow, $minute);
             $values = $this->withoutPrefix(fn () => $this->connection()->hgetall($key));
 
-            return is_array($values) && $values !== [] ? $values : null;
+            return $this->normalizeHash(is_array($values) ? $values : []);
         } catch (Throwable $e) {
             $this->logRedisFailure('getMinuteMetrics', $gateway, $e);
 
-            return null;
+            return $this->emptyMetrics();
         }
     }
 
-    private function recordClassifiedError(string $gateway, string $category, string $errorType): void
+    /**
+     * Aggregate metrics across the configured rolling window for one or all gateways.
+     *
+     * @param list<string>|null $gateways
+     * @return array<string, int|float>
+     */
+    public function aggregateWindowMetrics(?array $gateways = null, ?int $minutes = null, ?string $flow = null): array
     {
-        match ($category) {
-            GatewayMetricHelper::CATEGORY_INFRASTRUCTURE => $this->recordInfrastructureError($gateway, $errorType),
-            GatewayMetricHelper::CATEGORY_GATEWAY => $this->recordGatewayError($gateway, $errorType),
-            GatewayMetricHelper::CATEGORY_APPLICATION => $this->recordApplicationError($gateway, $errorType),
-            default => $this->recordFailure($gateway),
-        };
+        $minutes = $minutes ?? GatewayMetricHelper::aggregationWindowMinutes();
+        $gateways = $gateways ?? GatewayMetricHelper::supportedGateways();
+        $totals = $this->emptyMetrics();
+        $maxResponseTime = 0;
+
+        foreach ($gateways as $gateway) {
+            if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+                continue;
+            }
+
+            foreach (GatewayMetricHelper::buildRedisKeysForWindow($gateway, $minutes, $flow) as $key) {
+                try {
+                    $hash = $this->withoutPrefix(fn () => $this->connection()->hgetall($key));
+                    $normalized = $this->normalizeHash(is_array($hash) ? $hash : []);
+
+                    foreach ($normalized as $field => $value) {
+                        if ($field === GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME) {
+                            $maxResponseTime = max($maxResponseTime, $value);
+
+                            continue;
+                        }
+
+                        $totals[$field] = ($totals[$field] ?? 0) + $value;
+                    }
+                } catch (Throwable $e) {
+                    $this->logRedisFailure('aggregateWindowMetrics', $gateway, $e, ['key' => $key]);
+                }
+            }
+        }
+
+        $totals[GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME] = $maxResponseTime;
+
+        return $totals;
     }
 
-    private function incrementCounter(string $gateway, string $field, int $amount = 1): void
+    /**
+     * @param list<string>|null $gateways
+     * @return array<string, list<int>>
+     */
+    public function sparklineSeries(?array $gateways = null, ?int $minutes = null, ?string $flow = null): array
+    {
+        $minutes = $minutes ?? GatewayMetricHelper::aggregationWindowMinutes();
+        $gateways = $gateways ?? GatewayMetricHelper::supportedGateways();
+
+        $series = [
+            'success' => array_fill(0, $minutes, 0),
+            'pending' => array_fill(0, $minutes, 0),
+            'failed' => array_fill(0, $minutes, 0),
+            'refunds' => array_fill(0, $minutes, 0),
+        ];
+
+        foreach ($gateways as $gateway) {
+            if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+                continue;
+            }
+
+            foreach (GatewayMetricHelper::buildRedisKeysForWindow($gateway, $minutes, $flow) as $index => $key) {
+                try {
+                    $hash = $this->withoutPrefix(fn () => $this->connection()->hgetall($key));
+                    $normalized = $this->normalizeHash(is_array($hash) ? $hash : []);
+
+                    $series['success'][$index] += $normalized[GatewayMetricHelper::FIELD_SUCCESS];
+                    $series['pending'][$index] += $normalized[GatewayMetricHelper::FIELD_PENDING];
+                    $series['failed'][$index] += $normalized[GatewayMetricHelper::FIELD_FAILED];
+                    $series['refunds'][$index] += $normalized[GatewayMetricHelper::FIELD_REFUNDS];
+                } catch (Throwable $e) {
+                    $this->logRedisFailure('sparklineSeries', $gateway, $e, ['key' => $key]);
+                }
+            }
+        }
+
+        return $series;
+    }
+
+    /**
+     * @param array<string, mixed> $hash
+     * @return array<string, int>
+     */
+    private function normalizeHash(array $hash): array
+    {
+        $normalized = $this->emptyMetrics();
+
+        foreach (GatewayMetricHelper::aggregatableFields() as $field) {
+            if (array_key_exists($field, $hash)) {
+                $normalized[$field] = (int) $hash[$field];
+            }
+        }
+
+        if (array_key_exists(GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME, $hash)) {
+            $normalized[GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME] = (int) $hash[GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function emptyMetrics(): array
+    {
+        $metrics = [];
+
+        foreach (GatewayMetricHelper::aggregatableFields() as $field) {
+            $metrics[$field] = 0;
+        }
+
+        $metrics[GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME] = 0;
+
+        return $metrics;
+    }
+
+    private function incrementCounter(string $gateway, string $field, ?string $flow = null, int $amount = 1): void
     {
         if ($amount === 0) {
             return;
@@ -225,8 +357,8 @@ class GatewayMetricService
             return;
         }
 
-        $this->safeRedis(function () use ($gateway, $field, $amount): void {
-            $key = GatewayMetricHelper::buildRedisKey($gateway);
+        $this->safeRedis(function () use ($gateway, $field, $flow, $amount): void {
+            $key = GatewayMetricHelper::buildRedisKey($gateway, $flow);
             $connection = $this->connection();
 
             $connection->hincrby($key, $field, $amount);
@@ -239,10 +371,10 @@ class GatewayMetricService
 
     private function updateMaxResponseTime(Connection $connection, string $key, int $durationMs): void
     {
-        $currentMax = (int) $connection->hget($key, GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME_MS);
+        $currentMax = (int) $connection->hget($key, GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME);
 
         if ($durationMs > $currentMax) {
-            $connection->hset($key, GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME_MS, (string) $durationMs);
+            $connection->hset($key, GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME, (string) $durationMs);
         }
     }
 

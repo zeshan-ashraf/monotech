@@ -46,6 +46,7 @@
 @push('js')
     <script>
         window.opsDashboardData = @json($chartData);
+        window.opsDashboardPaymentMetricsUrl = @json(route('admin.ops.dashboard.payment_metrics'));
     </script>
     <script src="{{ asset('js/dashboard.js') }}"></script>
 @endpush

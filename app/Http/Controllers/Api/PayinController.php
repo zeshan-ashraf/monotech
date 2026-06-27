@@ -545,12 +545,9 @@ class PayinController extends Controller
                         ]);
 
                         if ($easypaisaDiagnosticsLevel === 'timeout') {
-                            $this->recordInfrastructureCheckoutFailure(
-                                $request,
-                                $gateway,
-                                $startTime,
-                                GatewayMetricHelper::INFRASTRUCTURE_ERROR_CONNECTION_TIMEOUT
-                            );
+                            $this->gatewayMetrics->recordTimeout($gateway);
+                            $this->gatewayMetrics->recordFailed($gateway);
+                            $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
                         } elseif (isset($response['message']) && is_string($response['message'])) {
                             $classification = GatewayMetricHelper::classifyConnectionExceptionMessage($response['message']);
 
@@ -856,6 +853,7 @@ class PayinController extends Controller
         }
 
         $this->gatewayMetrics->recordApplicationError($gateway, $applicationErrorType);
+        $this->gatewayMetrics->recordRejected($gateway);
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
     }
 
@@ -870,6 +868,7 @@ class PayinController extends Controller
         }
 
         $this->gatewayMetrics->recordInfrastructureError($gateway, $infrastructureErrorType);
+        $this->gatewayMetrics->recordFailed($gateway);
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
     }
 
@@ -903,8 +902,14 @@ class PayinController extends Controller
             GatewayMetricHelper::CATEGORY_INFRASTRUCTURE => $this->gatewayMetrics->recordInfrastructureError($gateway, $errorType),
             GatewayMetricHelper::CATEGORY_GATEWAY => $this->gatewayMetrics->recordGatewayError($gateway, $errorType),
             GatewayMetricHelper::CATEGORY_APPLICATION => $this->gatewayMetrics->recordApplicationError($gateway, $errorType),
-            default => $this->gatewayMetrics->recordFailure($gateway),
+            default => null,
         };
+
+        if ($category === GatewayMetricHelper::CATEGORY_APPLICATION) {
+            $this->gatewayMetrics->recordRejected($gateway);
+        } else {
+            $this->gatewayMetrics->recordFailed($gateway);
+        }
 
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
     }

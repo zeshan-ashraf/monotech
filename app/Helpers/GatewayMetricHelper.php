@@ -11,9 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class GatewayMetricHelper
 {
-    public const GATEWAY_EASYPAISA = 'easypaisa';
-
-    public const GATEWAY_JAZZCASH = 'jazzcash';
+    public const FLOW_PAYIN = 'payin';
 
     public const CATEGORY_INFRASTRUCTURE = 'infrastructure';
 
@@ -21,19 +19,37 @@ final class GatewayMetricHelper
 
     public const CATEGORY_APPLICATION = 'application';
 
-    public const FIELD_TOTAL_REQUESTS = 'total_requests';
+    public const FIELD_REQUESTS = 'requests';
 
-    public const FIELD_SUCCESSFUL_REQUESTS = 'successful_requests';
-
-    public const FIELD_REJECTED_REQUESTS = 'rejected_requests';
+    public const FIELD_SUCCESS = 'success';
 
     public const FIELD_PENDING = 'pending';
 
+    public const FIELD_FAILED = 'failed';
+
+    public const FIELD_REJECTED = 'rejected';
+
+    public const FIELD_REFUNDS = 'refunds';
+
+    public const FIELD_GATEWAY_ERRORS = 'gateway_errors';
+
+    public const FIELD_APPLICATION_ERRORS = 'application_errors';
+
+    public const FIELD_INFRASTRUCTURE_ERRORS = 'infrastructure_errors';
+
     public const FIELD_TIMEOUTS = 'timeouts';
 
-    public const FIELD_HTTP_ERRORS = 'http_errors';
+    public const FIELD_SLOW_REQUESTS = 'slow_requests';
 
-    public const FIELD_SYSTEM_ERRORS = 'system_errors';
+    public const FIELD_VERY_SLOW_REQUESTS = 'very_slow_requests';
+
+    public const FIELD_TOTAL_RESPONSE_TIME = 'total_response_time';
+
+    public const FIELD_RESPONSE_SAMPLES = 'response_samples';
+
+    public const FIELD_MAX_RESPONSE_TIME = 'max_response_time';
+
+    public const FIELD_SYSTEM_ERROR = 'system_error';
 
     public const FIELD_INVALID_ACCOUNT = 'invalid_account';
 
@@ -41,23 +57,9 @@ final class GatewayMetricHelper
 
     public const FIELD_DUPLICATE_ORDER = 'duplicate_order';
 
-    public const FIELD_RULE_VIOLATIONS = 'rule_violations';
+    public const FIELD_RULE_VIOLATION = 'rule_violation';
 
-    public const FIELD_VALIDATION_ERRORS = 'validation_errors';
-
-    public const FIELD_APPLICATION_ERRORS = 'application_errors';
-
-    public const FIELD_INFRASTRUCTURE_ERRORS = 'infrastructure_errors';
-
-    public const FIELD_RESPONSE_TIME_TOTAL_MS = 'response_time_total_ms';
-
-    public const FIELD_RESPONSE_TIME_COUNT = 'response_time_count';
-
-    public const FIELD_MAX_RESPONSE_TIME_MS = 'max_response_time_ms';
-
-    public const FIELD_SLOW_REQUESTS = 'slow_requests';
-
-    public const FIELD_VERY_SLOW_REQUESTS = 'very_slow_requests';
+    public const FIELD_VALIDATION_FAILED = 'validation_failed';
 
     public const GATEWAY_ERROR_SYSTEM = 'system_error';
 
@@ -89,6 +91,8 @@ final class GatewayMetricHelper
 
     public const APPLICATION_ERROR_USER_NOT_FOUND = 'user_not_found';
 
+    public const INFRASTRUCTURE_ERROR_TIMEOUT = 'timeout';
+
     public const INFRASTRUCTURE_ERROR_CONNECTION_TIMEOUT = 'connection_timeout';
 
     public const INFRASTRUCTURE_ERROR_HTTP_500 = 'http_500';
@@ -109,12 +113,37 @@ final class GatewayMetricHelper
 
     public const REQUEST_ATTR_START_TIME = 'gateway_metrics_start';
 
+    /** @var array<string, string> */
     private const GATEWAY_ERROR_FIELD_MAP = [
-        self::GATEWAY_ERROR_SYSTEM => self::FIELD_SYSTEM_ERRORS,
+        self::GATEWAY_ERROR_SYSTEM => self::FIELD_SYSTEM_ERROR,
         self::GATEWAY_ERROR_INVALID_ACCOUNT => self::FIELD_INVALID_ACCOUNT,
         self::GATEWAY_ERROR_INVALID_ORDER => self::FIELD_INVALID_ORDER,
-        self::GATEWAY_ERROR_RULE_VIOLATION => self::FIELD_RULE_VIOLATIONS,
+        self::GATEWAY_ERROR_RULE_VIOLATION => self::FIELD_RULE_VIOLATION,
         self::GATEWAY_ERROR_DUPLICATE_ORDER => self::FIELD_DUPLICATE_ORDER,
+    ];
+
+    /** @var list<string> */
+    private const AGGREGATABLE_FIELDS = [
+        self::FIELD_REQUESTS,
+        self::FIELD_SUCCESS,
+        self::FIELD_PENDING,
+        self::FIELD_FAILED,
+        self::FIELD_REJECTED,
+        self::FIELD_REFUNDS,
+        self::FIELD_GATEWAY_ERRORS,
+        self::FIELD_APPLICATION_ERRORS,
+        self::FIELD_INFRASTRUCTURE_ERRORS,
+        self::FIELD_TIMEOUTS,
+        self::FIELD_SLOW_REQUESTS,
+        self::FIELD_VERY_SLOW_REQUESTS,
+        self::FIELD_TOTAL_RESPONSE_TIME,
+        self::FIELD_RESPONSE_SAMPLES,
+        self::FIELD_SYSTEM_ERROR,
+        self::FIELD_INVALID_ACCOUNT,
+        self::FIELD_INVALID_ORDER,
+        self::FIELD_DUPLICATE_ORDER,
+        self::FIELD_RULE_VIOLATION,
+        self::FIELD_VALIDATION_FAILED,
     ];
 
     /**
@@ -122,10 +151,7 @@ final class GatewayMetricHelper
      */
     public static function supportedGateways(): array
     {
-        return config('gateway_metrics.gateways', [
-            self::GATEWAY_EASYPAISA,
-            self::GATEWAY_JAZZCASH,
-        ]);
+        return config('gateway_metrics.gateways', ['easypaisa', 'jazzcash']);
     }
 
     public static function isSupportedGateway(string $gateway): bool
@@ -138,28 +164,59 @@ final class GatewayMetricHelper
         return strtolower(trim($gateway));
     }
 
-    /**
-     * Build a per-minute Redis key, e.g. gateway:easypaisa:2026-06-27:14:31
-     */
-    public static function buildRedisKey(string $gateway, ?\DateTimeInterface $minute = null): string
+    public static function defaultFlow(): string
     {
+        return (string) config('gateway_metrics.default_flow', self::FLOW_PAYIN);
+    }
+
+    /**
+     * Build a per-minute Redis key, e.g. metrics:gateway:easypaisa:payin:202606271430
+     */
+    public static function buildRedisKey(
+        string $gateway,
+        ?string $flow = null,
+        ?\DateTimeInterface $minute = null
+    ): string {
         $gateway = self::normalizeGateway($gateway);
+        $flow = $flow ?? self::defaultFlow();
         $minute = $minute !== null
             ? Carbon::instance($minute)->startOfMinute()
             : now()->startOfMinute();
 
         return sprintf(
-            'gateway:%s:%s:%s:%s',
+            'metrics:gateway:%s:%s:%s',
             $gateway,
-            $minute->format('Y-m-d'),
-            $minute->format('H'),
-            $minute->format('i')
+            $flow,
+            $minute->format('YmdHi')
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function buildRedisKeysForWindow(
+        string $gateway,
+        int $minutes,
+        ?string $flow = null
+    ): array {
+        $keys = [];
+        $cursor = now()->startOfMinute()->subMinutes($minutes - 1);
+
+        for ($index = 0; $index < $minutes; $index++) {
+            $keys[] = self::buildRedisKey($gateway, $flow, $cursor->copy()->addMinutes($index));
+        }
+
+        return $keys;
     }
 
     public static function keyTtlSeconds(): int
     {
         return (int) config('gateway_metrics.key_ttl_seconds', 7200);
+    }
+
+    public static function aggregationWindowMinutes(): int
+    {
+        return (int) config('gateway_metrics.aggregation_window_minutes', 60);
     }
 
     public static function slowThresholdMs(): int
@@ -170,6 +227,14 @@ final class GatewayMetricHelper
     public static function verySlowThresholdMs(): int
     {
         return (int) config('gateway_metrics.very_slow_threshold_ms', 5000);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function aggregatableFields(): array
+    {
+        return self::AGGREGATABLE_FIELDS;
     }
 
     /**
@@ -201,8 +266,6 @@ final class GatewayMetricHelper
     }
 
     /**
-     * Classify a gateway API response into a gateway error type.
-     *
      * @return array{category: string, error_type: string}|null
      */
     public static function classifyGatewayResponse(
@@ -274,8 +337,6 @@ final class GatewayMetricHelper
     }
 
     /**
-     * Classify middleware or early rejections from the HTTP response.
-     *
      * @return array{category: string, error_type: string}|null
      */
     public static function classifyMiddlewareRejection(Request $request, Response $response): ?array
@@ -306,8 +367,8 @@ final class GatewayMetricHelper
 
         if ($statusCode === 503 && self::responseMessageContains($payload, 'system outage')) {
             return [
-                'category' => self::CATEGORY_APPLICATION,
-                'error_type' => self::APPLICATION_ERROR_PENDING_BACKLOG,
+                'category' => self::CATEGORY_INFRASTRUCTURE,
+                'error_type' => self::INFRASTRUCTURE_ERROR_HTTP_503,
             ];
         }
 
@@ -337,7 +398,7 @@ final class GatewayMetricHelper
         if (str_contains($normalized, 'timed out') || str_contains($normalized, 'timeout')) {
             return [
                 'category' => self::CATEGORY_INFRASTRUCTURE,
-                'error_type' => self::INFRASTRUCTURE_ERROR_CONNECTION_TIMEOUT,
+                'error_type' => self::INFRASTRUCTURE_ERROR_TIMEOUT,
             ];
         }
 
@@ -375,6 +436,17 @@ final class GatewayMetricHelper
         );
     }
 
+    public static function formatDurationSeconds(int|float $milliseconds): string
+    {
+        $seconds = $milliseconds / 1000;
+
+        if ($seconds < 1) {
+            return number_format($seconds, 2) . ' sec';
+        }
+
+        return number_format($seconds, 2) . ' sec';
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -391,9 +463,9 @@ final class GatewayMetricHelper
         return is_array($decoded) ? $decoded : [];
     }
 
-  /**
-   * @param array<string, mixed> $payload
-   */
+    /**
+     * @param array<string, mixed> $payload
+     */
     private static function responseMessageContains(array $payload, string $needle): bool
     {
         $message = strtolower((string) ($payload['message'] ?? ''));
