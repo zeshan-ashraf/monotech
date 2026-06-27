@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Helpers\GatewayMetricHelper;
+use App\Services\Dashboard\GatewayMetricService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -9,6 +11,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class LogRejectedRequests
 {
+    public function __construct(
+        private readonly GatewayMetricService $gatewayMetrics
+    ) {
+    }
+
     /**
      * Handle an incoming request.
      */
@@ -16,8 +23,9 @@ class LogRejectedRequests
     {
         $response = $next($request);
 
-        // Log requests that result in error responses
         if ($response->getStatusCode() >= 400) {
+            $this->recordRejectedGatewayMetrics($request, $response);
+
             Log::channel('rejected_requests')->warning('Request rejected', [
                 'ip' => $request->ip(),
                 'method' => $request->method(),
@@ -31,10 +39,37 @@ class LogRejectedRequests
                 'request_headers' => $request->headers->all(),
                 'response_body' => $response->getContent(),
                 'timestamp' => now()->toDateTimeString(),
-                'request_id' => uniqid('rejected_')
+                'request_id' => uniqid('rejected_'),
             ]);
         }
 
         return $response;
     }
-} 
+
+    private function recordRejectedGatewayMetrics(Request $request, Response $response): void
+    {
+        if (! GatewayMetricHelper::isPayinCheckoutRequest($request)) {
+            return;
+        }
+
+        if ($request->attributes->get(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED)) {
+            return;
+        }
+
+        $gateway = (string) $request->input('payment_method', '');
+
+        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+            return;
+        }
+
+        $startTime = $request->attributes->get(GatewayMetricHelper::REQUEST_ATTR_START_TIME);
+
+        if (is_float($startTime) || is_int($startTime)) {
+            $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, (float) $startTime);
+        } else {
+            $request->attributes->set(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED, true);
+        }
+
+        $this->gatewayMetrics->recordMiddlewareRejection($gateway, $request, $response);
+    }
+}

@@ -74,6 +74,7 @@ class Kernel extends HttpKernel
         'check.blocked.numbers' => \App\Http\Middleware\CheckedBlockedNumbersMiddleware::class,
         'payment.validate' => \App\Http\Middleware\PaymentValidationMiddleware::class,
         'log.rejected' => \App\Http\Middleware\LogRejectedRequests::class,
+        'gateway.metrics' => \App\Http\Middleware\RecordGatewayRequestMetricsMiddleware::class,
         'throttle.phone' => \App\Http\Middleware\ThrottlePhoneNumberMiddleware::class,
         'throttle.payin.global' => \App\Http\Middleware\ThrottlePayinCheckoutGlobalMiddleware::class,
 		'phone.verified' => \App\Http\Middleware\EnsurePhoneIsVerified::class,

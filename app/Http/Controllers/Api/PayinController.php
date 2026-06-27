@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Validator;
 use DB;
 use App\Services\Payin\InstrumentedEasypaisaPayinClient;
 use App\Services\PhoneVerificationService;
+use App\Services\Dashboard\GatewayMetricService;
+use App\Helpers\GatewayMetricHelper;
 use App\Support\PayinAmountRules;
 
 class PayinController extends Controller
@@ -34,8 +36,10 @@ class PayinController extends Controller
         ],
     ];
 
-    public function __construct(PaymentService $service)
-    {
+    public function __construct(
+        PaymentService $service,
+        private readonly GatewayMetricService $gatewayMetrics
+    ) {
         $this->service = $service;
         $this->logger = Log::channel('payin');
     }
@@ -277,6 +281,7 @@ class PayinController extends Controller
     {
         $requestId = uniqid('req_');
         $startTime = microtime(true);
+        $gateway = $this->resolveGateway($request);
         $this->logger->info('Starting checkout process', [
             'request_id' => $requestId,
             'request_data' => $request->all(),
@@ -304,12 +309,26 @@ class PayinController extends Controller
                 'errors' => $validator->errors()->toArray(),
                 'execution_time' => microtime(true) - $startTime
             ]);
+            $this->recordApplicationCheckoutFailure(
+                $request,
+                $gateway,
+                $startTime,
+                GatewayMetricHelper::APPLICATION_ERROR_VALIDATION
+            );
+
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
         // Check for recent transaction restrictions
         $recentTransactionCheck = $this->checkRecentTransactionRestriction($request, $requestId, $startTime);
         if ($recentTransactionCheck) {
+            $this->recordApplicationCheckoutFailure(
+                $request,
+                $gateway,
+                $startTime,
+                GatewayMetricHelper::APPLICATION_ERROR_RULE_VIOLATION
+            );
+
             return response()->json($recentTransactionCheck, $recentTransactionCheck['code']);
         }
 
@@ -339,6 +358,13 @@ class PayinController extends Controller
                 'request_id' => $requestId,
                 'response' => $restrictionCheck
             ]);
+            $this->recordApplicationCheckoutFailure(
+                $request,
+                $gateway,
+                $startTime,
+                GatewayMetricHelper::APPLICATION_ERROR_RULE_VIOLATION
+            );
+
             return response()->json($restrictionCheck, $restrictionCheck['code']);
         }
 
@@ -349,6 +375,13 @@ class PayinController extends Controller
                 'payment_method' => $request->payment_method,
                 'execution_time' => microtime(true) - $startTime
             ]);
+            $this->recordApplicationCheckoutFailure(
+                $request,
+                $gateway,
+                $startTime,
+                GatewayMetricHelper::APPLICATION_ERROR_MERCHANT_DISABLED
+            );
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Error: Limit exceeded.',
@@ -358,6 +391,13 @@ class PayinController extends Controller
             // Check daily limit for JazzCash payments
             $dailyLimitCheck = $this->checkDailyLimit($request, $user, $requestId, $startTime);
             if ($dailyLimitCheck) {
+                $this->recordApplicationCheckoutFailure(
+                    $request,
+                    $gateway,
+                    $startTime,
+                    GatewayMetricHelper::APPLICATION_ERROR_RULE_VIOLATION
+                );
+
                 return response()->json($dailyLimitCheck, $dailyLimitCheck['code']);
             }
 
@@ -426,6 +466,7 @@ class PayinController extends Controller
                                         'transaction_id' => $transaction->txn_ref_no,
                                         'total_execution_time' => microtime(true) - $startTime
                                     ]);
+                                    $this->recordGatewayCheckoutSuccess($request, $gateway, $startTime);
                                     try {
                                         app(PhoneVerificationService::class)->markVerified((string) $request->phone);
                                     } catch (\Throwable $e) {
@@ -459,6 +500,8 @@ class PayinController extends Controller
                                     'response_desc' => $responseDesc,
                                     'execution_time' => microtime(true) - $startTime
                                 ]);
+                                $this->recordGatewayCheckoutPending($request, $gateway, $startTime);
+
                                 return response()->json([
                                     'status' => 'pending',
                                     'transaction_id' => $transaction ? $transaction->txn_ref_no : $response['orderId'],
@@ -481,6 +524,14 @@ class PayinController extends Controller
                                 'response_desc' => $responseDesc,
                                 'execution_time' => microtime(true) - $startTime
                             ]);
+                            $this->recordGatewayCheckoutFailure(
+                                $request,
+                                $gateway,
+                                $startTime,
+                                $responseCode,
+                                $responseDesc
+                            );
+
                             return response()->json([
                                 'status' => 'error',
                                 'message' => 'Payment checkout cannot be processed, please try again.',
@@ -492,6 +543,44 @@ class PayinController extends Controller
                             'response' => $response,
                             'execution_time' => microtime(true) - $startTime
                         ]);
+
+                        if ($easypaisaDiagnosticsLevel === 'timeout') {
+                            $this->recordInfrastructureCheckoutFailure(
+                                $request,
+                                $gateway,
+                                $startTime,
+                                GatewayMetricHelper::INFRASTRUCTURE_ERROR_CONNECTION_TIMEOUT
+                            );
+                        } elseif (isset($response['message']) && is_string($response['message'])) {
+                            $classification = GatewayMetricHelper::classifyConnectionExceptionMessage($response['message']);
+
+                            if ($classification['category'] === GatewayMetricHelper::CATEGORY_INFRASTRUCTURE
+                                && $classification['error_type'] !== GatewayMetricHelper::INFRASTRUCTURE_ERROR_CONNECTION
+                            ) {
+                                $this->recordClassifiedCheckoutFailure(
+                                    $request,
+                                    $gateway,
+                                    $startTime,
+                                    $classification['category'],
+                                    $classification['error_type']
+                                );
+                            } else {
+                                $this->recordApplicationCheckoutFailure(
+                                    $request,
+                                    $gateway,
+                                    $startTime,
+                                    GatewayMetricHelper::APPLICATION_ERROR_VALIDATION
+                                );
+                            }
+                        } else {
+                            $this->recordInfrastructureCheckoutFailure(
+                                $request,
+                                $gateway,
+                                $startTime,
+                                GatewayMetricHelper::INFRASTRUCTURE_ERROR_HTTP_500
+                            );
+                        }
+
                         return response()->json([
                             'status' => 'error',
                             'message' => 'Invalid response from Easypaisa.',
@@ -503,6 +592,15 @@ class PayinController extends Controller
                             'trace' => $e->getTraceAsString(),
                             'execution_time' => microtime(true) - $startTime
                         ]);
+                        $classification = GatewayMetricHelper::classifyConnectionExceptionMessage($e->getMessage());
+                        $this->recordClassifiedCheckoutFailure(
+                            $request,
+                            $gateway,
+                            $startTime,
+                            $classification['category'],
+                            $classification['error_type']
+                        );
+
                         return response()->json([
                             'status' => 'error',
                             'message' => 'An error occurred while processing the payment.',
@@ -578,6 +676,8 @@ class PayinController extends Controller
                                 'transaction_id' => $transaction->txn_ref_no,
                                 'total_execution_time' => microtime(true) - $startTime
                             ]);
+                            $this->recordGatewayCheckoutSuccess($request, $gateway, $startTime);
+
                             return response()->json([
                                 'status' => $transaction->status,
                                 'transaction_id' => $transaction->txn_ref_no,
@@ -590,6 +690,14 @@ class PayinController extends Controller
                             'response_code' => $result->pp_ResponseCode,
                             'execution_time' => microtime(true) - $startTime
                         ]);
+                        $this->recordGatewayCheckoutFailure(
+                            $request,
+                            $gateway,
+                            $startTime,
+                            (string) ($result->pp_ResponseCode ?? ''),
+                            (string) ($result->pp_ResponseMessage ?? '')
+                        );
+
                         return response()->json([
                             'status' => 'error',
                             'message' => 'Payment checkout cannot be processed, please try again.',
@@ -611,6 +719,8 @@ class PayinController extends Controller
                             'response_message' => $result->pp_ResponseMessage ?? null,
                             'execution_time' => microtime(true) - $startTime
                         ]);
+                        $this->recordGatewayCheckoutPending($request, $gateway, $startTime);
+
                         return response()->json([
                             'status' => 'pending',
                             'transaction_id' => $transaction ? $transaction->txn_ref_no : $result->pp_TxnRefNo,
@@ -631,6 +741,14 @@ class PayinController extends Controller
                             'response_code' => $result->pp_ResponseCode ?? 'unknown',
                             'execution_time' => microtime(true) - $startTime
                         ]);
+                        $this->recordGatewayCheckoutFailure(
+                            $request,
+                            $gateway,
+                            $startTime,
+                            (string) ($result->pp_ResponseCode ?? ''),
+                            (string) ($result->pp_ResponseMessage ?? '')
+                        );
+
                         return response()->json([
                             'status' => 'error',
                             'message' => 'Payment checkout cannot be processed, please try again.',
@@ -646,6 +764,14 @@ class PayinController extends Controller
                     'trace' => $e->getTraceAsString(),
                     'execution_time' => microtime(true) - $startTime
                 ]);
+                $classification = GatewayMetricHelper::classifyConnectionExceptionMessage($e->getMessage());
+                $this->recordClassifiedCheckoutFailure(
+                    $request,
+                    $gateway,
+                    $startTime,
+                    $classification['category'],
+                    $classification['error_type']
+                );
                 // dd($e->getMessage());
                 return response()->json([
                     'status' => 'error',
@@ -692,5 +818,94 @@ class PayinController extends Controller
             'queue_default' => config('queue.default'),
             'queue_job_id' => $jobId,
         ]);
+    }
+
+    private function resolveGateway(Request $request): string
+    {
+        return (string) $request->input('payment_method', '');
+    }
+
+    private function recordGatewayCheckoutSuccess(Request $request, string $gateway, float $startTime): void
+    {
+        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+            return;
+        }
+
+        $this->gatewayMetrics->recordSuccess($gateway);
+        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+    }
+
+    private function recordGatewayCheckoutPending(Request $request, string $gateway, float $startTime): void
+    {
+        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+            return;
+        }
+
+        $this->gatewayMetrics->recordPending($gateway);
+        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+    }
+
+    private function recordApplicationCheckoutFailure(
+        Request $request,
+        string $gateway,
+        float $startTime,
+        string $applicationErrorType
+    ): void {
+        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+            return;
+        }
+
+        $this->gatewayMetrics->recordApplicationError($gateway, $applicationErrorType);
+        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+    }
+
+    private function recordInfrastructureCheckoutFailure(
+        Request $request,
+        string $gateway,
+        float $startTime,
+        string $infrastructureErrorType
+    ): void {
+        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+            return;
+        }
+
+        $this->gatewayMetrics->recordInfrastructureError($gateway, $infrastructureErrorType);
+        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+    }
+
+    private function recordGatewayCheckoutFailure(
+        Request $request,
+        string $gateway,
+        float $startTime,
+        ?string $responseCode,
+        ?string $responseDescription
+    ): void {
+        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+            return;
+        }
+
+        $this->gatewayMetrics->recordGatewayResponseFailure($gateway, $responseCode, $responseDescription);
+        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+    }
+
+    private function recordClassifiedCheckoutFailure(
+        Request $request,
+        string $gateway,
+        float $startTime,
+        string $category,
+        string $errorType
+    ): void {
+        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+            return;
+        }
+
+        match ($category) {
+            GatewayMetricHelper::CATEGORY_INFRASTRUCTURE => $this->gatewayMetrics->recordInfrastructureError($gateway, $errorType),
+            GatewayMetricHelper::CATEGORY_GATEWAY => $this->gatewayMetrics->recordGatewayError($gateway, $errorType),
+            GatewayMetricHelper::CATEGORY_APPLICATION => $this->gatewayMetrics->recordApplicationError($gateway, $errorType),
+            default => $this->gatewayMetrics->recordFailure($gateway),
+        };
+
+        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
     }
 }
