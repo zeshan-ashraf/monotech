@@ -41,7 +41,7 @@ Route::as('payin.')->prefix('payin')->group(function () {
 
 
 Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProceed'])
-    ->middleware(['payment.validate', 'check.blocked.numbers', 'payin.pending.limit']);
+    ->middleware(['gateway.metrics', 'log.rejected', 'payment.validate', 'check.blocked.numbers', 'payin.pending.limit']);
 
 
  /*Route::as('payout.')->prefix('payout')->group(function () {

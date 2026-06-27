@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use DB;
 use App\Services\Payin\InstrumentedEasypaisaPayinClient;
 use App\Services\PhoneVerificationService;
-use App\Services\Dashboard\GatewayMetricService;
+use App\Services\Dashboard\PayinCheckoutMetricsRecorder;
 use App\Helpers\GatewayMetricHelper;
 use App\Support\PayinAmountRules;
 
@@ -38,7 +38,7 @@ class PayinController extends Controller
 
     public function __construct(
         PaymentService $service,
-        private readonly GatewayMetricService $gatewayMetrics
+        private readonly PayinCheckoutMetricsRecorder $checkoutMetrics
     ) {
         $this->service = $service;
         $this->logger = Log::channel('payin');
@@ -545,16 +545,14 @@ class PayinController extends Controller
                         ]);
 
                         if ($easypaisaDiagnosticsLevel === 'timeout') {
-                            $this->gatewayMetrics->recordTimeout($gateway);
-                            $this->gatewayMetrics->recordFailed($gateway);
-                            $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+                            $this->checkoutMetrics->recordTimeoutFailure($request, $gateway, $startTime);
                         } elseif (isset($response['message']) && is_string($response['message'])) {
                             $classification = GatewayMetricHelper::classifyConnectionExceptionMessage($response['message']);
 
                             if ($classification['category'] === GatewayMetricHelper::CATEGORY_INFRASTRUCTURE
                                 && $classification['error_type'] !== GatewayMetricHelper::INFRASTRUCTURE_ERROR_CONNECTION
                             ) {
-                                $this->recordClassifiedCheckoutFailure(
+                                $this->checkoutMetrics->recordClassifiedCheckoutFailure(
                                     $request,
                                     $gateway,
                                     $startTime,
@@ -562,7 +560,7 @@ class PayinController extends Controller
                                     $classification['error_type']
                                 );
                             } else {
-                                $this->recordApplicationCheckoutFailure(
+                                $this->checkoutMetrics->recordApplicationCheckoutFailure(
                                     $request,
                                     $gateway,
                                     $startTime,
@@ -570,7 +568,7 @@ class PayinController extends Controller
                                 );
                             }
                         } else {
-                            $this->recordInfrastructureCheckoutFailure(
+                            $this->checkoutMetrics->recordInfrastructureCheckoutFailure(
                                 $request,
                                 $gateway,
                                 $startTime,
@@ -824,22 +822,12 @@ class PayinController extends Controller
 
     private function recordGatewayCheckoutSuccess(Request $request, string $gateway, float $startTime): void
     {
-        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
-            return;
-        }
-
-        $this->gatewayMetrics->recordSuccess($gateway);
-        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->checkoutMetrics->recordGatewayCheckoutSuccess($request, $gateway, $startTime);
     }
 
     private function recordGatewayCheckoutPending(Request $request, string $gateway, float $startTime): void
     {
-        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
-            return;
-        }
-
-        $this->gatewayMetrics->recordPending($gateway);
-        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->checkoutMetrics->recordGatewayCheckoutPending($request, $gateway, $startTime);
     }
 
     private function recordApplicationCheckoutFailure(
@@ -848,13 +836,12 @@ class PayinController extends Controller
         float $startTime,
         string $applicationErrorType
     ): void {
-        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
-            return;
-        }
-
-        $this->gatewayMetrics->recordApplicationError($gateway, $applicationErrorType);
-        $this->gatewayMetrics->recordRejected($gateway);
-        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->checkoutMetrics->recordApplicationCheckoutFailure(
+            $request,
+            $gateway,
+            $startTime,
+            $applicationErrorType
+        );
     }
 
     private function recordInfrastructureCheckoutFailure(
@@ -863,13 +850,12 @@ class PayinController extends Controller
         float $startTime,
         string $infrastructureErrorType
     ): void {
-        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
-            return;
-        }
-
-        $this->gatewayMetrics->recordInfrastructureError($gateway, $infrastructureErrorType);
-        $this->gatewayMetrics->recordFailed($gateway);
-        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->checkoutMetrics->recordInfrastructureCheckoutFailure(
+            $request,
+            $gateway,
+            $startTime,
+            $infrastructureErrorType
+        );
     }
 
     private function recordGatewayCheckoutFailure(
@@ -879,12 +865,13 @@ class PayinController extends Controller
         ?string $responseCode,
         ?string $responseDescription
     ): void {
-        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
-            return;
-        }
-
-        $this->gatewayMetrics->recordGatewayResponseFailure($gateway, $responseCode, $responseDescription);
-        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->checkoutMetrics->recordGatewayCheckoutFailure(
+            $request,
+            $gateway,
+            $startTime,
+            $responseCode,
+            $responseDescription
+        );
     }
 
     private function recordClassifiedCheckoutFailure(
@@ -894,23 +881,12 @@ class PayinController extends Controller
         string $category,
         string $errorType
     ): void {
-        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
-            return;
-        }
-
-        match ($category) {
-            GatewayMetricHelper::CATEGORY_INFRASTRUCTURE => $this->gatewayMetrics->recordInfrastructureError($gateway, $errorType),
-            GatewayMetricHelper::CATEGORY_GATEWAY => $this->gatewayMetrics->recordGatewayError($gateway, $errorType),
-            GatewayMetricHelper::CATEGORY_APPLICATION => $this->gatewayMetrics->recordApplicationError($gateway, $errorType),
-            default => null,
-        };
-
-        if ($category === GatewayMetricHelper::CATEGORY_APPLICATION) {
-            $this->gatewayMetrics->recordRejected($gateway);
-        } else {
-            $this->gatewayMetrics->recordFailed($gateway);
-        }
-
-        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->checkoutMetrics->recordClassifiedCheckoutFailure(
+            $request,
+            $gateway,
+            $startTime,
+            $category,
+            $errorType
+        );
     }
 }

@@ -431,9 +431,67 @@ final class GatewayMetricHelper
         return $request->is(
             'api/payin/checkout',
             'api/v1/payment-checkout',
+            'api/v1/payin-checkout',
             'payin/checkout',
-            'v1/payment-checkout'
+            'v1/payment-checkout',
+            'v1/payin-checkout'
         );
+    }
+
+    /**
+     * Map legacy Redis hash fields to the current schema.
+     *
+     * @param array<string, mixed> $hash
+     * @return array<string, int>
+     */
+    public static function normalizeLegacyHash(array $hash): array
+    {
+        $legacyMap = [
+            'total_requests' => self::FIELD_REQUESTS,
+            'successful_requests' => self::FIELD_SUCCESS,
+            'rejected_requests' => self::FIELD_REJECTED,
+            'response_time_total_ms' => self::FIELD_TOTAL_RESPONSE_TIME,
+            'response_time_count' => self::FIELD_RESPONSE_SAMPLES,
+            'max_response_time_ms' => self::FIELD_MAX_RESPONSE_TIME,
+            'system_errors' => self::FIELD_SYSTEM_ERROR,
+            'rule_violations' => self::FIELD_RULE_VIOLATION,
+            'validation_errors' => self::FIELD_VALIDATION_FAILED,
+        ];
+
+        $normalized = [];
+
+        foreach ($hash as $field => $value) {
+            $targetField = $legacyMap[$field] ?? (is_string($field) ? $field : null);
+
+            if ($targetField === null) {
+                continue;
+            }
+
+            $normalized[$targetField] = ($normalized[$targetField] ?? 0) + (int) $value;
+        }
+
+        return $normalized;
+    }
+
+    public static function isCurrentFormatKey(string $key): bool
+    {
+        return str_starts_with($key, 'metrics:gateway:');
+    }
+
+    public static function isLegacyFormatKey(string $key): bool
+    {
+        return (bool) preg_match('/^gateway:[^:]+:\d{4}-\d{2}-\d{2}:\d{2}:\d{2}$/', $key);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function discoverMetricKeyPatterns(): array
+    {
+        return [
+            'metrics:gateway:*:payin:*',
+            'gateway:*:*:*:*',
+        ];
     }
 
     public static function formatDurationSeconds(int|float $milliseconds): string

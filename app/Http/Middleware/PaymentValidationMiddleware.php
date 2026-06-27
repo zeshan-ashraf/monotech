@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Helpers\GatewayMetricHelper;
+use App\Services\Dashboard\PayinCheckoutMetricsRecorder;
 use App\Support\PayinAmountRules;
 use Closure;
 use Illuminate\Http\Request;
@@ -12,6 +14,11 @@ use Illuminate\Validation\Rule;
 
 class PaymentValidationMiddleware
 {
+    public function __construct(
+        private readonly PayinCheckoutMetricsRecorder $checkoutMetrics
+    ) {
+    }
+
     public function handle(Request $request, Closure $next)
     {
         $messages = [
@@ -76,6 +83,13 @@ class PaymentValidationMiddleware
 
         $request->merge(['user_model' => $user]);
 
+        if (GatewayMetricHelper::isPayinCheckoutRequest($request)) {
+            $this->checkoutMetrics->recordValidatedRequest(
+                $request,
+                (string) $paymentMethod
+            );
+        }
+
         return $next($request);
     }
 
@@ -86,6 +100,18 @@ class PaymentValidationMiddleware
             'client_email' => $request->client_email ?? 'unknown',
             'errors' => $errors,
         ]);
+
+        if (GatewayMetricHelper::isPayinCheckoutRequest($request)) {
+            $gateway = (string) $request->input('payment_method', '');
+            $startTime = (float) ($request->attributes->get(GatewayMetricHelper::REQUEST_ATTR_START_TIME) ?? microtime(true));
+
+            $this->checkoutMetrics->recordApplicationCheckoutFailure(
+                $request,
+                $gateway,
+                $startTime,
+                GatewayMetricHelper::APPLICATION_ERROR_VALIDATION
+            );
+        }
 
         return response()->json([
             'status' => 'error',

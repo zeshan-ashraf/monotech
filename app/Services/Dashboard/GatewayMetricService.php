@@ -3,6 +3,7 @@
 namespace App\Services\Dashboard;
 
 use App\Helpers\GatewayMetricHelper;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Redis\Connections\Connection;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +18,8 @@ use Throwable;
 class GatewayMetricService
 {
     private const LOG_CHANNEL = 'payin';
+
+    private const METRICS_CONNECTION = 'metrics';
 
     public function __construct(
         private readonly ?Connection $redis = null
@@ -134,9 +137,6 @@ class GatewayMetricService
         $this->incrementCounter($gateway, GatewayMetricHelper::FIELD_VERY_SLOW_REQUESTS, $flow);
     }
 
-    /**
-     * Classify and record a gateway API response failure.
-     */
     public function recordGatewayResponseFailure(
         string $gateway,
         ?string $responseCode,
@@ -156,9 +156,6 @@ class GatewayMetricService
         }
     }
 
-    /**
-     * Classify and record a middleware rejection for payin checkout routes.
-     */
     public function recordMiddlewareRejection(
         string $gateway,
         Request $request,
@@ -193,9 +190,6 @@ class GatewayMetricService
         };
     }
 
-    /**
-     * Record checkout timing and mark the request outcome on the request object.
-     */
     public function finalizeCheckoutMetrics(Request $request, string $gateway, float $startTime, ?string $flow = null): void
     {
         $durationMs = (int) round((microtime(true) - $startTime) * 1000);
@@ -216,7 +210,7 @@ class GatewayMetricService
 
         try {
             $key = GatewayMetricHelper::buildRedisKey($gateway, $flow, $minute);
-            $values = $this->withoutPrefix(fn () => $this->connection()->hgetall($key));
+            $values = $this->connection()->hgetall($key);
 
             return $this->normalizeHash(is_array($values) ? $values : []);
         } catch (Throwable $e) {
@@ -227,8 +221,6 @@ class GatewayMetricService
     }
 
     /**
-     * Aggregate metrics across the configured rolling window for one or all gateways.
-     *
      * @param list<string>|null $gateways
      * @return array<string, int|float>
      */
@@ -236,18 +228,33 @@ class GatewayMetricService
     {
         $minutes = $minutes ?? GatewayMetricHelper::aggregationWindowMinutes();
         $gateways = $gateways ?? GatewayMetricHelper::supportedGateways();
+        $flow = $flow ?? GatewayMetricHelper::defaultFlow();
         $totals = $this->emptyMetrics();
         $maxResponseTime = 0;
+        $processedKeys = [];
 
         foreach ($gateways as $gateway) {
             if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
                 continue;
             }
 
-            foreach (GatewayMetricHelper::buildRedisKeysForWindow($gateway, $minutes, $flow) as $key) {
+            foreach ($this->resolveKeysForWindow($gateway, $minutes, $flow) as $key) {
+                if (isset($processedKeys[$key])) {
+                    continue;
+                }
+
+                $processedKeys[$key] = true;
+
                 try {
-                    $hash = $this->withoutPrefix(fn () => $this->connection()->hgetall($key));
-                    $normalized = $this->normalizeHash(is_array($hash) ? $hash : []);
+                    $hash = $this->connection()->hgetall($key);
+
+                    if (! is_array($hash) || $hash === []) {
+                        continue;
+                    }
+
+                    $normalized = GatewayMetricHelper::isLegacyFormatKey($key)
+                        ? $this->mergeMetrics($this->emptyMetrics(), GatewayMetricHelper::normalizeLegacyHash($hash))
+                        : $this->normalizeHash($hash);
 
                     foreach ($normalized as $field => $value) {
                         if ($field === GatewayMetricHelper::FIELD_MAX_RESPONSE_TIME) {
@@ -277,6 +284,7 @@ class GatewayMetricService
     {
         $minutes = $minutes ?? GatewayMetricHelper::aggregationWindowMinutes();
         $gateways = $gateways ?? GatewayMetricHelper::supportedGateways();
+        $flow = $flow ?? GatewayMetricHelper::defaultFlow();
 
         $series = [
             'success' => array_fill(0, $minutes, 0),
@@ -292,8 +300,13 @@ class GatewayMetricService
 
             foreach (GatewayMetricHelper::buildRedisKeysForWindow($gateway, $minutes, $flow) as $index => $key) {
                 try {
-                    $hash = $this->withoutPrefix(fn () => $this->connection()->hgetall($key));
-                    $normalized = $this->normalizeHash(is_array($hash) ? $hash : []);
+                    $hash = $this->connection()->hgetall($key);
+
+                    if (! is_array($hash) || $hash === []) {
+                        continue;
+                    }
+
+                    $normalized = $this->normalizeHash($hash);
 
                     $series['success'][$index] += $normalized[GatewayMetricHelper::FIELD_SUCCESS];
                     $series['pending'][$index] += $normalized[GatewayMetricHelper::FIELD_PENDING];
@@ -309,7 +322,99 @@ class GatewayMetricService
     }
 
     /**
-     * @param array<string, mixed> $hash
+     * @return list<string>
+     */
+    private function resolveKeysForWindow(string $gateway, int $minutes, string $flow): array
+    {
+        $keys = GatewayMetricHelper::buildRedisKeysForWindow($gateway, $minutes, $flow);
+        $windowStart = now()->startOfMinute()->subMinutes($minutes - 1);
+
+        foreach ($this->discoverRedisKeys() as $key) {
+            if (! $this->keyBelongsToGateway($key, $gateway)) {
+                continue;
+            }
+
+            if (! $this->keyWithinWindow($key, $windowStart)) {
+                continue;
+            }
+
+            $keys[] = $key;
+        }
+
+        return array_values(array_unique($keys));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function discoverRedisKeys(): array
+    {
+        $keys = [];
+
+        try {
+            foreach (GatewayMetricHelper::discoverMetricKeyPatterns() as $pattern) {
+                $matches = $this->connection()->keys($pattern);
+
+                if (is_array($matches)) {
+                    foreach ($matches as $match) {
+                        if (is_string($match) && $match !== '') {
+                            $keys[] = $match;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            $this->logRedisFailure('discoverRedisKeys', 'all', $e);
+        }
+
+        return $keys;
+    }
+
+    private function keyBelongsToGateway(string $key, string $gateway): bool
+    {
+        $gateway = GatewayMetricHelper::normalizeGateway($gateway);
+
+        if (GatewayMetricHelper::isCurrentFormatKey($key)) {
+            return str_contains($key, ':gateway:' . $gateway . ':');
+        }
+
+        if (GatewayMetricHelper::isLegacyFormatKey($key)) {
+            return str_starts_with($key, 'gateway:' . $gateway . ':');
+        }
+
+        return false;
+    }
+
+    private function keyWithinWindow(string $key, Carbon $windowStart): bool
+    {
+        $bucket = $this->extractBucketTime($key);
+
+        if ($bucket === null) {
+            return false;
+        }
+
+        return $bucket->greaterThanOrEqualTo($windowStart)
+            && $bucket->lessThanOrEqualTo(now()->startOfMinute());
+    }
+
+    private function extractBucketTime(string $key): ?Carbon
+    {
+        if (preg_match('/:payin:(\d{12})$/', $key, $matches)) {
+            return Carbon::createFromFormat('YmdHi', $matches[1]) ?: null;
+        }
+
+        if (preg_match('/^gateway:[^:]+:(\d{4}-\d{2}-\d{2}):(\d{2}):(\d{2})$/', $key, $matches)) {
+            return Carbon::createFromFormat(
+                'Y-m-d H:i',
+                $matches[1] . ' ' . $matches[2] . ':' . $matches[3]
+            ) ?: null;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, int> $hash
      * @return array<string, int>
      */
     private function normalizeHash(array $hash): array
@@ -327,6 +432,20 @@ class GatewayMetricService
         }
 
         return $normalized;
+    }
+
+    /**
+     * @param array<string, int> $base
+     * @param array<string, int> $addition
+     * @return array<string, int>
+     */
+    private function mergeMetrics(array $base, array $addition): array
+    {
+        foreach ($addition as $field => $value) {
+            $base[$field] = ($base[$field] ?? 0) + $value;
+        }
+
+        return $base;
     }
 
     /**
@@ -385,7 +504,7 @@ class GatewayMetricService
 
     private function connection(): Connection
     {
-        return $this->redis ?? Redis::connection();
+        return $this->redis ?? Redis::connection(self::METRICS_CONNECTION);
     }
 
     /**
@@ -398,23 +517,12 @@ class GatewayMetricService
     private function safeRedis(callable $callback, string $operation, string $gateway, array $context = []): mixed
     {
         try {
-            return $this->withoutPrefix($callback);
+            return $callback();
         } catch (RedisException|Throwable $e) {
             $this->logRedisFailure($operation, $gateway, $e, $context);
 
             return null;
         }
-    }
-
-    /**
-     * @template T
-     *
-     * @param callable(): T $callback
-     * @return T
-     */
-    private function withoutPrefix(callable $callback): mixed
-    {
-        return Redis::withoutPrefix($callback);
     }
 
     /**
