@@ -56,19 +56,35 @@ class PayinCheckoutMetricsRecorder
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
     }
 
+    /**
+     * Request blocked before the gateway API call (validation, throttle, limits, blocked number).
+     */
+    public function recordPreGatewayRejection(
+        Request $request,
+        string $gateway,
+        float $startTime,
+        ?string $applicationErrorType = null
+    ): void {
+        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+            return;
+        }
+
+        if ($applicationErrorType !== null) {
+            $this->gatewayMetrics->recordApplicationError($gateway, $applicationErrorType);
+        }
+
+        $this->gatewayMetrics->recordRejected($gateway);
+        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $request->attributes->set(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED, true);
+    }
+
     public function recordApplicationCheckoutFailure(
         Request $request,
         string $gateway,
         float $startTime,
         string $applicationErrorType
     ): void {
-        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
-            return;
-        }
-
-        $this->gatewayMetrics->recordApplicationError($gateway, $applicationErrorType);
-        $this->gatewayMetrics->recordRejected($gateway);
-        $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->recordPreGatewayRejection($request, $gateway, $startTime, $applicationErrorType);
     }
 
     public function recordInfrastructureCheckoutFailure(
@@ -126,6 +142,7 @@ class PayinCheckoutMetricsRecorder
         }
 
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $request->attributes->set(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED, true);
     }
 
     public function recordTimeoutFailure(Request $request, string $gateway, float $startTime): void

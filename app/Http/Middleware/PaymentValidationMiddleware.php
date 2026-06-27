@@ -51,6 +51,18 @@ class PaymentValidationMiddleware
                 'client_email' => $request->client_email,
             ]);
 
+            if (GatewayMetricHelper::isPayinCheckoutRequest($request)) {
+                $gateway = (string) $request->input('payment_method', '');
+                $startTime = (float) ($request->attributes->get(GatewayMetricHelper::REQUEST_ATTR_START_TIME) ?? microtime(true));
+
+                $this->checkoutMetrics->recordPreGatewayRejection(
+                    $request,
+                    $gateway,
+                    $startTime,
+                    GatewayMetricHelper::APPLICATION_ERROR_USER_NOT_FOUND
+                );
+            }
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'User not found.',
@@ -105,7 +117,7 @@ class PaymentValidationMiddleware
             $gateway = (string) $request->input('payment_method', '');
             $startTime = (float) ($request->attributes->get(GatewayMetricHelper::REQUEST_ATTR_START_TIME) ?? microtime(true));
 
-            $this->checkoutMetrics->recordApplicationCheckoutFailure(
+            $this->checkoutMetrics->recordPreGatewayRejection(
                 $request,
                 $gateway,
                 $startTime,

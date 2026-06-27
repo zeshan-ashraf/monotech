@@ -290,7 +290,7 @@ class GatewayMetricService
             'success' => array_fill(0, $minutes, 0),
             'pending' => array_fill(0, $minutes, 0),
             'failed' => array_fill(0, $minutes, 0),
-            'refunds' => array_fill(0, $minutes, 0),
+            'rejected' => array_fill(0, $minutes, 0),
         ];
 
         foreach ($gateways as $gateway) {
@@ -311,7 +311,7 @@ class GatewayMetricService
                     $series['success'][$index] += $normalized[GatewayMetricHelper::FIELD_SUCCESS];
                     $series['pending'][$index] += $normalized[GatewayMetricHelper::FIELD_PENDING];
                     $series['failed'][$index] += $normalized[GatewayMetricHelper::FIELD_FAILED];
-                    $series['refunds'][$index] += $normalized[GatewayMetricHelper::FIELD_REFUNDS];
+                    $series['rejected'][$index] += $normalized[GatewayMetricHelper::FIELD_REJECTED];
                 } catch (Throwable $e) {
                     $this->logRedisFailure('sparklineSeries', $gateway, $e, ['key' => $key]);
                 }

@@ -26,9 +26,8 @@
                         <div class="row g-3 mb-3">
                             <div class="col-xl-8">
                                 @include('admin.dashboard.payments', [
-                                    'payments' => $payments,
+                                    'gatewayPayments' => $gatewayPayments,
                                     'transactions' => $transactions,
-                                    'paymentStats' => $paymentStats,
                                 ])
                             </div>
                             <div class="col-xl-4">

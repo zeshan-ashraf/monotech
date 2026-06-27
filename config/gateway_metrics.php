@@ -17,6 +17,19 @@ return [
         'jazzcash',
     ],
 
+    'gateway_profiles' => [
+        'easypaisa' => [
+            'name' => 'Easypaisa',
+            'icon' => 'fa-mobile',
+            'brand_color' => '#1eb53a',
+        ],
+        'jazzcash' => [
+            'name' => 'JazzCash',
+            'icon' => 'fa-credit-card',
+            'brand_color' => '#d11f2f',
+        ],
+    ],
+
     'gateway_errors' => [
         'easypaisa' => [
             'response_codes' => [
@@ -53,6 +66,7 @@ return [
         'unauthorized' => 'application_errors',
         'rule_violation' => 'rule_violation',
         'rate_limited' => 'rule_violation',
+        'blocked_number' => 'rule_violation',
         'pending_backlog' => 'infrastructure_errors',
         'user_not_found' => 'application_errors',
     ],

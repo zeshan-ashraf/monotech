@@ -23,7 +23,7 @@ class PaymentDashboardService
      *     payin_success: int,
      *     payin_pending: int,
      *     payin_failed: int,
-     *     refunds: int,
+     *     payin_rejected: int,
      *     total_requests: int,
      *     success_rate: float,
      *     average_response_time: float,
@@ -48,7 +48,7 @@ class PaymentDashboardService
             'payin_success' => $payinSuccess,
             'payin_pending' => (int) ($totals[GatewayMetricHelper::FIELD_PENDING] ?? 0),
             'payin_failed' => (int) ($totals[GatewayMetricHelper::FIELD_FAILED] ?? 0),
-            'refunds' => (int) ($totals[GatewayMetricHelper::FIELD_REFUNDS] ?? 0),
+            'payin_rejected' => (int) ($totals[GatewayMetricHelper::FIELD_REJECTED] ?? 0),
             'total_requests' => $totalRequests,
             'success_rate' => $this->calculateSuccessRate($payinSuccess, $totalRequests),
             'average_response_time' => $responseSamples > 0
@@ -97,11 +97,11 @@ class PaymentDashboardService
                 'sparkline' => $sparklines['failed'],
             ],
             [
-                'key' => 'refunds',
-                'label' => 'Refunds',
-                'value' => $metrics['refunds'],
+                'key' => 'rejected',
+                'label' => 'Rejected / Block',
+                'value' => $metrics['payin_rejected'],
                 'color' => 'info',
-                'sparkline' => $sparklines['refunds'],
+                'sparkline' => $sparklines['rejected'],
             ],
         ];
     }
@@ -124,19 +124,52 @@ class PaymentDashboardService
     }
 
     /**
+     * Per-gateway payment sections for the OPS dashboard.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function gatewaySections(): array
+    {
+        $sections = [];
+
+        foreach (GatewayMetricHelper::supportedGateways() as $gateway) {
+            $profile = GatewayMetricHelper::gatewayProfile($gateway);
+            $sparklines = $this->gatewayMetricService->sparklineSeries([$gateway]);
+
+            $sections[] = array_merge($profile, [
+                'metrics' => $this->getMetrics([$gateway]),
+                'cards' => $this->paymentsOverview([$gateway]),
+                'payment_stats' => $this->paymentResponseStats([$gateway]),
+                'sparklines' => $sparklines,
+            ]);
+        }
+
+        return $sections;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function paymentMetricsPayload(?array $gateways = null): array
     {
-        $metrics = $this->getMetrics($gateways);
-        $sparklines = $this->gatewayMetricService->sparklineSeries($gateways);
-        $responseStats = $this->paymentResponseStats($gateways);
+        if ($gateways !== null) {
+            return [
+                'gateways' => [
+                    array_merge(
+                        GatewayMetricHelper::gatewayProfile($gateways[0]),
+                        [
+                            'metrics' => $this->getMetrics($gateways),
+                            'cards' => $this->paymentsOverview($gateways),
+                            'payment_stats' => $this->paymentResponseStats($gateways),
+                            'sparklines' => $this->gatewayMetricService->sparklineSeries($gateways),
+                        ]
+                    ),
+                ],
+            ];
+        }
 
         return [
-            'metrics' => $metrics,
-            'payments' => $this->paymentsOverview($gateways),
-            'payment_stats' => $responseStats,
-            'sparklines' => $sparklines,
+            'gateways' => $this->gatewaySections(),
         ];
     }
 

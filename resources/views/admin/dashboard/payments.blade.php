@@ -9,22 +9,20 @@
 
     <div class="ops-panel__body">
 
-        {{-- Summary stat cards --}}
-        <div class="row g-3 mb-4">
-            @foreach($payments as $payment)
-                <div class="col-sm-6 col-xl-3">
-                    <x-ops-dashboard.payment-stat
-                        :label="$payment['label']"
-                        :value="$payment['value']"
-                        :color="$payment['color']"
-                        :chart-id="'ops-payment-' . $payment['key']"
-                    />
-                </div>
-            @endforeach
-        </div>
+        @foreach($gatewayPayments as $gatewaySection)
+            <x-ops-dashboard.gateway-payments
+                :gateway="$gatewaySection"
+                :cards="$gatewaySection['cards']"
+                :payment-stats="$gatewaySection['payment_stats']"
+            />
+
+            @if(! $loop->last)
+                <hr class="ops-gateway-payments__divider my-4">
+            @endif
+        @endforeach
 
         {{-- Recent transactions --}}
-        <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="d-flex align-items-center justify-content-between mb-2 mt-4">
             <h6 class="ops-subtitle mb-0">Recent Transactions</h6>
         </div>
         <div class="table-responsive ops-table-wrap">
@@ -54,18 +52,6 @@
                     @endforeach
                 </tbody>
             </table>
-        </div>
-
-        {{-- API response footer --}}
-        <div class="ops-panel__footer d-flex flex-wrap gap-4 mt-3 pt-3">
-            <span class="ops-panel__footer-stat text-muted small">
-                Avg. API Response Time:
-                <strong class="text-body">{{ $paymentStats['avg'] }}</strong>
-            </span>
-            <span class="ops-panel__footer-stat text-muted small">
-                Max API Response Time:
-                <strong class="text-danger">{{ $paymentStats['max'] }}</strong>
-            </span>
         </div>
     </div>
 </section>

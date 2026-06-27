@@ -153,20 +153,35 @@
         renderChart('ops-phpfpm-slow', sparklineOptions(data.slow, colors.danger));
     }
 
-    function paymentSparklines(data) {
+    function paymentSparklines(data, gatewayKey) {
         var colors = themeColors();
         var colorMap = {
             success: colors.success,
             pending: colors.warning,
             failed: colors.danger,
-            refunds: colors.info,
+            rejected: colors.info,
         };
 
         Object.keys(colorMap).forEach(function (key) {
-            if (!data[key]) {
+            if (!data || !data[key]) {
                 return;
             }
-            renderChart('ops-payment-' + key, sparklineOptions(data[key], colorMap[key]));
+
+            var chartId = gatewayKey
+                ? 'ops-payment-' + gatewayKey + '-' + key
+                : 'ops-payment-' + key;
+
+            renderChart(chartId, sparklineOptions(data[key], colorMap[key]));
+        });
+    }
+
+    function initPaymentSparklines(paymentsData) {
+        if (!paymentsData) {
+            return;
+        }
+
+        Object.keys(paymentsData).forEach(function (gatewayKey) {
+            paymentSparklines(paymentsData[gatewayKey], gatewayKey);
         });
     }
 
@@ -287,8 +302,9 @@
         return active ? active.getAttribute('data-interval') : '10s';
     }
 
-    function updatePaymentStatValue(key, value) {
-        var chartEl = document.getElementById('ops-payment-' + key);
+    function updatePaymentStatValue(gatewayKey, metricKey, value) {
+        var chartId = 'ops-payment-' + gatewayKey + '-' + metricKey;
+        var chartEl = document.getElementById(chartId);
 
         if (!chartEl) {
             return;
@@ -307,25 +323,21 @@
         }
     }
 
-    function updatePaymentResponseStats(stats) {
+    function updateGatewayResponseStats(gatewayKey, stats) {
         if (!stats) {
             return;
         }
 
-        var footerStats = document.querySelectorAll('.ops-payments-panel .ops-panel__footer-stat strong');
+        var avgEl = document.querySelector('.ops-gateway-avg[data-gateway="' + gatewayKey + '"]');
+        var maxEl = document.querySelector('.ops-gateway-max[data-gateway="' + gatewayKey + '"]');
 
-        if (footerStats.length >= 2) {
-            footerStats[0].textContent = stats.avg || '0.00 sec';
-            footerStats[1].textContent = stats.max || '0.00 sec';
-        }
-    }
-
-    function updatePaymentSparklines(sparklines) {
-        if (!sparklines) {
-            return;
+        if (avgEl) {
+            avgEl.textContent = stats.avg || '0.00 sec';
         }
 
-        paymentSparklines(sparklines);
+        if (maxEl) {
+            maxEl.textContent = stats.max || '0.00 sec';
+        }
     }
 
     function refreshPaymentMetrics() {
@@ -350,16 +362,25 @@
                 return response.json();
             })
             .then(function (payload) {
-                if (!payload || !payload.payments) {
+                if (!payload || !payload.gateways) {
                     return;
                 }
 
-                payload.payments.forEach(function (payment) {
-                    updatePaymentStatValue(payment.key, payment.value);
-                });
+                payload.gateways.forEach(function (gateway) {
+                    if (!gateway.cards) {
+                        return;
+                    }
 
-                updatePaymentSparklines(payload.sparklines);
-                updatePaymentResponseStats(payload.payment_stats);
+                    gateway.cards.forEach(function (card) {
+                        updatePaymentStatValue(gateway.key, card.key, card.value);
+                    });
+
+                    if (gateway.sparklines) {
+                        paymentSparklines(gateway.sparklines, gateway.key);
+                    }
+
+                    updateGatewayResponseStats(gateway.key, gateway.payment_stats);
+                });
             })
             .catch(function (error) {
                 console.warn('OPS dashboard payment metrics refresh failed:', error);
@@ -422,7 +443,7 @@
         }
 
         if (data.payments) {
-            paymentSparklines(data.payments);
+            initPaymentSparklines(data.payments);
         }
 
         if (data.history) {

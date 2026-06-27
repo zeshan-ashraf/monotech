@@ -46,6 +46,9 @@ class LogRejectedRequests
         return $response;
     }
 
+    /**
+     * Pre-gateway rejection — request never reached Easypaisa/JazzCash API.
+     */
     private function recordRejectedGatewayMetrics(Request $request, Response $response): void
     {
         if (! GatewayMetricHelper::isPayinCheckoutRequest($request)) {
@@ -65,11 +68,19 @@ class LogRejectedRequests
         $startTime = $request->attributes->get(GatewayMetricHelper::REQUEST_ATTR_START_TIME);
 
         if (is_float($startTime) || is_int($startTime)) {
-            $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, (float) $startTime);
-        } else {
-            $request->attributes->set(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED, true);
+            $durationMs = (int) round((microtime(true) - (float) $startTime) * 1000);
+            $this->gatewayMetrics->recordResponseTime($gateway, $durationMs);
         }
 
-        $this->gatewayMetrics->recordMiddlewareRejection($gateway, $request, $response);
+        $classification = GatewayMetricHelper::classifyMiddlewareRejection($request, $response);
+
+        if ($classification !== null
+            && $classification['category'] === GatewayMetricHelper::CATEGORY_APPLICATION
+        ) {
+            $this->gatewayMetrics->recordApplicationError($gateway, $classification['error_type']);
+        }
+
+        $this->gatewayMetrics->recordRejected($gateway);
+        $request->attributes->set(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED, true);
     }
 }

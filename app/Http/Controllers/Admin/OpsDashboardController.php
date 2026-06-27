@@ -25,22 +25,23 @@ class OpsDashboardController extends Controller
     {
         $serverInfo = $this->systemService->serverInfo();
         $overviewCards = $this->systemService->overviewCards($serverInfo);
-        $payments = $this->paymentDashboardService->paymentsOverview();
+        $gatewayPayments = $this->paymentDashboardService->gatewaySections();
 
         return view('admin.dashboard.index', [
             'serverInfo' => $serverInfo,
             'overviewCards' => $overviewCards,
-            'payments' => $payments,
+            'gatewayPayments' => $gatewayPayments,
             'transactions' => $this->paymentDashboardService->recentTransactions(),
-            'paymentStats' => $this->paymentDashboardService->paymentResponseStats(),
             'alerts' => $this->placeholderService->alerts(),
             'refreshIntervals' => $this->placeholderService->refreshIntervals(),
             'chartData' => [
                 'overview' => collect($overviewCards)->mapWithKeys(fn (array $card) => [
                     $card['key'] => $card['sparkline'],
                 ])->all(),
-                'payments' => collect($payments)->mapWithKeys(fn (array $item) => [
-                    $item['key'] => $item['sparkline'],
+                'payments' => collect($gatewayPayments)->mapWithKeys(fn (array $section) => [
+                    $section['key'] => collect($section['cards'])->mapWithKeys(fn (array $card) => [
+                        $card['key'] => $card['sparkline'],
+                    ])->all(),
                 ])->all(),
             ],
         ]);

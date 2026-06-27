@@ -89,6 +89,8 @@ final class GatewayMetricHelper
 
     public const APPLICATION_ERROR_PENDING_BACKLOG = 'pending_backlog';
 
+    public const APPLICATION_ERROR_BLOCKED_NUMBER = 'blocked_number';
+
     public const APPLICATION_ERROR_USER_NOT_FOUND = 'user_not_found';
 
     public const INFRASTRUCTURE_ERROR_TIMEOUT = 'timeout';
@@ -152,6 +154,31 @@ final class GatewayMetricHelper
     public static function supportedGateways(): array
     {
         return config('gateway_metrics.gateways', ['easypaisa', 'jazzcash']);
+    }
+
+    /**
+     * @return array<string, array{name: string, icon: string, brand_color: string}>
+     */
+    public static function gatewayProfiles(): array
+    {
+        return config('gateway_metrics.gateway_profiles', []);
+    }
+
+    /**
+     * @return array{name: string, icon: string, brand_color: string, key: string}
+     */
+    public static function gatewayProfile(string $gateway): array
+    {
+        $gateway = self::normalizeGateway($gateway);
+        $profiles = self::gatewayProfiles();
+        $profile = $profiles[$gateway] ?? [];
+
+        return [
+            'key' => $gateway,
+            'name' => (string) ($profile['name'] ?? ucfirst($gateway)),
+            'icon' => (string) ($profile['icon'] ?? 'fa-credit-card'),
+            'brand_color' => (string) ($profile['brand_color'] ?? '#7367f0'),
+        ];
     }
 
     public static function isSupportedGateway(string $gateway): bool
@@ -362,6 +389,32 @@ final class GatewayMetricHelper
             return [
                 'category' => self::CATEGORY_APPLICATION,
                 'error_type' => self::APPLICATION_ERROR_USER_NOT_FOUND,
+            ];
+        }
+
+        if ($statusCode === 400 && self::responseMessageContains($payload, 'blocked')) {
+            return [
+                'category' => self::CATEGORY_APPLICATION,
+                'error_type' => self::APPLICATION_ERROR_BLOCKED_NUMBER,
+            ];
+        }
+
+        if ($statusCode === 400 && self::responseMessageContains($payload, 'limit exceeded')) {
+            return [
+                'category' => self::CATEGORY_APPLICATION,
+                'error_type' => self::APPLICATION_ERROR_MERCHANT_DISABLED,
+            ];
+        }
+
+        if ($statusCode === 400 && (
+            self::responseMessageContains($payload, 'transaction blocked')
+            || self::responseMessageContains($payload, 'restriction')
+            || self::responseMessageContains($payload, 'limit has been breached')
+            || self::responseMessageContains($payload, 'daily transaction limit')
+        )) {
+            return [
+                'category' => self::CATEGORY_APPLICATION,
+                'error_type' => self::APPLICATION_ERROR_RULE_VIOLATION,
             ];
         }
 
