@@ -129,6 +129,8 @@ class Kernel extends ConsoleKernel
         $event = $schedule->command('transactions:auto-reverse')->everyTenMinutes();
         $wrapSchedule($event, 'transactions:auto-reverse');
 
+        $schedule->command('logs:repair-permissions')->everyMinute();
+
     }
 
     /**
