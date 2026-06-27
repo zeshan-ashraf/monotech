@@ -31,6 +31,7 @@ class LogRejectedRequests
                 'method' => $request->method(),
                 'path' => $request->path(),
                 'full_url' => $request->fullUrl(),
+                'payment_method' => $request->input('payment_method'),
                 'status_code' => $response->getStatusCode(),
                 'user_agent' => $request->header('User-Agent'),
                 'content_type' => $request->header('Content-Type'),
@@ -59,9 +60,9 @@ class LogRejectedRequests
             return;
         }
 
-        $gateway = (string) $request->input('payment_method', '');
+        $gateway = GatewayMetricHelper::resolveCheckoutGateway($request);
 
-        if (! GatewayMetricHelper::isSupportedGateway($gateway)) {
+        if ($gateway === null) {
             return;
         }
 
@@ -72,15 +73,7 @@ class LogRejectedRequests
             $this->gatewayMetrics->recordResponseTime($gateway, $durationMs);
         }
 
-        $classification = GatewayMetricHelper::classifyMiddlewareRejection($request, $response);
-
-        if ($classification !== null
-            && $classification['category'] === GatewayMetricHelper::CATEGORY_APPLICATION
-        ) {
-            $this->gatewayMetrics->recordApplicationError($gateway, $classification['error_type']);
-        }
-
-        $this->gatewayMetrics->recordRejected($gateway);
+        $this->gatewayMetrics->recordMiddlewareRejection($gateway, $request, $response);
         $request->attributes->set(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED, true);
     }
 }

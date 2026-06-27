@@ -420,8 +420,8 @@ final class GatewayMetricHelper
 
         if ($statusCode === 503 && self::responseMessageContains($payload, 'system outage')) {
             return [
-                'category' => self::CATEGORY_INFRASTRUCTURE,
-                'error_type' => self::INFRASTRUCTURE_ERROR_HTTP_503,
+                'category' => self::CATEGORY_APPLICATION,
+                'error_type' => self::APPLICATION_ERROR_PENDING_BACKLOG,
             ];
         }
 
@@ -489,6 +489,26 @@ final class GatewayMetricHelper
             'v1/payment-checkout',
             'v1/payin-checkout'
         );
+    }
+
+    /**
+     * Resolve the checkout gateway from common request payload keys.
+     */
+    public static function resolveCheckoutGateway(Request $request): ?string
+    {
+        foreach ([
+            $request->input('payment_method'),
+            $request->input('txn_type'),
+            $request->input('gateway'),
+        ] as $candidate) {
+            $gateway = self::normalizeGateway((string) $candidate);
+
+            if ($gateway !== '' && self::isSupportedGateway($gateway)) {
+                return $gateway;
+            }
+        }
+
+        return null;
     }
 
     /**

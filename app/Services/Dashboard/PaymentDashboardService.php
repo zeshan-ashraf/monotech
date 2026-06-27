@@ -14,7 +14,8 @@ use Carbon\Carbon;
 class PaymentDashboardService
 {
     public function __construct(
-        private readonly GatewayMetricService $gatewayMetricService
+        private readonly GatewayMetricService $gatewayMetricService,
+        private readonly RejectedRequestsLogService $rejectedRequestsLogService,
     ) {
     }
 
@@ -48,7 +49,7 @@ class PaymentDashboardService
             'payin_success' => $payinSuccess,
             'payin_pending' => (int) ($totals[GatewayMetricHelper::FIELD_PENDING] ?? 0),
             'payin_failed' => (int) ($totals[GatewayMetricHelper::FIELD_FAILED] ?? 0),
-            'payin_rejected' => (int) ($totals[GatewayMetricHelper::FIELD_REJECTED] ?? 0),
+            'payin_rejected' => $this->resolveRejectedCount($gateways, $totals),
             'total_requests' => $totalRequests,
             'success_rate' => $this->calculateSuccessRate($payinSuccess, $totalRequests),
             'average_response_time' => $responseSamples > 0
@@ -222,5 +223,30 @@ class PaymentDashboardService
             'refund', 'refunded', 'reversed' => 'success',
             default => $status !== '' ? $status : 'pending',
         };
+    }
+
+    /**
+     * Prefer Redis rejected counts; fall back to rejected_requests.log when Redis is empty.
+     *
+     * @param  list<string>|null  $gateways
+     * @param  array<string, int|float>  $totals
+     */
+    private function resolveRejectedCount(?array $gateways, array $totals): int
+    {
+        $redisRejected = (int) ($totals[GatewayMetricHelper::FIELD_REJECTED] ?? 0);
+
+        if ($redisRejected > 0) {
+            return $redisRejected;
+        }
+
+        $logCounts = $this->rejectedRequestsLogService->countByGateway();
+        $targetGateways = $gateways ?? GatewayMetricHelper::supportedGateways();
+        $logRejected = 0;
+
+        foreach ($targetGateways as $gateway) {
+            $logRejected += (int) ($logCounts[$gateway] ?? 0);
+        }
+
+        return $logRejected;
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Exceptions;
 
+use App\Helpers\GatewayMetricHelper;
+use App\Services\Dashboard\PayinCheckoutMetricsRecorder;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
@@ -40,6 +42,7 @@ class Handler extends ExceptionHandler
                 'method' => $request->method(),
                 'path' => $request->path(),
                 'full_url' => $request->fullUrl(),
+                'payment_method' => $request->input('payment_method'),
                 'user_agent' => $request->header('User-Agent'),
                 'content_type' => $request->header('Content-Type'),
                 'request_body' => $request->getContent(),
@@ -47,8 +50,23 @@ class Handler extends ExceptionHandler
                 'request_headers' => $request->headers->all(),
                 'exception_message' => $e->getMessage(),
                 'timestamp' => now()->toDateTimeString(),
-                'request_id' => uniqid('rate_limited_')
+                'request_id' => uniqid('rate_limited_'),
             ]);
+
+            if (GatewayMetricHelper::isPayinCheckoutRequest($request)) {
+                $gateway = GatewayMetricHelper::resolveCheckoutGateway($request);
+
+                if ($gateway !== null) {
+                    $startTime = (float) ($request->attributes->get(GatewayMetricHelper::REQUEST_ATTR_START_TIME) ?? microtime(true));
+
+                    app(PayinCheckoutMetricsRecorder::class)->recordPreGatewayRejection(
+                        $request,
+                        $gateway,
+                        $startTime,
+                        GatewayMetricHelper::APPLICATION_ERROR_RATE_LIMITED
+                    );
+                }
+            }
         });
 
         $this->renderable(function (ThrottleRequestsException $e, Request $request) {
