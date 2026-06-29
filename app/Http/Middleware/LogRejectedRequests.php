@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Helpers\GatewayMetricHelper;
+use App\Services\Dashboard\ApiTrafficMetricsRecorder;
 use App\Services\Dashboard\GatewayMetricService;
 use Closure;
 use Illuminate\Http\Request;
@@ -12,7 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
 class LogRejectedRequests
 {
     public function __construct(
-        private readonly GatewayMetricService $gatewayMetrics
+        private readonly GatewayMetricService $gatewayMetrics,
+        private readonly ApiTrafficMetricsRecorder $apiTrafficMetrics
     ) {
     }
 
@@ -25,6 +27,7 @@ class LogRejectedRequests
 
         if ($response->getStatusCode() >= 400) {
             $this->recordRejectedGatewayMetrics($request, $response);
+            $this->apiTrafficMetrics->recordMiddlewareRejection($request, $response);
 
             Log::channel('rejected_requests')->warning('Request rejected', [
                 'ip' => $request->ip(),

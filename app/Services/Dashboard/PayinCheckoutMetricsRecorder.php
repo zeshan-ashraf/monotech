@@ -11,7 +11,8 @@ use Illuminate\Http\Request;
 class PayinCheckoutMetricsRecorder
 {
     public function __construct(
-        private readonly GatewayMetricService $gatewayMetrics
+        private readonly GatewayMetricService $gatewayMetrics,
+        private readonly ApiTrafficMetricsRecorder $apiTrafficMetrics
     ) {
     }
 
@@ -33,6 +34,7 @@ class PayinCheckoutMetricsRecorder
         }
 
         $this->gatewayMetrics->recordRequest($gateway);
+        $this->apiTrafficMetrics->recordAccepted($request);
         $request->attributes->set('gateway_metrics_request_recorded', true);
     }
 
@@ -44,6 +46,7 @@ class PayinCheckoutMetricsRecorder
 
         $this->gatewayMetrics->recordSuccess($gateway);
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->apiTrafficMetrics->recordGatewayCheckoutSuccess($request, $startTime);
     }
 
     public function recordGatewayCheckoutPending(Request $request, string $gateway, float $startTime): void
@@ -54,6 +57,7 @@ class PayinCheckoutMetricsRecorder
 
         $this->gatewayMetrics->recordPending($gateway);
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->apiTrafficMetrics->recordGatewayCheckoutPending($request, $startTime);
     }
 
     /**
@@ -75,6 +79,7 @@ class PayinCheckoutMetricsRecorder
 
         $this->gatewayMetrics->recordRejected($gateway);
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->apiTrafficMetrics->recordPreGatewayRejection($request, $startTime, $applicationErrorType);
         $request->attributes->set(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED, true);
     }
 
@@ -100,6 +105,7 @@ class PayinCheckoutMetricsRecorder
         $this->gatewayMetrics->recordInfrastructureError($gateway, $infrastructureErrorType);
         $this->gatewayMetrics->recordFailed($gateway);
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->apiTrafficMetrics->recordInfrastructureCheckoutFailure($request, $startTime, $infrastructureErrorType);
     }
 
     public function recordGatewayCheckoutFailure(
@@ -115,6 +121,7 @@ class PayinCheckoutMetricsRecorder
 
         $this->gatewayMetrics->recordGatewayResponseFailure($gateway, $responseCode, $responseDescription);
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->apiTrafficMetrics->recordGatewayCheckoutFailure($request, $startTime, $responseCode, $responseDescription);
     }
 
     public function recordClassifiedCheckoutFailure(
@@ -142,6 +149,7 @@ class PayinCheckoutMetricsRecorder
         }
 
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->apiTrafficMetrics->recordClassifiedCheckoutFailure($request, $startTime, $category, $errorType);
         $request->attributes->set(GatewayMetricHelper::REQUEST_ATTR_OUTCOME_RECORDED, true);
     }
 
@@ -154,5 +162,6 @@ class PayinCheckoutMetricsRecorder
         $this->gatewayMetrics->recordTimeout($gateway);
         $this->gatewayMetrics->recordFailed($gateway);
         $this->gatewayMetrics->finalizeCheckoutMetrics($request, $gateway, $startTime);
+        $this->apiTrafficMetrics->recordTimeoutFailure($request, $startTime);
     }
 }

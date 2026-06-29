@@ -740,3 +740,126 @@ body.dark-layout .ops-dashboard {
     background-color: var(--bs-success);
     border-color: var(--bs-success);
 }
+
+/* ==========================================================================
+   API Traffic panel
+   ========================================================================== */
+
+.ops-traffic-panel .ops-panel__header {
+    padding-bottom: 0.5rem;
+}
+
+.ops-traffic-windows .ops-traffic-window {
+    background: transparent;
+    border: 1px solid var(--ops-border);
+    color: var(--ops-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    transition: background var(--ops-transition), color var(--ops-transition), border-color var(--ops-transition);
+}
+
+.ops-traffic-windows .ops-traffic-window:hover {
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+}
+
+.ops-traffic-windows .ops-traffic-window.active {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: #fff;
+}
+
+.ops-traffic-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--bs-success);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ops-traffic-live__dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: currentColor;
+    animation: ops-pulse 2s infinite;
+}
+
+.ops-traffic-live.is-paused {
+    color: var(--ops-text-muted);
+}
+
+.ops-traffic-live.is-paused .ops-traffic-live__dot {
+    animation: none;
+    opacity: 0.45;
+}
+
+.ops-traffic-chart-wrap {
+    padding: 0.75rem 0.85rem 0.5rem;
+    background: var(--ops-surface-2);
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+    height: 100%;
+}
+
+.ops-traffic-chart {
+    min-height: 220px;
+}
+
+.ops-traffic-api-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 0.75rem 0.85rem;
+    background: var(--ops-surface-2);
+    border: 1px solid var(--ops-border);
+    border-radius: var(--ops-radius-sm);
+    min-height: 220px;
+}
+
+.ops-traffic-api-row__label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--bs-body-color);
+}
+
+.ops-traffic-api-row__value {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--bs-body-color);
+}
+
+.ops-traffic-api-row__track {
+    height: 0.45rem;
+    background: rgba(var(--bs-primary-rgb), 0.08);
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.ops-traffic-api-row__bar {
+    height: 100%;
+    border-radius: 1rem;
+    transition: width 0.35s ease;
+    min-width: 0;
+}
+
+.ops-traffic-error {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.45em 0.75em;
+}
+
+.ops-traffic-error strong {
+    font-weight: 700;
+}
+
+@media (max-width: 767.98px) {
+    .ops-traffic-chart,
+    .ops-traffic-api-list {
+        min-height: 180px;
+    }
+}

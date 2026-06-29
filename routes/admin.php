@@ -24,6 +24,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     Route::get('/zig-dashboard', [DashboardController::class, 'zigIndex'])->name('zig_dashboard');
     Route::get('/ops-dashboard', [OpsDashboardController::class, 'index'])->name('ops.dashboard');
     Route::get('/ops-dashboard/payment-metrics', [OpsDashboardController::class, 'paymentMetrics'])->name('ops.dashboard.payment_metrics');
+    Route::get('/ops-dashboard/traffic-metrics', [OpsDashboardController::class, 'trafficMetrics'])->name('ops.dashboard.traffic_metrics');
     Route::get('/testing', [DashboardController::class, 'testing'])->name('testing');
     Route::get('/add-data/{id}', [DashboardController::class, 'prevClientSettlementEntry'])->name('add.data');
     Route::get('/profile/form', [DashboardController::class, 'profile'])->name('profile');

@@ -22,6 +22,9 @@
                         {{-- Live: overview metric cards --}}
                         @include('admin.dashboard.cards', ['overviewCards' => $overviewCards])
 
+                        {{-- Live: API traffic --}}
+                        @include('admin.dashboard.traffic', ['traffic' => $traffic])
+
                         {{-- Payments & Alerts --}}
                         <div class="row g-3 mb-3">
                             <div class="col-xl-8">
@@ -46,6 +49,8 @@
     <script>
         window.opsDashboardData = @json($chartData);
         window.opsDashboardPaymentMetricsUrl = @json(route('admin.ops.dashboard.payment_metrics'));
+        window.opsDashboardTrafficMetricsUrl = @json(route('admin.ops.dashboard.traffic_metrics'));
+        window.opsDashboardTraffic = @json($traffic);
     </script>
     <script src="{{ asset('js/dashboard.js') }}"></script>
 @endpush

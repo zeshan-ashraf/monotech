@@ -417,21 +417,308 @@
                     label.textContent = btn.getAttribute('data-interval');
                 }
                 schedulePaymentMetricsRefresh();
+                updateTrafficLiveIndicator();
             });
         });
 
         var autoRefresh = document.getElementById('ops-auto-refresh');
 
         if (autoRefresh) {
-            autoRefresh.addEventListener('change', schedulePaymentMetricsRefresh);
+            autoRefresh.addEventListener('change', function () {
+                schedulePaymentMetricsRefresh();
+                scheduleTrafficMetricsRefresh();
+                updateTrafficLiveIndicator();
+            });
         }
     }
 
-    function init() {
-        var data = window.opsDashboardData;
-        if (!data) {
+  /**
+   * API Traffic panel — live Redis metrics.
+   */
+    var trafficMetricsTimer = null;
+    var trafficWindowMinutes = 5;
+    var TRAFFIC_REFRESH_MS = 5000;
+
+    function getTrafficMetricsUrl() {
+        var baseUrl = window.opsDashboardTrafficMetricsUrl;
+
+        if (!baseUrl) {
+            return null;
+        }
+
+        var separator = baseUrl.indexOf('?') === -1 ? '?' : '&';
+
+        return baseUrl + separator + 'minutes=' + encodeURIComponent(trafficWindowMinutes);
+    }
+
+    function updateTrafficLiveIndicator() {
+        var liveEl = document.getElementById('ops-traffic-live');
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (!liveEl) {
             return;
         }
+
+        if (autoRefresh && !autoRefresh.checked) {
+            liveEl.classList.add('is-paused');
+        } else {
+            liveEl.classList.remove('is-paused');
+        }
+    }
+
+    function updateTrafficStatValue(metricKey, value) {
+        var stat = document.querySelector('.ops-traffic-stat[data-metric="' + metricKey + '"]');
+
+        if (!stat) {
+            return;
+        }
+
+        var valueEl = stat.querySelector('[data-field="value"]');
+
+        if (!valueEl) {
+            return;
+        }
+
+        if (metricKey === 'incoming' || metricKey === 'rejected') {
+            valueEl.textContent = Number(value || 0).toLocaleString();
+        } else {
+            valueEl.textContent = value;
+        }
+    }
+
+    function updateTrafficApiRows(rows) {
+        var listEl = document.getElementById('ops-traffic-api-list');
+
+        if (!listEl || !rows || !rows.length) {
+            return;
+        }
+
+        var maxIncoming = 1;
+
+        rows.forEach(function (row) {
+            maxIncoming = Math.max(maxIncoming, Number(row.incoming || 0));
+        });
+
+        rows.forEach(function (row) {
+            var rowEl = listEl.querySelector('.ops-traffic-api-row[data-api="' + row.key + '"]');
+
+            if (!rowEl) {
+                return;
+            }
+
+            var incomingEl = rowEl.querySelector('[data-field="incoming"]');
+            var barEl = rowEl.querySelector('[data-field="bar"]');
+            var incoming = Number(row.incoming || 0);
+            var percent = Math.round((incoming / maxIncoming) * 1000) / 10;
+
+            if (incomingEl) {
+                incomingEl.textContent = incoming.toLocaleString();
+            }
+
+            if (barEl) {
+                barEl.style.width = percent + '%';
+            }
+        });
+    }
+
+    function updateTrafficErrorBadges(errors) {
+        if (!errors || !errors.length) {
+            return;
+        }
+
+        errors.forEach(function (error) {
+            var badge = document.querySelector('.ops-traffic-error[data-error="' + error.key + '"]');
+
+            if (!badge) {
+                return;
+            }
+
+            var valueEl = badge.querySelector('[data-field="value"]');
+
+            if (valueEl) {
+                valueEl.textContent = Number(error.value || 0).toLocaleString();
+            }
+        });
+    }
+
+    function trafficIncomingChartOptions(labels, series) {
+        var colors = themeColors();
+
+        return {
+            series: [{ name: 'Incoming', data: series || [] }],
+            chart: {
+                type: 'area',
+                height: 220,
+                toolbar: { show: false },
+                zoom: { enabled: false },
+                fontFamily: 'Montserrat, sans-serif',
+            },
+            colors: [colors.primary],
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 2 },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 0.4,
+                    opacityFrom: 0.5,
+                    opacityTo: 0.05,
+                },
+            },
+            grid: {
+                borderColor: colors.grid,
+                strokeDashArray: 4,
+                padding: { left: 8, right: 8 },
+            },
+            xaxis: {
+                categories: labels || [],
+                labels: {
+                    style: { colors: colors.text, fontSize: '10px' },
+                },
+                axisBorder: { show: false },
+                axisTicks: { show: false },
+            },
+            yaxis: {
+                min: 0,
+                labels: {
+                    style: { colors: colors.text, fontSize: '11px' },
+                },
+            },
+            tooltip: {
+                theme: isDarkLayout() ? 'dark' : 'light',
+            },
+        };
+    }
+
+    function renderTrafficCharts(payload) {
+        if (!payload) {
+            return;
+        }
+
+        if (payload.chart) {
+            renderChart(
+                'ops-traffic-incoming-chart',
+                trafficIncomingChartOptions(payload.chart.labels, payload.chart.series)
+            );
+        }
+
+        var incomingCard = (payload.cards || []).find(function (card) {
+            return card.key === 'incoming';
+        });
+
+        if (incomingCard && payload.chart && payload.chart.series) {
+            renderChart(
+                'ops-traffic-spark-incoming',
+                sparklineOptions(payload.chart.series, themeColors().primary)
+            );
+        }
+
+        var windowEl = document.getElementById('ops-traffic-chart-window');
+
+        if (windowEl && payload.window_minutes) {
+            windowEl.textContent = payload.window_minutes;
+        }
+    }
+
+    function applyTrafficPayload(payload) {
+        if (!payload) {
+            return;
+        }
+
+        (payload.cards || []).forEach(function (card) {
+            updateTrafficStatValue(card.key, card.value);
+        });
+
+        updateTrafficApiRows(payload.api_rows || []);
+        updateTrafficErrorBadges(payload.errors || []);
+        renderTrafficCharts(payload);
+    }
+
+    function refreshTrafficMetrics() {
+        var url = getTrafficMetricsUrl();
+
+        if (!url || !document.getElementById('ops-traffic-panel')) {
+            return;
+        }
+
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Traffic metrics request failed');
+                }
+
+                return response.json();
+            })
+            .then(function (payload) {
+                applyTrafficPayload(payload);
+            })
+            .catch(function (error) {
+                console.warn('OPS dashboard traffic metrics refresh failed:', error);
+            });
+    }
+
+    function scheduleTrafficMetricsRefresh() {
+        if (trafficMetricsTimer) {
+            clearInterval(trafficMetricsTimer);
+            trafficMetricsTimer = null;
+        }
+
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (autoRefresh && !autoRefresh.checked) {
+            updateTrafficLiveIndicator();
+
+            return;
+        }
+
+        trafficMetricsTimer = setInterval(refreshTrafficMetrics, TRAFFIC_REFRESH_MS);
+        updateTrafficLiveIndicator();
+    }
+
+    function bindTrafficWindowControls() {
+        document.querySelectorAll('.ops-traffic-window').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var minutes = parseInt(btn.getAttribute('data-minutes'), 10);
+
+                if (Number.isNaN(minutes)) {
+                    return;
+                }
+
+                trafficWindowMinutes = minutes;
+
+                document.querySelectorAll('.ops-traffic-window').forEach(function (b) {
+                    b.classList.remove('active');
+                });
+                btn.classList.add('active');
+
+                refreshTrafficMetrics();
+            });
+        });
+    }
+
+    function initTrafficPanel() {
+        if (!document.getElementById('ops-traffic-panel')) {
+            return;
+        }
+
+        var initial = window.opsDashboardTraffic;
+
+        if (initial && initial.window_minutes) {
+            trafficWindowMinutes = initial.window_minutes;
+        }
+
+        applyTrafficPayload(initial);
+        bindTrafficWindowControls();
+        scheduleTrafficMetricsRefresh();
+    }
+
+    function init() {
+        var data = window.opsDashboardData || {};
 
         if (data.overview) {
             overviewSparklines(data.overview);
@@ -452,6 +739,7 @@
 
         bindNavbarControls();
         schedulePaymentMetricsRefresh();
+        initTrafficPanel();
     }
 
     document.addEventListener('DOMContentLoaded', init);
@@ -459,10 +747,15 @@
     window.OpsDashboard = {
         init: init,
         refreshPaymentMetrics: refreshPaymentMetrics,
+        refreshTrafficMetrics: refreshTrafficMetrics,
         destroy: function () {
             if (paymentMetricsTimer) {
                 clearInterval(paymentMetricsTimer);
                 paymentMetricsTimer = null;
+            }
+            if (trafficMetricsTimer) {
+                clearInterval(trafficMetricsTimer);
+                trafficMetricsTimer = null;
             }
             Object.keys(charts).forEach(destroyChart);
         },

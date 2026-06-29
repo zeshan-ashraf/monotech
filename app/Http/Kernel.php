@@ -39,6 +39,7 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
+            \App\Http\Middleware\ApiTrafficMiddleware::class,
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
@@ -80,5 +81,6 @@ class Kernel extends HttpKernel
 		'phone.verified' => \App\Http\Middleware\EnsurePhoneIsVerified::class,
         'payout.daily.limit' => \App\Http\Middleware\CheckPayoutDailyLimit::class,
         'payin.pending.limit' => \App\Http\Middleware\CheckPayinPendingBacklogMiddleware::class,
+        'api.traffic' => \App\Http\Middleware\ApiTrafficMiddleware::class,
     ];
 }
