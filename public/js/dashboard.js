@@ -427,6 +427,7 @@
             autoRefresh.addEventListener('change', function () {
                 schedulePaymentMetricsRefresh();
                 scheduleTrafficMetricsRefresh();
+                scheduleRuntimeMetricsRefresh();
                 updateTrafficLiveIndicator();
             });
         }
@@ -717,6 +718,239 @@
         scheduleTrafficMetricsRefresh();
     }
 
+  /**
+   * Application Runtime panel — live metrics polling.
+   */
+    var runtimeMetricsTimer = null;
+    var RUNTIME_REFRESH_MS = 5000;
+
+    function updateRuntimeLiveIndicator() {
+        var liveEl = document.getElementById('ops-runtime-live');
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (!liveEl) {
+            return;
+        }
+
+        if (autoRefresh && !autoRefresh.checked) {
+            liveEl.classList.add('is-paused');
+        } else {
+            liveEl.classList.remove('is-paused');
+        }
+    }
+
+    function updateRuntimeSummaryCards(summary) {
+        if (!summary || !summary.length) {
+            return;
+        }
+
+        summary.forEach(function (card) {
+            var el = document.querySelector('[data-runtime-summary="' + card.key + '"]');
+
+            if (!el) {
+                return;
+            }
+
+            var valueEl = el.querySelector('[data-field="value"]');
+            var subtitleEl = el.querySelector('[data-field="subtitle"]');
+            var statusEl = el.querySelector('[data-field="status"]');
+
+            if (valueEl) {
+                valueEl.textContent = card.value;
+            }
+
+            if (subtitleEl) {
+                subtitleEl.textContent = card.subtitle;
+            }
+
+            if (statusEl) {
+                statusEl.textContent = card.status_label;
+                statusEl.className = 'ops-health-badge ops-health-badge--' + card.status_color;
+            }
+
+            el.className = 'ops-card ops-metric-card ops-metric-card--' + card.color;
+        });
+    }
+
+    function updateRuntimeSection(sectionKey, data, fields) {
+        var section = document.querySelector('[data-runtime-section="' + sectionKey + '"]');
+
+        if (!section || !data) {
+            return;
+        }
+
+        fields.forEach(function (field) {
+            var el = section.querySelector('[data-field="' + field + '"]');
+
+            if (el) {
+                el.textContent = data[field] !== undefined && data[field] !== null ? data[field] : '—';
+            }
+        });
+
+        if (sectionKey === 'php_fpm') {
+            var bar = section.querySelector('[data-field="utilization_bar"]');
+            var utilization = Number(data.worker_utilization || 0);
+
+            if (bar) {
+                bar.style.width = Math.min(100, utilization) + '%';
+                bar.className = 'progress-bar bg-' + (data.status_color || 'primary');
+            }
+        }
+    }
+
+    function updateRuntimeStuckTable(stuck) {
+        var tbody = document.getElementById('ops-runtime-stuck-table');
+        var totalEl = document.querySelector('[data-field="stuck_total"]');
+
+        if (totalEl) {
+            totalEl.textContent = stuck && stuck.total !== undefined ? stuck.total : 0;
+        }
+
+        if (!tbody) {
+            return;
+        }
+
+        var processes = (stuck && stuck.processes) ? stuck.processes : [];
+
+        if (!processes.length) {
+            tbody.innerHTML = '<tr data-empty-row="1"><td colspan="7" class="text-center text-muted py-4">No stuck processes detected</td></tr>';
+
+            return;
+        }
+
+        tbody.innerHTML = processes.map(function (process) {
+            return '<tr>'
+                + '<td>' + (process.type_label || '') + '</td>'
+                + '<td>' + (process.name || '') + '</td>'
+                + '<td>' + (process.pid || '—') + '</td>'
+                + '<td>' + (process.started || '') + '</td>'
+                + '<td>' + (process.running_for || '') + '</td>'
+                + '<td><span class="ops-health-badge ops-health-badge--' + (process.status_color || 'secondary') + '"><span class="ops-health-badge__dot"></span>' + (process.status_label || '') + '</span></td>'
+                + '<td>' + (process.recommendation || '') + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    function updateRuntimeRecommendations(recommendations) {
+        var container = document.getElementById('ops-runtime-recommendations');
+
+        if (!container || !recommendations || !recommendations.length) {
+            return;
+        }
+
+        container.innerHTML = recommendations.map(function (item) {
+            var severityLabel = item.severity ? item.severity.charAt(0).toUpperCase() + item.severity.slice(1) : 'Info';
+
+            return '<div class="col-xl-4 col-md-6">'
+                + '<div class="ops-card h-100 p-3 border">'
+                + '<div class="d-flex align-items-center gap-2 mb-2">'
+                + '<span class="ops-health-badge ops-health-badge--' + (item.severity_color || 'secondary') + '"><span class="ops-health-badge__dot"></span>' + severityLabel + '</span>'
+                + '<strong>' + (item.title || '') + '</strong>'
+                + '</div>'
+                + '<p class="text-muted small mb-2">' + (item.description || '') + '</p>'
+                + '<p class="mb-0 small"><strong>Action:</strong> ' + (item.action || '') + '</p>'
+                + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
+    function applyRuntimePayload(payload) {
+        if (!payload) {
+            return;
+        }
+
+        updateRuntimeSummaryCards(payload.summary || []);
+        updateRuntimeSection('php_fpm', payload.php_fpm, [
+            'total_workers',
+            'busy_workers',
+            'idle_workers',
+            'listen_queue',
+            'max_children_reached',
+            'slow_requests',
+            'avg_response_ms',
+            'requests_per_second',
+            'worker_utilization',
+        ]);
+        updateRuntimeSection('scheduler', payload.scheduler, [
+            'status_label',
+            'last_tick',
+            'next_tick',
+            'scheduled_commands',
+            'running_commands',
+            'failed_today',
+            'avg_runtime',
+            'longest_runtime',
+        ]);
+        updateRuntimeSection('queue', payload.queue, [
+            'pending_jobs',
+            'processing_jobs',
+            'failed_jobs',
+            'retrying_jobs',
+            'avg_runtime',
+            'longest_running_for',
+            'worker_count',
+            'status_label',
+        ]);
+        updateRuntimeStuckTable(payload.stuck_processes || {});
+        updateRuntimeRecommendations(payload.recommendations || []);
+    }
+
+    function refreshRuntimeMetrics() {
+        var url = window.opsDashboardRuntimeMetricsUrl;
+
+        if (!url || !document.getElementById('ops-runtime-panel')) {
+            return;
+        }
+
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Runtime metrics request failed');
+                }
+
+                return response.json();
+            })
+            .then(function (payload) {
+                applyRuntimePayload(payload);
+            })
+            .catch(function (error) {
+                console.warn('OPS dashboard runtime metrics refresh failed:', error);
+            });
+    }
+
+    function scheduleRuntimeMetricsRefresh() {
+        if (runtimeMetricsTimer) {
+            clearInterval(runtimeMetricsTimer);
+            runtimeMetricsTimer = null;
+        }
+
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (autoRefresh && !autoRefresh.checked) {
+            updateRuntimeLiveIndicator();
+
+            return;
+        }
+
+        runtimeMetricsTimer = setInterval(refreshRuntimeMetrics, RUNTIME_REFRESH_MS);
+        updateRuntimeLiveIndicator();
+    }
+
+    function initRuntimePanel() {
+        if (!document.getElementById('ops-runtime-panel')) {
+            return;
+        }
+
+        applyRuntimePayload(window.opsDashboardRuntime || null);
+        scheduleRuntimeMetricsRefresh();
+    }
+
     function init() {
         var data = window.opsDashboardData || {};
 
@@ -740,6 +974,7 @@
         bindNavbarControls();
         schedulePaymentMetricsRefresh();
         initTrafficPanel();
+        initRuntimePanel();
     }
 
     document.addEventListener('DOMContentLoaded', init);
@@ -748,6 +983,7 @@
         init: init,
         refreshPaymentMetrics: refreshPaymentMetrics,
         refreshTrafficMetrics: refreshTrafficMetrics,
+        refreshRuntimeMetrics: refreshRuntimeMetrics,
         destroy: function () {
             if (paymentMetricsTimer) {
                 clearInterval(paymentMetricsTimer);
@@ -756,6 +992,10 @@
             if (trafficMetricsTimer) {
                 clearInterval(trafficMetricsTimer);
                 trafficMetricsTimer = null;
+            }
+            if (runtimeMetricsTimer) {
+                clearInterval(runtimeMetricsTimer);
+                runtimeMetricsTimer = null;
             }
             Object.keys(charts).forEach(destroyChart);
         },

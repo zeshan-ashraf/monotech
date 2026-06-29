@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Dashboard\ApplicationRuntimeService;
 use App\Services\Dashboard\OpsDashboardPlaceholderService;
 use App\Services\Dashboard\PaymentDashboardService;
 use App\Services\Dashboard\SystemService;
@@ -18,6 +19,7 @@ class OpsDashboardController extends Controller
         private readonly OpsDashboardPlaceholderService $placeholderService,
         private readonly PaymentDashboardService $paymentDashboardService,
         private readonly TrafficDashboardService $trafficDashboardService,
+        private readonly ApplicationRuntimeService $applicationRuntimeService,
     ) {
     }
 
@@ -30,11 +32,13 @@ class OpsDashboardController extends Controller
         $overviewCards = $this->systemService->overviewCards($serverInfo);
         $gatewayPayments = $this->paymentDashboardService->gatewaySections();
         $traffic = $this->trafficDashboardService->dashboardPayload(5);
+        $runtime = $this->applicationRuntimeService->dashboardPayload();
 
         return view('admin.dashboard.index', [
             'serverInfo' => $serverInfo,
             'overviewCards' => $overviewCards,
             'traffic' => $traffic,
+            'runtime' => $runtime,
             'gatewayPayments' => $gatewayPayments,
             'transactions' => $this->paymentDashboardService->recentTransactions(),
             'alerts' => $this->placeholderService->alerts(),

@@ -25,6 +25,9 @@
                         {{-- Live: API traffic --}}
                         @include('admin.dashboard.traffic', ['traffic' => $traffic])
 
+                        {{-- Live: Application runtime --}}
+                        @include('admin.dashboard.application-runtime', ['runtime' => $runtime])
+
                         {{-- Payments & Alerts --}}
                         <div class="row g-3 mb-3">
                             <div class="col-xl-8">
@@ -51,6 +54,8 @@
         window.opsDashboardPaymentMetricsUrl = @json(route('admin.ops.dashboard.payment_metrics'));
         window.opsDashboardTrafficMetricsUrl = @json(route('admin.ops.dashboard.traffic_metrics'));
         window.opsDashboardTraffic = @json($traffic);
+        window.opsDashboardRuntimeMetricsUrl = @json(route('admin.ops.dashboard.runtime_metrics'));
+        window.opsDashboardRuntime = @json($runtime);
     </script>
     <script src="{{ asset('js/dashboard.js') }}"></script>
 @endpush

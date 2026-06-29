@@ -8,6 +8,7 @@ use App\Models\ScheduleSetting;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use App\Services\Dashboard\SchedulerService;
 
 class Kernel extends ConsoleKernel
 {
@@ -131,6 +132,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('logs:repair-permissions')->everyMinute();
 
+        app(SchedulerService::class)->storeScheduledCommandCount(count($schedule->events()));
     }
 
     /**

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\Authorization\TeamController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DashboardMetricsController;
 use App\Http\Controllers\Admin\OpsDashboardController;
+use App\Http\Controllers\Admin\SystemMetricsController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\PayoutController;
 use App\Http\Controllers\Admin\SettlementController;
@@ -25,6 +26,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     Route::get('/ops-dashboard', [OpsDashboardController::class, 'index'])->name('ops.dashboard');
     Route::get('/ops-dashboard/payment-metrics', [OpsDashboardController::class, 'paymentMetrics'])->name('ops.dashboard.payment_metrics');
     Route::get('/ops-dashboard/traffic-metrics', [OpsDashboardController::class, 'trafficMetrics'])->name('ops.dashboard.traffic_metrics');
+    Route::get('/ops-dashboard/runtime-metrics', SystemMetricsController::class)->name('ops.dashboard.runtime_metrics');
     Route::get('/testing', [DashboardController::class, 'testing'])->name('testing');
     Route::get('/add-data/{id}', [DashboardController::class, 'prevClientSettlementEntry'])->name('add.data');
     Route::get('/profile/form', [DashboardController::class, 'profile'])->name('profile');
