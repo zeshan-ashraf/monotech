@@ -46,6 +46,7 @@ return [
         'rejected_requests',
         'schedule_debug',
         'payin_diagnostics',
+        'zee',
         'laravel',
     ],
 

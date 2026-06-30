@@ -34,6 +34,7 @@ return [
         '#^api/payout-status-check$#i' => 'payout_status',
         '#^api/(v1/)?get-dashboard-data$#i' => 'dashboard',
         '#^api/jazzcash/callback$#i' => 'webhook',
+        '#^api/v2/webhook$#i' => 'webhook',
         '#^api/v1/payment-checkout$#i' => 'payin',
         '#^api/v1/payin-checkout$#i' => 'payin',
         '#^api/payin/#i' => 'payin',
