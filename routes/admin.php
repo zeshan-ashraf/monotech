@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/settlement-grid', [DashboardController::class, 'settlementGrid'])->name('dashboard.settlement_grid');
     Route::get('/dashboard/metrics', [DashboardMetricsController::class, 'index'])->name('dashboard.metrics');
     Route::get('/dashboard/metrics/{userId}', [DashboardMetricsController::class, 'show'])->name('dashboard.metrics.show');
     Route::get('/zig-dashboard', [DashboardController::class, 'zigIndex'])->name('zig_dashboard');

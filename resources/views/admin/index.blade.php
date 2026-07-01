@@ -89,6 +89,71 @@
             .form-switch .form-check-input{
                     margin-left: 0 !important;
             }
+
+            .settlement-poll-toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 1rem;
+                padding: 0.65rem 1rem;
+                background: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-bottom: 0;
+            }
+            .settlement-poll-toolbar__label {
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: #4b4b4b;
+                text-transform: uppercase;
+            }
+            .settlement-poll-status {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                font-size: 0.8rem;
+                color: #6e6b7b;
+            }
+            .settlement-poll-status__dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #b9b9c3;
+            }
+            .settlement-poll-status__dot.is-live {
+                background: #28c76f;
+                box-shadow: 0 0 0 0 rgba(40, 199, 111, 0.5);
+                animation: settlement-poll-pulse 1.8s infinite;
+            }
+            .settlement-poll-status__dot.is-syncing {
+                background: #ff9f43;
+                animation: settlement-poll-spin 0.8s linear infinite;
+            }
+            .settlement-poll-status__dot.is-off {
+                background: #b9b9c3;
+            }
+            @keyframes settlement-poll-pulse {
+                0% { box-shadow: 0 0 0 0 rgba(40, 199, 111, 0.45); }
+                70% { box-shadow: 0 0 0 8px rgba(40, 199, 111, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(40, 199, 111, 0); }
+            }
+            @keyframes settlement-poll-spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            [data-poll-scope].poll-tick-up {
+                animation: settlement-tick-up 0.65s ease;
+            }
+            [data-poll-scope].poll-tick-down {
+                animation: settlement-tick-down 0.65s ease;
+            }
+            @keyframes settlement-tick-up {
+                0% { background-color: rgba(40, 199, 111, 0.45); }
+                100% { background-color: transparent; }
+            }
+            @keyframes settlement-tick-down {
+                0% { background-color: rgba(234, 84, 85, 0.45); }
+                100% { background-color: transparent; }
+            }
             
         </style>
 @endpush
@@ -121,21 +186,21 @@
                             <div class="@if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin") col-md-2 @else col-md-3 @endif">
                                 <div class="card bg-success">
                                     <div class="card-body pb-50">
-                                        <h5 class="text-white">No of Sub Stores: <span class="fw-bolder" style="font-size:14px">{{ $sub_stores }}</span> </h5>
+                                        <h5 class="text-white">No of Sub Stores: <span class="fw-bolder" style="font-size:14px" data-poll-scope="card" data-poll-metric="sub_stores">{{ $sub_stores }}</span> </h5>
                                     </div>
                                 </div>
                             </div>
                             <div class="@if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin") col-md-3 @else col-md-3 @endif">
                                 <div class="card bg-info">
                                     <div class="card-body pb-50">
-                                        <h5 class="text-white">Today Payin No: <span class="fw-bolder" style="font-size:14px">{{ $transaction }}</span> </h5>
+                                        <h5 class="text-white">Today Payin No: <span class="fw-bolder" style="font-size:14px" data-poll-scope="card" data-poll-metric="payin_count">{{ $transaction }}</span> </h5>
                                     </div>
                                 </div>
                             </div>
                             <div class="@if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Admin") col-md-2 @else col-md-3 @endif">
                                 <div class="card bg-danger">
                                     <div class="card-body pb-50">
-                                        <h5 class="text-white">Today Payout No: <span class="fw-bolder" style="font-size:14px">{{ $payout }}</span> </h5>
+                                        <h5 class="text-white">Today Payout No: <span class="fw-bolder" style="font-size:14px" data-poll-scope="card" data-poll-metric="payout_count">{{ $payout }}</span> </h5>
                                     </div>
                                 </div>
                             </div>
@@ -143,7 +208,7 @@
                             <div class="col-md-3">
                                 <div class="card bg-warning">
                                     <div class="card-body pb-50">
-                                        <h5 class="text-black">Monthly EP Payin: <span class="fw-bolder" style="font-size:20px">{{ number_format(round($totalMonthlyAmount,0))}}</span> </h5>
+                                        <h5 class="text-black">Monthly EP Payin: <span class="fw-bolder" style="font-size:20px" data-poll-scope="card" data-poll-metric="monthly_ep_payin">{{ number_format(round($totalMonthlyAmount,0))}}</span> </h5>
                                     </div>
                                 </div>
                             </div>
@@ -154,6 +219,36 @@
                         <div class="row justify-content-center align-items-center mt-1">
                             <div class="col-lg-12 col-12">
                                 <div class="card card-company-table">
+                                    @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
+                                    <div class="settlement-poll-toolbar">
+                                        <div class="settlement-poll-status">
+                                            <span class="settlement-poll-status__dot is-off" id="settlement-poll-status-dot"></span>
+                                            <span id="settlement-poll-status-label">Paused</span>
+                                            <span class="ms-2" id="settlement-poll-updated-at"></span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="settlement-poll-toolbar__label">Auto Refresh</span>
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input" type="checkbox" role="switch" id="settlement-auto-refresh">
+                                            </div>
+                                        </div>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fa fa-refresh"></i>
+                                                <span id="settlement-poll-interval-label">30s</span>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                @foreach(['30s', '1m', '5m', '10m'] as $interval)
+                                                    <li>
+                                                        <button class="dropdown-item settlement-poll-interval {{ $interval === '30s' ? 'active' : '' }}" type="button" data-interval="{{ $interval }}">
+                                                            {{ $interval }}
+                                                        </button>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    @endif
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
                                             <table class="table table-bordered">
@@ -185,8 +280,8 @@
                                                                 </div>
                                                             </th>
                                                         @endforeach
-                                                        <th>{{number_format(round($surplusAmount->jazzcash,0))}}</th>
-                                                        <th>{{number_format(round($surplusAmount->easypaisa,0))}}</th>
+                                                        <th data-poll-scope="surplus" data-poll-metric="jazzcash">{{number_format(round($surplusAmount->jazzcash,0))}}</th>
+                                                        <th data-poll-scope="surplus" data-poll-metric="easypaisa">{{number_format(round($surplusAmount->easypaisa,0))}}</th>
                                                         <th colspan="6"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
                                                         
                                                     </tr>
@@ -269,26 +364,24 @@
                                                             <td class="client">{{ $user->name }}</td>
                                                     
                                                             @if(auth()->user()->user_role == "Super Admin" || auth()->user()->id == $user->id)
-                                                                <td>{{ number_format($item['prev_balance']) }}</td>
-                                                                <td class="bg-green">{{ number_format($item['jc_payin']) }}</td>
-                                                                <td class="bg-green">{{ number_format($item['ep_payin']) }}</td>
-                                                                <td class="bg-green font-weight-bold">{{ number_format($item['total_payin']) }}</td>
-                                                                <td class="font-weight-bold text-red">{{ number_format($item['reverse_amount']) }}</td>
-                                                                <td class="bg-red">{{ number_format($item['jc_payout']) }}</td>
-                                                                <td class="bg-red">{{ number_format($item['ibft_amount']) }}</td>
-                                                                <td class="bg-red">{{ number_format($item['ep_payout']) }}</td>
-                                                                <td class="bg-red font-weight-bold">{{ number_format($item['total_payout']) }}</td>
-                                                                <td>{{ number_format($item['prev_usdt']) }}</td>
-                                                                <td>{{ number_format($item['wallet_transfer']) }}</td>
+                                                                <td data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="prev_balance">{{ number_format($item['prev_balance']) }}</td>
+                                                                <td class="bg-green" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="jc_payin">{{ number_format($item['jc_payin']) }}</td>
+                                                                <td class="bg-green" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="ep_payin">{{ number_format($item['ep_payin']) }}</td>
+                                                                <td class="bg-green font-weight-bold" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="total_payin">{{ number_format($item['total_payin']) }}</td>
+                                                                <td class="font-weight-bold text-red" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="reverse_amount">{{ number_format($item['reverse_amount']) }}</td>
+                                                                <td class="bg-red" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="jc_payout">{{ number_format($item['jc_payout']) }}</td>
+                                                                <td class="bg-red" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="ibft_amount">{{ number_format($item['ibft_amount']) }}</td>
+                                                                <td class="bg-red" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="ep_payout">{{ number_format($item['ep_payout']) }}</td>
+                                                                <td class="bg-red font-weight-bold" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="total_payout">{{ number_format($item['total_payout']) }}</td>
+                                                                <td data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="prev_usdt">{{ number_format($item['prev_usdt']) }}</td>
+                                                                <td data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="wallet_transfer">{{ number_format($item['wallet_transfer']) }}</td>
                                                             @endif
                                                     
-                                                            <td class="font-weight-bold text-red">{{ number_format($item['unsettled_amount']) }}</td>
-                                                            {{--<td class="bg-gray">{{ number_format($item['assigned_amount']->jazzcash ?? 0) }}</td>
-                                                            <td class="bg-gray">{{ number_format($item['assigned_amount']->easypaisa ?? 0) }}</td>--}}
-                                                            <td colspan="2" class="bg-gray font-weight-bold">{{ number_format($item['assigned_amount']->payout_balance ?? 0) }}</td>
+                                                            <td class="font-weight-bold text-red" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="unsettled_amount">{{ number_format($item['unsettled_amount']) }}</td>
+                                                            <td colspan="2" class="bg-gray font-weight-bold" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="assigned_payout">{{ number_format($item['assigned_amount']->payout_balance ?? 0) }}</td>
                                                     
                                                             @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == $user->id)
-                                                            <td class="bg-warning">{{ number_format(round($item['unsettled_amount_balance'], 0)) }}</td>
+                                                            <td class="bg-warning" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="unsettled_amount_balance">{{ number_format(round($item['unsettled_amount_balance'], 0)) }}</td>
                                                             @endif
                                                             @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == 4 || auth()->user()->id == 23)
                                                             <td class="bg-warning">
@@ -312,7 +405,7 @@
                                                                         @if($item['setting']->auto == 1) checked @endif>
                                                                 </div>
                                                             </td>
-                                                            <td class="font-weight-bold text-green">{{ number_format($item['rev_cln']) }}</td>
+                                                            <td class="font-weight-bold text-green" data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="rev_cln">{{ number_format($item['rev_cln']) }}</td>
                                                             <td>
                                                                 <a data-target="#attributeModal"
                                                                     class="btn btn-primary waves-effect waves-float waves-light open_modal" 
@@ -330,25 +423,23 @@
                                                             <td class="client font-weight-bold">Total</td>
                                                         
                                                             @if(auth()->user()->user_role == "Super Admin")
-                                                                <td class="font-weight-bold">{{ number_format($totals['prev_balance']) }}</td>
-                                                                <td class="bg-green font-weight-bold">{{ number_format($totals['jc_payin']) }}</td>
-                                                                <td class="bg-green font-weight-bold">{{ number_format($totals['ep_payin']) }}</td>
-                                                                <td class="bg-green font-weight-bold">{{ number_format($totals['total_payin']) }}</td>
-                                                                <td class="bg-green font-weight-bold">{{ number_format($totals['reverse_amount']) }}</td>
-                                                                <td class="bg-red font-weight-bold">{{ number_format($totals['jc_payout']) }}</td>
-                                                                <td class="bg-red font-weight-bold">{{ number_format($totals['total_ibft_amount']) }}</td>
-                                                                <td class="bg-red font-weight-bold">{{ number_format($totals['ep_payout']) }}</td>
-                                                                <td class="bg-red font-weight-bold">{{ number_format($totals['total_payout']) }}</td>
-                                                                <td class="font-weight-bold">{{ number_format($totals['prev_usdt']) }}</td>
-                                                                <td class="font-weight-bold">{{ number_format($totals['wallet_transfer']) }}</td>
+                                                                <td class="font-weight-bold" data-poll-scope="totals" data-poll-metric="prev_balance">{{ number_format($totals['prev_balance']) }}</td>
+                                                                <td class="bg-green font-weight-bold" data-poll-scope="totals" data-poll-metric="jc_payin">{{ number_format($totals['jc_payin']) }}</td>
+                                                                <td class="bg-green font-weight-bold" data-poll-scope="totals" data-poll-metric="ep_payin">{{ number_format($totals['ep_payin']) }}</td>
+                                                                <td class="bg-green font-weight-bold" data-poll-scope="totals" data-poll-metric="total_payin">{{ number_format($totals['total_payin']) }}</td>
+                                                                <td class="bg-green font-weight-bold" data-poll-scope="totals" data-poll-metric="reverse_amount">{{ number_format($totals['reverse_amount']) }}</td>
+                                                                <td class="bg-red font-weight-bold" data-poll-scope="totals" data-poll-metric="jc_payout">{{ number_format($totals['jc_payout']) }}</td>
+                                                                <td class="bg-red font-weight-bold" data-poll-scope="totals" data-poll-metric="total_ibft_amount">{{ number_format($totals['total_ibft_amount']) }}</td>
+                                                                <td class="bg-red font-weight-bold" data-poll-scope="totals" data-poll-metric="ep_payout">{{ number_format($totals['ep_payout']) }}</td>
+                                                                <td class="bg-red font-weight-bold" data-poll-scope="totals" data-poll-metric="total_payout">{{ number_format($totals['total_payout']) }}</td>
+                                                                <td class="font-weight-bold" data-poll-scope="totals" data-poll-metric="prev_usdt">{{ number_format($totals['prev_usdt']) }}</td>
+                                                                <td class="font-weight-bold" data-poll-scope="totals" data-poll-metric="wallet_transfer">{{ number_format($totals['wallet_transfer']) }}</td>
                                                             @endif
                                                         
-                                                            <td class="font-weight-bold text-red">{{ number_format($totals['unsettled_amount']) }}</td>
-                                                            {{--<td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_jc']) }}</td>
-                                                            <td class="bg-gray font-weight-bold">{{ number_format($totals['assigned_ep']) }}</td>--}}
-                                                            <td colspan="2" class="bg-gray font-weight-bold">{{ number_format($totals['assigned_payout']) }}</td>
-                                                            <td colspan="3" class="bg-warning font-weight-bold">{{ number_format($totals['unsettled_amount_balance']) }}</td>
-                                                            <td class="font-weight-bold text-green">{{ number_format($totals['total_rev_cln']) }}</td>
+                                                            <td class="font-weight-bold text-red" data-poll-scope="totals" data-poll-metric="unsettled_amount">{{ number_format($totals['unsettled_amount']) }}</td>
+                                                            <td colspan="2" class="bg-gray font-weight-bold" data-poll-scope="totals" data-poll-metric="assigned_payout">{{ number_format($totals['assigned_payout']) }}</td>
+                                                            <td colspan="3" class="bg-warning font-weight-bold" data-poll-scope="totals" data-poll-metric="unsettled_amount_balance">{{ number_format($totals['unsettled_amount_balance']) }}</td>
+                                                            <td class="font-weight-bold text-green" data-poll-scope="totals" data-poll-metric="total_rev_cln">{{ number_format($totals['total_rev_cln']) }}</td>
                                                         </tr>
                                                     @endif
 
@@ -424,7 +515,6 @@ $(document).ready(function () {
             contentType: 'application/json',
             data: JSON.stringify({ id: id, type: type, status: status ? 1 : 0 }),
             success: function (response) {
-                location.reload();
                 console.log('Toggle updated:', response);
             },
             error: function (xhr, status, error) {
@@ -519,4 +609,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 </script>
+@if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
+<script>
+    window.settlementDashboardPollConfig = {
+        enabled: true,
+        url: @json(route('admin.dashboard.settlement_grid')),
+    };
+</script>
+<script src="{{ asset('js/settlement-dashboard-poll.js') }}"></script>
+@endif
 @endpush

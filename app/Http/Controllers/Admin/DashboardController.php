@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\Payout;
-use App\Models\Transaction;
 use App\Models\ArcheiveTransaction;
-use App\Models\{User,Settlement, Setting, BackupTransaction, SurplusAmount,PayoutSetting};
+use App\Models\Transaction;
+use App\Models\{User,Settlement, Setting, BackupTransaction};
 use App\Services\DashboardMetricsService;
+use App\Services\SettlementDashboardService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -20,129 +20,39 @@ use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly SettlementDashboardService $settlementDashboard
+    ) {
+    }
 
     public function index()
     {
-        $today=today()->format('d-m-Y');
-        $clients = User::where('user_role', 'Client')->where('active',1)->get();
-        
-        $now = Carbon::now();
+        $today = today()->format('d-m-Y');
+        $viewer = auth()->user();
+        $viewData = $this->settlementDashboard->getViewData($viewer);
 
-        $totalMonthlyAmount = DB::table('settlements')
-            ->whereBetween('created_at', [
-                $now->copy()->startOfMonth()->subHours(5),
-                $now->copy()->endOfMonth()->subHours(5)
-            ])
-            ->sum('ep_payin');
-        $data = [];
-        
-        foreach ($clients as $client) {
-            $userId = $client->id;
-            
-            $prevBal=Settlement::where('user_id', $userId)->whereDate('date', today()->subDay())->value('closing_bal') ?? 0;
-            $settlement=Settlement::where('user_id', $userId)->whereDate('date', today())->first();
-            
-            $epPayinAmount = $settlement->ep_payin ?? 0;
-            $jcPayinAmount = $settlement->jc_payin ?? 0;
-            $epPayoutAmount = $settlement->ep_payout ?? 0;
-            $jcPayoutAmount = $settlement->jc_payout ?? 0;
-            
-            $rev_cln = $settlement->rev_cln ?? 0;
-            $reverseAmount = $settlement->reverse_amount ?? 0;
-            // if($userId == 2 || $userId == 18){
-                $payinSuccess= $epPayinAmount + $jcPayinAmount;
-            // }else{
-                // $payinSuccess= $jcPayinAmount;
-            // }
-            $ibftAmount= $settlement->ibft_amount ?? 0;
-            $payoutSuccess= $epPayoutAmount + $jcPayoutAmount + $ibftAmount;
-            $prevUsdt= $settlement->usdt ?? 0;
-            $prevWalletTrans= $settlement->wallet_transfer ?? 0;
-            $payinFee=$client->payin_fee  ?? 0;
-            $payoutFee=$client->payout_fee  ?? 0;
-            //getUnsettlement
-            // if ($userId == 2) {
-            //     $payinSuccess = $epPayinAmount;
-            // } 
-            $unsettletdAmount=$settlement->closing_bal ?? 0;
-            $assignedAmount=Setting::where('user_id',$userId)->select('jazzcash','easypaisa','payout_balance')->first();
-            $balance= $unsettletdAmount - $assignedAmount->payout_balance  ?? 0 ;
-            // $balance = $settlement->closing_bal ?? 0;
-    
-            $data[] = [ 
-                'user' => $client,
-                'prev_balance' => $prevBal,
-                'jc_payin' => $jcPayinAmount,
-                'ep_payin' => $epPayinAmount,
-                'reverse_amount' => $reverseAmount,
-                'total_payin' => $payinSuccess,
-                'jc_payout' => $jcPayoutAmount,
-                'ep_payout' => $epPayoutAmount,
-                'total_payout' => $payoutSuccess,
-                'prev_usdt' => $prevUsdt,
-                'wallet_transfer' => $prevWalletTrans,
-                'unsettled_amount' => $unsettletdAmount,
-                'unsettled_amount_balance' => $balance,
-                'assigned_amount' => Setting::where('user_id', $userId)->first(),
-                'setting' => Setting::where('user_id', $userId)->first(),
-                'set_id'=> $settlement->id ?? 0,
-                'rev_cln'=> $rev_cln,
-                'ibft_amount'=>$ibftAmount,
-            ];
-        }
-        $totals = [
-            'prev_balance' => 0,
-            'jc_payin' => 0,
-            'ep_payin' => 0,
-            'reverse_amount' => 0,
-            'total_payin' => 0,
-            'jc_payout' => 0,
-            'ep_payout' => 0,
-            'total_payout' => 0,
-            'prev_usdt' => 0,
-            'wallet_transfer' => 0,
-            'unsettled_amount' => 0,
-            'unsettled_amount_balance'=>0,
-            'assigned_jc' => 0,
-            'assigned_ep' => 0,
-            'assigned_payout' => 0,
-            'total_rev_cln' => 0,
-            'total_ibft_amount' => 0,
-        ];
-        
-        foreach ($data as $item) {
-            $totals['prev_balance'] += $item['prev_balance'] ?? 0;
-            $totals['jc_payin'] += $item['jc_payin'] ?? 0;
-            $totals['ep_payin'] += $item['ep_payin'] ?? 0;
-            $totals['reverse_amount'] += $item['reverse_amount'] ?? 0;
-            $totals['total_payin'] += $item['total_payin'] ?? 0;
-            $totals['jc_payout'] += $item['jc_payout'] ?? 0;
-            $totals['ep_payout'] += $item['ep_payout'] ?? 0;
-            $totals['total_payout'] += $item['total_payout'] ?? 0;
-            $totals['prev_usdt'] += $item['prev_usdt'] ?? 0;
-            $totals['wallet_transfer'] += $item['wallet_transfer'] ?? 0;
-            $totals['unsettled_amount'] += $item['unsettled_amount'] ?? 0;
-            $totals['unsettled_amount_balance'] += $item['unsettled_amount_balance'] ?? 0;
-            $totals['assigned_jc'] += $item['assigned_amount']->jazzcash ?? 0;
-            $totals['assigned_ep'] += $item['assigned_amount']->easypaisa ?? 0;
-            $totals['assigned_payout'] += $item['assigned_amount']->payout_balance ?? 0;
-            $totals['total_rev_cln'] += $item['rev_cln'] ?? 0;
-            $totals['total_ibft_amount'] += $item['ibft_amount'] ?? 0;
-        }
-        
-        $list = Setting::all();
-        $surplusAmount = SurplusAmount::where('id', '1')->first();
-        $data = collect($data)->sortBy(function ($item) {
-            return $item['user']->id == 24 ? 1 : 0;
-        })->values()->toArray();
-        $payout_setting = PayoutSetting::all();
+        $data = $viewData['data'];
+        $totals = $viewData['totals'];
+        $payout_setting = $viewData['payout_setting'];
+        $surplusAmount = $viewData['surplusAmount'];
+        $totalMonthlyAmount = $viewData['totalMonthlyAmount'];
 
         $metricsService = app(DashboardMetricsService::class);
-        $dashboardMetricClients = $metricsService->getVisibleClients(auth()->user());
+        $dashboardMetricClients = $metricsService->getVisibleClients($viewer);
         $dashboardMetricsPayload = $metricsService->getMetricsPayloadForClients($dashboardMetricClients);
 
         return view('admin.index', get_defined_vars());
+    }
 
+    public function settlementGrid(): JsonResponse
+    {
+        $viewer = auth()->user();
+
+        if (!in_array($viewer->user_role, ['Super Admin', 'Manager'], true)) {
+            abort(403);
+        }
+
+        return response()->json($this->settlementDashboard->getPayloadForViewer($viewer));
     }
     
     public function zigIndex()
