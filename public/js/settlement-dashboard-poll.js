@@ -70,31 +70,10 @@
         return document.querySelector(selector);
     }
 
-    function ensureTickArrow(el) {
-        if (!el || el.querySelector('.poll-tick-arrow')) {
-            return;
-        }
-        var arrow = document.createElement('span');
-        arrow.className = 'poll-tick-arrow';
-        arrow.setAttribute('aria-hidden', 'true');
-        el.insertBefore(arrow, el.firstChild);
-    }
-
-    function setTickArrow(el, direction) {
-        var arrow = el && el.querySelector('.poll-tick-arrow');
-        if (!arrow) {
-            return;
-        }
-        arrow.textContent = direction === 'up' ? '▲' : '▼';
-        arrow.style.color = direction === 'up' ? '#00c853' : '#ff1744';
-    }
-
     function flashCell(el, direction) {
         if (!el) {
             return;
         }
-        ensureTickArrow(el);
-        setTickArrow(el, direction);
         el.classList.remove('poll-tick-up', 'poll-tick-down', 'poll-sync-flash');
         void el.offsetWidth;
         el.classList.add(direction === 'up' ? 'poll-tick-up' : 'poll-tick-down');
@@ -120,20 +99,7 @@
     }
 
     function setCellText(el, value) {
-        var formatted = getDisplayText(el, value);
-        var arrow = el.querySelector('.poll-tick-arrow');
-
-        if (arrow) {
-            Array.from(el.childNodes).forEach(function (node) {
-                if (node !== arrow) {
-                    node.remove();
-                }
-            });
-            el.appendChild(document.createTextNode(formatted));
-            return;
-        }
-
-        el.textContent = formatted;
+        el.textContent = getDisplayText(el, value);
     }
 
     function animateValue(el, fromValue, toValue) {

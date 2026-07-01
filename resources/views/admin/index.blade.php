@@ -237,24 +237,6 @@
                     color: inherit;
                 }
             }
-            [data-poll-scope] .poll-tick-arrow {
-                display: inline-block;
-                font-size: 0.72em;
-                font-weight: 800;
-                margin-right: 2px;
-                vertical-align: baseline;
-                opacity: 0;
-            }
-            [data-poll-scope].poll-tick-up .poll-tick-arrow,
-            [data-poll-scope].poll-tick-down .poll-tick-arrow {
-                animation: settlement-arrow-pop 0.85s ease;
-            }
-            @keyframes settlement-arrow-pop {
-                0% { opacity: 0; transform: translateY(4px); }
-                20% { opacity: 1; transform: translateY(0); }
-                80% { opacity: 1; }
-                100% { opacity: 0; }
-            }
             .settlement-poll-table-wrap {
                 overflow-x: auto;
                 overflow-y: visible;
