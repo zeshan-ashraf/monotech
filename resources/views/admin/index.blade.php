@@ -156,6 +156,15 @@
                 gap: 0.4rem;
                 font-size: 0.8rem;
                 color: #6e6b7b;
+                flex-wrap: wrap;
+            }
+            #settlement-poll-countdown {
+                font-weight: 600;
+                color: #5e5873;
+                white-space: nowrap;
+            }
+            #settlement-poll-countdown.is-ticking {
+                color: #7367f0;
             }
             .settlement-poll-status__dot {
                 width: 8px;
@@ -326,6 +335,7 @@
                                         <div class="settlement-poll-status">
                                             <span class="settlement-poll-status__dot is-off" id="settlement-poll-status-dot"></span>
                                             <span id="settlement-poll-status-label">Paused</span>
+                                            <span class="ms-1" id="settlement-poll-countdown"></span>
                                             <span class="ms-1 text-muted" id="settlement-poll-change-summary"></span>
                                             <span class="ms-2" id="settlement-poll-updated-at"></span>
                                         </div>

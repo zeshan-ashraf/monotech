@@ -5,8 +5,9 @@
     'use strict';
 
     var config = window.settlementDashboardPollConfig || null;
-    var pollTimer = null;
+    var countdownTimer = null;
     var isFetching = false;
+    var secondsRemaining = 0;
     var lastValues = {};
     var STORAGE_KEY = 'settlement_dashboard_poll_prefs';
 
@@ -19,6 +20,10 @@
 
     function parseIntervalMs(interval) {
         return INTERVALS[interval] || INTERVALS['30s'];
+    }
+
+    function intervalToSeconds(interval) {
+        return Math.round(parseIntervalMs(interval) / 1000);
     }
 
     function loadPrefs() {
@@ -269,6 +274,83 @@
         }
     }
 
+    function formatCountdownLabel(seconds) {
+        var unit = seconds === 1 ? 'second' : 'seconds';
+        return 'Next Refresh In: ' + seconds + ' ' + unit;
+    }
+
+    function updateCountdownDisplay() {
+        var el = document.getElementById('settlement-poll-countdown');
+        if (!el) {
+            return;
+        }
+
+        var toggle = document.getElementById('settlement-auto-refresh');
+        el.classList.remove('is-ticking');
+
+        if (!toggle || !toggle.checked) {
+            el.textContent = '';
+            return;
+        }
+
+        if (document.hidden || isModalOpen()) {
+            el.textContent = 'Next Refresh In: paused';
+            return;
+        }
+
+        if (isFetching) {
+            el.textContent = 'Refreshing…';
+            return;
+        }
+
+        var seconds = Math.max(0, secondsRemaining);
+        el.textContent = formatCountdownLabel(seconds);
+        el.classList.add('is-ticking');
+    }
+
+    function resetCountdown() {
+        secondsRemaining = intervalToSeconds(getSelectedInterval());
+        updateCountdownDisplay();
+    }
+
+    function clearCountdownTimer() {
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+        }
+    }
+
+    function tickCountdown() {
+        var toggle = document.getElementById('settlement-auto-refresh');
+        if (!toggle || !toggle.checked) {
+            updateCountdownDisplay();
+            return;
+        }
+
+        if (document.hidden || isModalOpen()) {
+            updateCountdownDisplay();
+            return;
+        }
+
+        if (isFetching) {
+            updateCountdownDisplay();
+            return;
+        }
+
+        secondsRemaining -= 1;
+        updateCountdownDisplay();
+
+        if (secondsRemaining <= 0) {
+            refreshSettlementGrid();
+        }
+    }
+
+    function startCountdown() {
+        clearCountdownTimer();
+        resetCountdown();
+        countdownTimer = setInterval(tickCountdown, 1000);
+    }
+
     function setSyncState(state, changeCount) {
         var dot = document.getElementById('settlement-poll-status-dot');
         var label = document.getElementById('settlement-poll-status-label');
@@ -286,6 +368,7 @@
             if (summary) {
                 summary.textContent = '';
             }
+            updateCountdownDisplay();
             return;
         }
 
@@ -303,6 +386,7 @@
                     summary.style.fontWeight = '400';
                 }
             }
+            updateCountdownDisplay();
             return;
         }
 
@@ -311,6 +395,7 @@
         if (summary) {
             summary.textContent = '';
         }
+        updateCountdownDisplay();
     }
 
     function setUpdatedAt(isoString) {
@@ -392,30 +477,29 @@
             })
             .finally(function () {
                 isFetching = false;
+                if (shouldPoll()) {
+                    resetCountdown();
+                } else {
+                    updateCountdownDisplay();
+                }
             });
     }
 
-    function clearPollTimer() {
-        if (pollTimer) {
-            clearInterval(pollTimer);
-            pollTimer = null;
-        }
-    }
-
     function schedulePolling() {
-        clearPollTimer();
+        clearCountdownTimer();
 
         var toggle = document.getElementById('settlement-auto-refresh');
         if (!toggle || !toggle.checked) {
             setSyncState('off');
             setToolbarSyncing(false);
+            secondsRemaining = 0;
+            updateCountdownDisplay();
             return;
         }
 
-        var interval = getSelectedInterval();
         setSyncState('live', 0);
+        startCountdown();
         refreshSettlementGrid();
-        pollTimer = setInterval(refreshSettlementGrid, parseIntervalMs(interval));
     }
 
     function getSelectedInterval() {
@@ -477,9 +561,10 @@
 
         document.addEventListener('visibilitychange', function () {
             if (document.hidden) {
-                clearPollTimer();
+                clearCountdownTimer();
                 setSyncState('off');
                 setToolbarSyncing(false);
+                updateCountdownDisplay();
             } else {
                 schedulePolling();
             }
@@ -487,7 +572,10 @@
 
         var modal = document.querySelector('.CustomTypeModal');
         if (modal) {
-            modal.addEventListener('shown.bs.modal', clearPollTimer);
+            modal.addEventListener('shown.bs.modal', function () {
+                clearCountdownTimer();
+                updateCountdownDisplay();
+            });
             modal.addEventListener('hidden.bs.modal', schedulePolling);
         }
 
