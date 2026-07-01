@@ -70,70 +70,12 @@
         return document.querySelector(selector);
     }
 
-    function flashCell(el, direction) {
-        if (!el) {
-            return;
-        }
-        el.classList.remove('poll-tick-up', 'poll-tick-down', 'poll-sync-flash');
-        void el.offsetWidth;
-        el.classList.add(direction === 'up' ? 'poll-tick-up' : 'poll-tick-down');
-        window.setTimeout(function () {
-            el.classList.remove('poll-tick-up', 'poll-tick-down');
-        }, 900);
-    }
-
-    function flashSyncPulse(el) {
-        if (!el) {
-            return;
-        }
-        el.classList.remove('poll-sync-flash', 'poll-tick-up', 'poll-tick-down');
-        void el.offsetWidth;
-        el.classList.add('poll-sync-flash');
-        window.setTimeout(function () {
-            el.classList.remove('poll-sync-flash');
-        }, 600);
-    }
-
     function getDisplayText(el, value) {
         return formatNumber(value);
     }
 
     function setCellText(el, value) {
         el.textContent = getDisplayText(el, value);
-    }
-
-    function animateValue(el, fromValue, toValue) {
-        var from = Number(fromValue);
-        var to = Number(toValue);
-        if (!isFinite(from) || !isFinite(to)) {
-            setCellText(el, to);
-            return false;
-        }
-
-        if (from === to) {
-            return false;
-        }
-
-        var direction = to > from ? 'up' : 'down';
-        flashCell(el, direction);
-
-        var start = performance.now();
-        var duration = 650;
-
-        function frame(now) {
-            var progress = Math.min((now - start) / duration, 1);
-            var eased = 1 - Math.pow(1 - progress, 3);
-            var current = from + (to - from) * eased;
-            setCellText(el, current);
-            if (progress < 1) {
-                requestAnimationFrame(frame);
-            } else {
-                setCellText(el, to);
-            }
-        }
-
-        requestAnimationFrame(frame);
-        return true;
     }
 
     function updateMetric(scope, metric, value, userId) {
@@ -157,7 +99,8 @@
         }
 
         lastValues[key] = nextValue;
-        return animateValue(el, prevValue, nextValue);
+        setCellText(el, nextValue);
+        return true;
     }
 
     function applyTopCards(cards) {
@@ -225,12 +168,6 @@
         });
 
         return changed;
-    }
-
-    function pulseAllMetricCells() {
-        document.querySelectorAll('[data-poll-scope][data-poll-metric]').forEach(function (el) {
-            flashSyncPulse(el);
-        });
     }
 
     function setToolbarSyncing(isSyncing) {
@@ -426,8 +363,6 @@
                 return response.json();
             })
             .then(function (payload) {
-                pulseAllMetricCells();
-
                 var changeCount = 0;
                 changeCount += applyTopCards(payload.top_cards);
                 changeCount += applySurplus(payload.surplus);

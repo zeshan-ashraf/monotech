@@ -210,37 +210,9 @@
                 0%, 100% { color: #6e6b7b; }
                 40% { color: #7367f0; font-weight: 700; }
             }
-            [data-poll-scope] {
-                contain: paint;
-            }
-            [data-poll-scope].poll-sync-flash {
-                animation: settlement-sync-flash 0.55s ease !important;
-            }
-            @keyframes settlement-sync-flash {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.72; }
-            }
-            [data-poll-scope].poll-tick-up {
-                animation: settlement-tick-up 0.85s ease !important;
-            }
-            [data-poll-scope].poll-tick-down {
-                animation: settlement-tick-down 0.85s ease !important;
-            }
-            @keyframes settlement-tick-up {
-                0%, 55% {
-                    color: #00c853 !important;
-                }
-                100% {
-                    color: inherit;
-                }
-            }
-            @keyframes settlement-tick-down {
-                0%, 55% {
-                    color: #ff1744 !important;
-                }
-                100% {
-                    color: inherit;
-                }
+            .settlement-poll-table-wrap [data-poll-scope] {
+                font-variant-numeric: tabular-nums;
+                font-feature-settings: "tnum" 1;
             }
             .settlement-poll-table-wrap {
                 overflow-x: auto;
