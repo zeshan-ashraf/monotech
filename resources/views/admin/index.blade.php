@@ -203,15 +203,8 @@
                 animation: settlement-sync-flash 0.55s ease !important;
             }
             @keyframes settlement-sync-flash {
-                0% {
-                    box-shadow: inset 0 0 0 0 rgba(115, 103, 240, 0);
-                }
-                35% {
-                    box-shadow: inset 0 0 0 3px rgba(115, 103, 240, 0.55);
-                }
-                100% {
-                    box-shadow: inset 0 0 0 0 rgba(115, 103, 240, 0);
-                }
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.72; }
             }
             [data-poll-scope].poll-tick-up {
                 animation: settlement-tick-up 0.85s ease !important;
@@ -220,29 +213,19 @@
                 animation: settlement-tick-down 0.85s ease !important;
             }
             @keyframes settlement-tick-up {
-                0% {
+                0%, 55% {
                     color: #00c853 !important;
-                    box-shadow: inset 0 0 0 3px rgba(0, 200, 83, 0.95) !important;
-                }
-                55% {
-                    color: #00c853 !important;
-                    box-shadow: inset 0 0 0 2px rgba(0, 200, 83, 0.65) !important;
                 }
                 100% {
-                    box-shadow: inset 0 0 0 0 transparent !important;
+                    color: inherit;
                 }
             }
             @keyframes settlement-tick-down {
-                0% {
+                0%, 55% {
                     color: #ff1744 !important;
-                    box-shadow: inset 0 0 0 3px rgba(255, 23, 68, 0.95) !important;
-                }
-                55% {
-                    color: #ff1744 !important;
-                    box-shadow: inset 0 0 0 2px rgba(255, 23, 68, 0.65) !important;
                 }
                 100% {
-                    box-shadow: inset 0 0 0 0 transparent !important;
+                    color: inherit;
                 }
             }
             [data-poll-scope] .poll-tick-arrow {
