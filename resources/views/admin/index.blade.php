@@ -99,6 +99,26 @@
                 background: #f8f9fa;
                 border: 1px solid #dee2e6;
                 border-bottom: 0;
+                position: relative;
+                overflow: hidden;
+            }
+            .settlement-poll-toolbar.is-syncing .settlement-poll-toolbar__progress {
+                opacity: 1;
+            }
+            .settlement-poll-toolbar__progress {
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 3px;
+                width: 35%;
+                background: linear-gradient(90deg, #7367f0, #28c76f);
+                opacity: 0;
+                animation: settlement-poll-progress 1.1s ease-in-out infinite;
+                pointer-events: none;
+            }
+            @keyframes settlement-poll-progress {
+                0% { left: -35%; }
+                100% { left: 100%; }
             }
             .settlement-poll-toolbar__label {
                 font-size: 0.85rem;
@@ -126,7 +146,8 @@
             }
             .settlement-poll-status__dot.is-syncing {
                 background: #ff9f43;
-                animation: settlement-poll-spin 0.8s linear infinite;
+                box-shadow: 0 0 6px rgba(255, 159, 67, 0.8);
+                animation: settlement-poll-blink 0.55s ease-in-out infinite alternate;
             }
             .settlement-poll-status__dot.is-off {
                 background: #b9b9c3;
@@ -140,19 +161,96 @@
                 from { transform: rotate(0deg); }
                 to { transform: rotate(360deg); }
             }
+            @keyframes settlement-poll-blink {
+                from { opacity: 0.35; transform: scale(0.85); }
+                to { opacity: 1; transform: scale(1.15); }
+            }
+            #settlement-poll-updated-at.poll-ts-flash {
+                animation: settlement-ts-flash 0.7s ease;
+            }
+            @keyframes settlement-ts-flash {
+                0%, 100% { color: #6e6b7b; }
+                40% { color: #7367f0; font-weight: 700; }
+            }
+            [data-poll-scope] {
+                transition: transform 0.15s ease;
+            }
+            [data-poll-scope].poll-sync-flash {
+                animation: settlement-sync-flash 0.55s ease !important;
+            }
+            @keyframes settlement-sync-flash {
+                0% {
+                    box-shadow: inset 0 0 0 0 rgba(115, 103, 240, 0);
+                }
+                35% {
+                    box-shadow: inset 0 0 0 3px rgba(115, 103, 240, 0.55);
+                    filter: brightness(1.08);
+                }
+                100% {
+                    box-shadow: inset 0 0 0 0 rgba(115, 103, 240, 0);
+                }
+            }
             [data-poll-scope].poll-tick-up {
-                animation: settlement-tick-up 0.65s ease;
+                animation: settlement-tick-up 0.85s ease !important;
+                z-index: 2;
+                position: relative;
             }
             [data-poll-scope].poll-tick-down {
-                animation: settlement-tick-down 0.65s ease;
+                animation: settlement-tick-down 0.85s ease !important;
+                z-index: 2;
+                position: relative;
             }
             @keyframes settlement-tick-up {
-                0% { background-color: rgba(40, 199, 111, 0.45); }
-                100% { background-color: transparent; }
+                0% {
+                    color: #00c853 !important;
+                    box-shadow: inset 0 0 0 3px rgba(0, 200, 83, 0.95) !important;
+                    transform: scale(1.06);
+                    filter: brightness(1.15);
+                }
+                55% {
+                    color: #00c853 !important;
+                    box-shadow: inset 0 0 0 2px rgba(0, 200, 83, 0.65) !important;
+                }
+                100% {
+                    box-shadow: inset 0 0 0 0 transparent !important;
+                    transform: scale(1);
+                    filter: none;
+                }
             }
             @keyframes settlement-tick-down {
-                0% { background-color: rgba(234, 84, 85, 0.45); }
-                100% { background-color: transparent; }
+                0% {
+                    color: #ff1744 !important;
+                    box-shadow: inset 0 0 0 3px rgba(255, 23, 68, 0.95) !important;
+                    transform: scale(1.06);
+                    filter: brightness(1.12);
+                }
+                55% {
+                    color: #ff1744 !important;
+                    box-shadow: inset 0 0 0 2px rgba(255, 23, 68, 0.65) !important;
+                }
+                100% {
+                    box-shadow: inset 0 0 0 0 transparent !important;
+                    transform: scale(1);
+                    filter: none;
+                }
+            }
+            [data-poll-scope] .poll-tick-arrow {
+                display: inline-block;
+                font-size: 0.72em;
+                font-weight: 800;
+                margin-right: 2px;
+                vertical-align: baseline;
+                opacity: 0;
+            }
+            [data-poll-scope].poll-tick-up .poll-tick-arrow,
+            [data-poll-scope].poll-tick-down .poll-tick-arrow {
+                animation: settlement-arrow-pop 0.85s ease;
+            }
+            @keyframes settlement-arrow-pop {
+                0% { opacity: 0; transform: translateY(4px); }
+                20% { opacity: 1; transform: translateY(0); }
+                80% { opacity: 1; }
+                100% { opacity: 0; }
             }
             
         </style>
@@ -220,10 +318,12 @@
                             <div class="col-lg-12 col-12">
                                 <div class="card card-company-table">
                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
-                                    <div class="settlement-poll-toolbar">
+                                    <div class="settlement-poll-toolbar" id="settlement-poll-toolbar">
+                                        <div class="settlement-poll-toolbar__progress" aria-hidden="true"></div>
                                         <div class="settlement-poll-status">
                                             <span class="settlement-poll-status__dot is-off" id="settlement-poll-status-dot"></span>
                                             <span id="settlement-poll-status-label">Paused</span>
+                                            <span class="ms-1 text-muted" id="settlement-poll-change-summary"></span>
                                             <span class="ms-2" id="settlement-poll-updated-at"></span>
                                         </div>
                                         <div class="d-flex align-items-center gap-2">
