@@ -25,9 +25,6 @@
                         {{-- Live: API traffic --}}
                         @include('admin.dashboard.traffic', ['traffic' => $traffic])
 
-                        {{-- Live: Application runtime --}}
-                        @include('admin.dashboard.application-runtime', ['runtime' => $runtime])
-
                         {{-- Payments & Alerts --}}
                         <div class="row g-3 mb-3">
                             <div class="col-xl-8">
@@ -40,6 +37,9 @@
                                 @include('admin.dashboard.alerts', ['alerts' => $alerts])
                             </div>
                         </div>
+
+                        {{-- Live: Application runtime --}}
+                        @include('admin.dashboard.application-runtime', ['runtime' => $runtime])
 
                     </div>
                 </div>
