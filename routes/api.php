@@ -110,7 +110,7 @@ Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCal
 |
 */
 Route::prefix('v2')->as('webhook.')->group(function () {
-    Route::any('webhook', [WebhookController::class, 'handle'])->name('receive');
+    //Route::any('webhook', [WebhookController::class, 'handle'])->name('receive');
 });
 /*
 |--------------------------------------------------------------------------
