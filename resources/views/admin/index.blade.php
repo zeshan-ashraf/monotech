@@ -90,6 +90,9 @@
                     margin-left: 0 !important;
             }
 
+            .settlement-poll-card {
+                overflow: visible;
+            }
             .settlement-poll-toolbar {
                 display: flex;
                 align-items: center;
@@ -100,7 +103,15 @@
                 border: 1px solid #dee2e6;
                 border-bottom: 0;
                 position: relative;
-                overflow: hidden;
+            }
+            .settlement-poll-toolbar > .settlement-poll-status,
+            .settlement-poll-toolbar > .d-flex,
+            .settlement-poll-toolbar > .dropdown {
+                position: relative;
+                z-index: 2;
+            }
+            .settlement-poll-toolbar .dropdown-menu {
+                z-index: 1050;
             }
             .settlement-poll-toolbar.is-syncing .settlement-poll-toolbar__progress {
                 opacity: 1;
@@ -111,6 +122,7 @@
                 top: 0;
                 height: 3px;
                 width: 35%;
+                z-index: 1;
                 background: linear-gradient(90deg, #7367f0, #28c76f);
                 opacity: 0;
                 animation: settlement-poll-progress 1.1s ease-in-out infinite;
@@ -316,7 +328,7 @@
                         
                         <div class="row justify-content-center align-items-center mt-1">
                             <div class="col-lg-12 col-12">
-                                <div class="card card-company-table">
+                                <div class="card card-company-table settlement-poll-card">
                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                     <div class="settlement-poll-toolbar" id="settlement-poll-toolbar">
                                         <div class="settlement-poll-toolbar__progress" aria-hidden="true"></div>
@@ -332,8 +344,8 @@
                                                 <input class="form-check-input" type="checkbox" role="switch" id="settlement-auto-refresh">
                                             </div>
                                         </div>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <div class="dropdown" id="settlement-poll-interval-dropdown">
+                                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="settlement-poll-interval-toggle" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
                                                 <i class="fa fa-refresh"></i>
                                                 <span id="settlement-poll-interval-label">30s</span>
                                             </button>
