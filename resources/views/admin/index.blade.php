@@ -106,6 +106,9 @@
                 position: relative;
                 overflow: visible;
             }
+            .settlement-poll-toolbar > .settlement-poll-status {
+                margin-right: auto;
+            }
             .settlement-poll-toolbar > .settlement-poll-status,
             .settlement-poll-toolbar > .d-flex,
             .settlement-poll-toolbar > .dropdown {
@@ -153,10 +156,11 @@
             .settlement-poll-status {
                 display: inline-flex;
                 align-items: center;
-                gap: 0.4rem;
+                gap: 0.5rem;
                 font-size: 0.8rem;
                 color: #6e6b7b;
                 flex-wrap: wrap;
+                text-align: left;
             }
             #settlement-poll-countdown {
                 font-weight: 600;
@@ -167,8 +171,9 @@
                 color: #7367f0;
             }
             .settlement-poll-status__dot {
-                width: 8px;
-                height: 8px;
+                width: 15px;
+                height: 15px;
+                flex-shrink: 0;
                 border-radius: 50%;
                 background: #b9b9c3;
             }
