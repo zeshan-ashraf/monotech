@@ -91,7 +91,8 @@
             }
 
             .settlement-poll-card {
-                overflow: visible;
+                overflow-x: clip;
+                overflow-y: visible;
             }
             .settlement-poll-toolbar {
                 display: flex;
@@ -103,6 +104,7 @@
                 border: 1px solid #dee2e6;
                 border-bottom: 0;
                 position: relative;
+                overflow: visible;
             }
             .settlement-poll-toolbar > .settlement-poll-status,
             .settlement-poll-toolbar > .d-flex,
@@ -116,21 +118,31 @@
             .settlement-poll-toolbar.is-syncing .settlement-poll-toolbar__progress {
                 opacity: 1;
             }
+            .settlement-poll-toolbar__progress-track {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                height: 3px;
+                overflow: hidden;
+                pointer-events: none;
+                z-index: 1;
+            }
             .settlement-poll-toolbar__progress {
                 position: absolute;
                 left: 0;
                 top: 0;
-                height: 3px;
-                width: 35%;
-                z-index: 1;
+                height: 100%;
+                width: 30%;
                 background: linear-gradient(90deg, #7367f0, #28c76f);
                 opacity: 0;
+                will-change: transform;
                 animation: settlement-poll-progress 1.1s ease-in-out infinite;
                 pointer-events: none;
             }
             @keyframes settlement-poll-progress {
-                0% { left: -35%; }
-                100% { left: 100%; }
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(430%); }
             }
             .settlement-poll-toolbar__label {
                 font-size: 0.85rem;
@@ -174,8 +186,8 @@
                 to { transform: rotate(360deg); }
             }
             @keyframes settlement-poll-blink {
-                from { opacity: 0.35; transform: scale(0.85); }
-                to { opacity: 1; transform: scale(1.15); }
+                from { opacity: 0.45; }
+                to { opacity: 1; }
             }
             #settlement-poll-updated-at.poll-ts-flash {
                 animation: settlement-ts-flash 0.7s ease;
@@ -185,7 +197,7 @@
                 40% { color: #7367f0; font-weight: 700; }
             }
             [data-poll-scope] {
-                transition: transform 0.15s ease;
+                contain: paint;
             }
             [data-poll-scope].poll-sync-flash {
                 animation: settlement-sync-flash 0.55s ease !important;
@@ -196,7 +208,6 @@
                 }
                 35% {
                     box-shadow: inset 0 0 0 3px rgba(115, 103, 240, 0.55);
-                    filter: brightness(1.08);
                 }
                 100% {
                     box-shadow: inset 0 0 0 0 rgba(115, 103, 240, 0);
@@ -204,20 +215,14 @@
             }
             [data-poll-scope].poll-tick-up {
                 animation: settlement-tick-up 0.85s ease !important;
-                z-index: 2;
-                position: relative;
             }
             [data-poll-scope].poll-tick-down {
                 animation: settlement-tick-down 0.85s ease !important;
-                z-index: 2;
-                position: relative;
             }
             @keyframes settlement-tick-up {
                 0% {
                     color: #00c853 !important;
                     box-shadow: inset 0 0 0 3px rgba(0, 200, 83, 0.95) !important;
-                    transform: scale(1.06);
-                    filter: brightness(1.15);
                 }
                 55% {
                     color: #00c853 !important;
@@ -225,16 +230,12 @@
                 }
                 100% {
                     box-shadow: inset 0 0 0 0 transparent !important;
-                    transform: scale(1);
-                    filter: none;
                 }
             }
             @keyframes settlement-tick-down {
                 0% {
                     color: #ff1744 !important;
                     box-shadow: inset 0 0 0 3px rgba(255, 23, 68, 0.95) !important;
-                    transform: scale(1.06);
-                    filter: brightness(1.12);
                 }
                 55% {
                     color: #ff1744 !important;
@@ -242,8 +243,6 @@
                 }
                 100% {
                     box-shadow: inset 0 0 0 0 transparent !important;
-                    transform: scale(1);
-                    filter: none;
                 }
             }
             [data-poll-scope] .poll-tick-arrow {
@@ -264,6 +263,13 @@
                 80% { opacity: 1; }
                 100% { opacity: 0; }
             }
+            .settlement-poll-table-wrap {
+                overflow-x: auto;
+                overflow-y: visible;
+            }
+            #dashboard-ecommerce.settlement-poll-active {
+                overflow-x: clip;
+            }
             
         </style>
 @endpush
@@ -275,7 +281,7 @@
         </div>
         <div class="content-body">
             <!-- Dashboard Ecommerce Starts -->
-            <section id="dashboard-ecommerce">
+            <section id="dashboard-ecommerce" @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager") class="settlement-poll-active" @endif>
                 <div class="row match-height">
                     <!-- Statistics Card -->
                     @php
@@ -331,7 +337,9 @@
                                 <div class="card card-company-table settlement-poll-card">
                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                     <div class="settlement-poll-toolbar" id="settlement-poll-toolbar">
-                                        <div class="settlement-poll-toolbar__progress" aria-hidden="true"></div>
+                                        <div class="settlement-poll-toolbar__progress-track" aria-hidden="true">
+                                            <div class="settlement-poll-toolbar__progress"></div>
+                                        </div>
                                         <div class="settlement-poll-status">
                                             <span class="settlement-poll-status__dot is-off" id="settlement-poll-status-dot"></span>
                                             <span id="settlement-poll-status-label">Paused</span>
@@ -362,7 +370,7 @@
                                     </div>
                                     @endif
                                     <div class="card-body p-0">
-                                        <div class="table-responsive">
+                                        <div class="table-responsive settlement-poll-table-wrap">
                                             <table class="table table-bordered">
                                                 <thead>
                                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
