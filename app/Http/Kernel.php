@@ -82,5 +82,6 @@ class Kernel extends HttpKernel
         'payout.daily.limit' => \App\Http\Middleware\CheckPayoutDailyLimit::class,
         'payin.pending.limit' => \App\Http\Middleware\CheckPayinPendingBacklogMiddleware::class,
         'api.traffic' => \App\Http\Middleware\ApiTrafficMiddleware::class,
+        'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
     ];
 }
