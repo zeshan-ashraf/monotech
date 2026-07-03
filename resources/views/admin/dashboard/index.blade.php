@@ -51,6 +51,7 @@
 @push('js')
     <script>
         window.opsDashboardData = @json($chartData);
+        window.opsDashboardSystemMetricsUrl = @json(route('admin.ops.dashboard.system_metrics'));
         window.opsDashboardPaymentMetricsUrl = @json(route('admin.ops.dashboard.payment_metrics'));
         window.opsDashboardTrafficMetricsUrl = @json(route('admin.ops.dashboard.traffic_metrics'));
         window.opsDashboardTraffic = @json($traffic);

@@ -7,6 +7,7 @@
         <x-ops-dashboard.health-badge
             :status="$serverInfo['health']"
             :color="$serverInfo['health_color']"
+            data-server-health="1"
         />
     </div>
     <div class="ops-server-host__grid">
@@ -20,7 +21,7 @@
         </div>
         <div class="ops-server-host__item">
             <span class="ops-server-host__label">Uptime</span>
-            <span class="ops-server-host__value">{{ $serverInfo['uptime'] }}</span>
+            <span class="ops-server-host__value" data-server-field="uptime">{{ $serverInfo['uptime'] }}</span>
         </div>
         <div class="ops-server-host__item">
             <span class="ops-server-host__label">IP Address</span>

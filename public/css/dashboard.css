@@ -318,6 +318,7 @@ body.dark-layout .ops-dashboard {
     height: 100%;
     display: flex;
     flex-direction: column;
+    transition: background-color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
 .ops-metric-card__header {
@@ -361,12 +362,15 @@ body.dark-layout .ops-dashboard {
     font-weight: 700;
     color: var(--bs-body-color);
     line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.35s ease;
 }
 
 .ops-metric-card__subtitle {
     font-size: 0.75rem;
     color: var(--ops-text-muted);
     line-height: 1.35;
+    font-variant-numeric: tabular-nums;
 }
 
 .ops-section {

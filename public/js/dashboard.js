@@ -44,6 +44,29 @@
         charts[id].render();
     }
 
+    /**
+     * Smoothly update an existing sparkline's data without destroying it.
+     * Falls back to a full render only when the chart has not been created yet.
+     * This prevents the flicker caused by destroy + recreate on every refresh.
+     */
+    function updateSparkline(id, series, color) {
+        if (!series || !series.length) {
+            return;
+        }
+
+        if (charts[id]) {
+            try {
+                charts[id].updateSeries([{ name: 'value', data: series }], true);
+
+                return;
+            } catch (error) {
+                console.warn('OPS dashboard sparkline update failed, re-rendering:', id, error);
+            }
+        }
+
+        renderChart(id, sparklineOptions(series, color));
+    }
+
     function sparklineOptions(series, color) {
         var colors = themeColors();
         var safeSeries = (series && series.length) ? series : [1, 2, 3, 4, 5, 4, 3, 4, 5, 4, 3, 2];
@@ -405,6 +428,120 @@
         paymentMetricsTimer = setInterval(refreshPaymentMetrics, intervalMs);
     }
 
+  /**
+   * System overview cards — live server metrics polling (CPU/RAM/Disk/Load/Network).
+   */
+    var systemMetricsTimer = null;
+    var OVERVIEW_SPARK_COLORS = {
+        cpu: 'primary',
+        ram: 'success',
+        disk: 'info',
+        load: 'warning',
+        network: 'secondary',
+    };
+
+    function overviewColor(key) {
+        var colors = themeColors();
+
+        return colors[OVERVIEW_SPARK_COLORS[key]] || colors.primary;
+    }
+
+    function updateOverviewCards(cards) {
+        if (!cards || !cards.length) {
+            return;
+        }
+
+        cards.forEach(function (card) {
+            var el = document.querySelector('[data-overview-card="' + card.key + '"]');
+
+            if (el) {
+                var valueEl = el.querySelector('[data-field="value"]');
+                var subtitleEl = el.querySelector('[data-field="subtitle"]');
+
+                if (valueEl && card.value !== undefined) {
+                    valueEl.textContent = card.value;
+                }
+
+                if (subtitleEl && card.subtitle !== undefined) {
+                    subtitleEl.textContent = card.subtitle;
+                }
+            }
+
+            if (card.sparkline) {
+                updateSparkline('ops-spark-' + card.key, card.sparkline, overviewColor(card.key));
+            }
+        });
+    }
+
+    function updateServerInfo(server) {
+        if (!server) {
+            return;
+        }
+
+        var uptimeEl = document.querySelector('[data-server-field="uptime"]');
+
+        if (uptimeEl && server.uptime !== undefined) {
+            uptimeEl.textContent = server.uptime;
+        }
+
+        var healthEl = document.querySelector('[data-server-health]');
+
+        if (healthEl && server.health !== undefined) {
+            healthEl.className = 'ops-health-badge ops-health-badge--' + (server.health_color || 'success');
+            healthEl.innerHTML = '<span class="ops-health-badge__dot"></span>' + server.health;
+        }
+    }
+
+    function refreshSystemMetrics() {
+        var url = window.opsDashboardSystemMetricsUrl;
+
+        if (!url || !document.querySelector('[data-overview-card]')) {
+            return;
+        }
+
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('System metrics request failed');
+                }
+
+                return response.json();
+            })
+            .then(function (payload) {
+                if (!payload) {
+                    return;
+                }
+
+                updateOverviewCards(payload.cards || []);
+                updateServerInfo(payload.server || null);
+            })
+            .catch(function (error) {
+                console.warn('OPS dashboard system metrics refresh failed:', error);
+            });
+    }
+
+    function scheduleSystemMetricsRefresh() {
+        if (systemMetricsTimer) {
+            clearInterval(systemMetricsTimer);
+            systemMetricsTimer = null;
+        }
+
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (autoRefresh && !autoRefresh.checked) {
+            return;
+        }
+
+        var intervalMs = parseIntervalMs(getSelectedRefreshInterval());
+        systemMetricsTimer = setInterval(refreshSystemMetrics, intervalMs);
+    }
+
     function bindNavbarControls() {
         document.querySelectorAll('.ops-refresh-option').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -416,6 +553,7 @@
                 if (label) {
                     label.textContent = btn.getAttribute('data-interval');
                 }
+                scheduleSystemMetricsRefresh();
                 schedulePaymentMetricsRefresh();
                 updateTrafficLiveIndicator();
             });
@@ -425,6 +563,7 @@
 
         if (autoRefresh) {
             autoRefresh.addEventListener('change', function () {
+                scheduleSystemMetricsRefresh();
                 schedulePaymentMetricsRefresh();
                 scheduleTrafficMetricsRefresh();
                 scheduleRuntimeMetricsRefresh();
@@ -972,6 +1111,7 @@
         }
 
         bindNavbarControls();
+        scheduleSystemMetricsRefresh();
         schedulePaymentMetricsRefresh();
         initTrafficPanel();
         initRuntimePanel();
@@ -981,10 +1121,15 @@
 
     window.OpsDashboard = {
         init: init,
+        refreshSystemMetrics: refreshSystemMetrics,
         refreshPaymentMetrics: refreshPaymentMetrics,
         refreshTrafficMetrics: refreshTrafficMetrics,
         refreshRuntimeMetrics: refreshRuntimeMetrics,
         destroy: function () {
+            if (systemMetricsTimer) {
+                clearInterval(systemMetricsTimer);
+                systemMetricsTimer = null;
+            }
             if (paymentMetricsTimer) {
                 clearInterval(paymentMetricsTimer);
                 paymentMetricsTimer = null;

@@ -26,6 +26,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     Route::get('/zig-dashboard', [DashboardController::class, 'zigIndex'])->name('zig_dashboard');
     Route::middleware('super.admin')->group(function () {
         Route::get('/ops-dashboard', [OpsDashboardController::class, 'index'])->name('ops.dashboard');
+        Route::get('/ops-dashboard/system-metrics', [OpsDashboardController::class, 'systemMetrics'])->name('ops.dashboard.system_metrics');
         Route::get('/ops-dashboard/payment-metrics', [OpsDashboardController::class, 'paymentMetrics'])->name('ops.dashboard.payment_metrics');
         Route::get('/ops-dashboard/traffic-metrics', [OpsDashboardController::class, 'trafficMetrics'])->name('ops.dashboard.traffic_metrics');
         Route::get('/ops-dashboard/runtime-metrics', SystemMetricsController::class)->name('ops.dashboard.runtime_metrics');

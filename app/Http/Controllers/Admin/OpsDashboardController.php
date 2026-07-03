@@ -57,6 +57,23 @@ class OpsDashboardController extends Controller
     }
 
     /**
+     * Live system overview metrics (top cards + server health) for dashboard polling.
+     */
+    public function systemMetrics(): JsonResponse
+    {
+        $serverInfo = $this->systemService->serverInfo();
+
+        return response()->json([
+            'server' => [
+                'health' => $serverInfo['health'],
+                'health_color' => $serverInfo['health_color'],
+                'uptime' => $serverInfo['uptime'],
+            ],
+            'cards' => $this->systemService->overviewCards($serverInfo),
+        ]);
+    }
+
+    /**
      * Live payment metrics for dashboard polling.
      */
     public function paymentMetrics(): JsonResponse
