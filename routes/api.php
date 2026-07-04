@@ -34,7 +34,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::as('payin.')->prefix('payin')->group(function () {
     Route::post('/checkout',[PayinController::class, 'checkout'])
-        ->middleware(['gateway.metrics', 'log.rejected', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'throttle.phone']);
+        ->middleware(['gateway.metrics',  'phone.verified','log.rejected', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'throttle.phone']);
     Route::get('/test-trait',[PayinController::class, 'testTrait']); // Test route for trait
 });
 
