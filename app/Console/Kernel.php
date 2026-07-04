@@ -123,7 +123,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('transactions:old')->dailyAt('04:25');
         $event = $schedule->command('app:recount-report-generate')->dailyAt('01:00');
         $wrapSchedule($event, 'app:recount-report-generate');
-        $event = $schedule->command('transactions:auto-fail')->everyTenMinutes();
+        $event = $schedule->command('transactions:auto-fail')->everyTenMinutes()->withoutOverlapping();
         $wrapSchedule($event, 'transactions:auto-fail');
         
         // Auto-reverse transactions after 6 hours
