@@ -274,7 +274,8 @@ class SettingController extends Controller
         $list3 = ScheduleSetting::where('txns_type','easypaisa')->get();
         $payout_setting = PayoutSetting::first();
         $verificationUsers = User::where('user_role', 'client')
-            ->select('id', 'name', 'email', 'new_user_verification')
+            ->where('active', 1)
+            ->select('id', 'name', 'email', 'new_user_verification', 'new_user_max_amount')
             ->orderBy('name')
             ->get();
         $metricsClients = $this->canManageDbMetrics()
@@ -345,10 +346,12 @@ class SettingController extends Controller
         $validated = $request->validate([
             'user_id' => 'required|integer|exists:users,id',
             'status' => 'required|in:0,1',
+            'max_amount' => 'required|integer|min:0',
         ]);
 
         $user = User::findOrFail($validated['user_id']);
         $user->new_user_verification = (int) $validated['status'];
+        $user->new_user_max_amount = (int) $validated['max_amount'];
         $user->save();
 
         return response()->json([

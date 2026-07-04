@@ -39,5 +39,8 @@ return [
 
     // Lock duration to prevent concurrent duplicate processing (seconds).
     'lock_seconds' => 5,
+
+    // Fallback max amount when client user cannot be resolved (unverified phones only).
+    'default_max_amount' => 0,
 ];
 
