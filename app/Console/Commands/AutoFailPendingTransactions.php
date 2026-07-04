@@ -13,7 +13,7 @@ class AutoFailPendingTransactions extends Command
 
     public function handle()
     {
-        $cutoffTime = Carbon::now()->subMinutes(60);
+        $cutoffTime = Carbon::now()->subMinutes(45);
 
         $count = Transaction::where('status', 'pending')
             ->where('created_at', '<=', $cutoffTime)
