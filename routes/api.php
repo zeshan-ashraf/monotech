@@ -98,7 +98,7 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
 
     // Payout Route
     Route::post('payout/checkout', [PayoutController::class, 'checkout'])
-        ->middleware(['throttle:api', 'payout.daily.limit', 'whitelist.ip']);
+        ->middleware(['throttle:api', 'whitelist.ip']);
 });
 
 Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);
