@@ -174,6 +174,11 @@ class SearchingDataTable extends DataTable
 
     private function applySearchFilters(Builder $query, array $filters, string $orderMatchMode = 'exact'): Builder
     {
+        // Restrict clients to their own data
+        if (auth()->user()->user_role === 'Client') {
+            $query->where('user_id', auth()->id());
+        }
+
         return $query
             ->when($filters['txn_ref_no'], function (Builder $q) use ($filters) {
                 $q->where('txn_ref_no', 'like', $filters['txn_ref_no'] . '%');
@@ -191,7 +196,7 @@ class SearchingDataTable extends DataTable
                 ]);
             })
             ->when($filters['amount'] !== null, function (Builder $q) use ($filters) {
-                $q->where('amount', '=', $filters['amount']);
+                $q->where('amount', $filters['amount']);
             });
     }
 
