@@ -28,9 +28,16 @@ class TransactionRecheckStatus extends Command
     // Execute the console command.
     public function handle()
     {
-        $now=Carbon::now();
-        
-        $list = Transaction::where('status', 'failed')->where('pp_message','Transaction is Pending')->where('pp_code','157')->where('txn_type', 'jazzcash')->get();
+        $now = Carbon::now();
+        $minAgeMinutes = (int) config('payin_status_cron.min_age_minutes', 2);
+
+        $list = Transaction::query()
+            ->where('status', 'failed')
+            ->where('pp_message', 'Transaction is Pending')
+            ->where('pp_code', '157')
+            ->where('txn_type', 'jazzcash')
+            ->where('created_at', '<=', $now->copy()->subMinutes($minAgeMinutes))
+            ->get();
         // \Log::info('Response from notifyurl:', ['response' => $now]);
         
         set_time_limit(0);

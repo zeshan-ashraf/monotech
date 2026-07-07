@@ -58,10 +58,12 @@ class EasyPaisaCheckTransactionStatus extends Command
         try {
             set_time_limit(0);
 
+            $minAgeMinutes = (int) config('payin_status_cron.min_age_minutes', 2);
+
             $list = Transaction::query()
                 ->where('status', 'pending')
                 ->where('txn_type', 'easypaisa')
-                ->where('created_at', '<=', now()->subMinutes(2))
+                ->where('created_at', '<=', now()->subMinutes($minAgeMinutes))
                 ->orderBy('id', 'desc')
                 ->limit($chunk)
                 ->get();

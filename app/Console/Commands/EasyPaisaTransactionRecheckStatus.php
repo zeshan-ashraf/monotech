@@ -29,11 +29,12 @@ class EasyPaisaTransactionRecheckStatus extends Command
     public function handle()
     {
         $chunk = $this->chunkService->getChunk('recheck');
+        $minAgeMinutes = (int) config('payin_status_cron.min_age_minutes', 2);
 
         $list = Transaction::where('status', 'failed')
             ->where('pp_code', '0003')
             ->where('txn_type', 'easypaisa')
-            ->where('created_at', '<=', now()->subMinutes(5))
+            ->where('created_at', '<=', now()->subMinutes($minAgeMinutes))
             ->orderBy('created_at', 'asc')
             ->limit($chunk)
             ->get();
