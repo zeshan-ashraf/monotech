@@ -26,8 +26,7 @@ class BlockListedPhoneAndCarrierMiddleware
      * @var array<int, string>
      */
     private array $blockedCarriers = [
-         'jazzcash',
-         'easypaisa',
+        //
     ];
 
     public function handle(Request $request, Closure $next)
