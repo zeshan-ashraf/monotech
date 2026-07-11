@@ -15,8 +15,8 @@ class BlockListedPhoneAndCarrierMiddleware
      * @var array<int, string>
      */
     private array $blockedPhones = [
-        '03200166410'
-        '03335415336'
+        "03200166410",
+        "03335415336"
     ];
 
     /**
