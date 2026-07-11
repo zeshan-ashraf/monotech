@@ -83,5 +83,6 @@ class Kernel extends HttpKernel
         'payin.pending.limit' => \App\Http\Middleware\CheckPayinPendingBacklogMiddleware::class,
         'api.traffic' => \App\Http\Middleware\ApiTrafficMiddleware::class,
         'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
+        'block.listed.phone.carrier' => \App\Http\Middleware\BlockListedPhoneAndCarrierMiddleware::class,
     ];
 }
