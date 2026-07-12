@@ -11,12 +11,14 @@ class BlockListedPhoneAndCarrierMiddleware
     /**
      * Hard-blocked phone numbers.
      * Accepts 03XXXXXXXXX or 92XXXXXXXXXX — matching is normalized.
+     * Scope: both | payin | payout
      *
-     * @var array<int, string>
+     * @var array<string, string>
      */
     private array $blockedPhones = [
-        "03200166410",
-        "03335415336"
+        '03200166410' => 'both',
+        '03335415336' => 'both',
+        '03215842405' => 'payout',
     ];
 
     /**
@@ -29,8 +31,12 @@ class BlockListedPhoneAndCarrierMiddleware
         //
     ];
 
-    public function handle(Request $request, Closure $next)
+    /**
+     * @param  string  $flow  payin | payout | both (from route middleware param)
+     */
+    public function handle(Request $request, Closure $next, string $flow = 'both')
     {
+        $flow = strtolower($flow);
         $phone = (string) $request->input('phone', '');
         $carrier = strtolower((string) (
             $request->input('payment_method')
@@ -38,7 +44,7 @@ class BlockListedPhoneAndCarrierMiddleware
             ?? ''
         ));
 
-        if ($phone !== '' && $this->isPhoneBlocked($phone)) {
+        if ($phone !== '' && $this->isPhoneBlocked($phone, $flow)) {
             $this->logBlockedRequest($request, 'phone', $phone, $carrier);
 
             return response()->json([
@@ -59,7 +65,7 @@ class BlockListedPhoneAndCarrierMiddleware
         return $next($request);
     }
 
-    private function isPhoneBlocked(string $phone): bool
+    private function isPhoneBlocked(string $phone, string $flow): bool
     {
         $normalizedRequestPhone = $this->normalizePhone($phone);
 
@@ -67,10 +73,14 @@ class BlockListedPhoneAndCarrierMiddleware
             return false;
         }
 
-        foreach ($this->blockedPhones as $blockedPhone) {
-            if ($this->normalizePhone((string) $blockedPhone) === $normalizedRequestPhone) {
-                return true;
+        foreach ($this->blockedPhones as $blockedPhone => $scope) {
+            if ($this->normalizePhone((string) $blockedPhone) !== $normalizedRequestPhone) {
+                continue;
             }
+
+            $scope = strtolower((string) $scope);
+
+            return $scope === 'both' || $scope === $flow;
         }
 
         return false;

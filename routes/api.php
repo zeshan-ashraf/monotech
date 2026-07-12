@@ -34,16 +34,16 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::as('payin.')->prefix('payin')->group(function () {
     Route::post('/checkout',[PayinController::class, 'checkout'])
-        ->middleware(['gateway.metrics',  'phone.verified','log.rejected', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'throttle.phone']);
+        ->middleware(['gateway.metrics', 'block.listed.phone.carrier:payin', 'phone.verified','log.rejected', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'throttle.phone']);
     Route::get('/test-trait',[PayinController::class, 'testTrait']); // Test route for trait
 });
 
 
-
-
+/*
+dont know why this is here
 Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProceed'])
-    ->middleware(['gateway.metrics','block.listed.phone.carrier', 'log.rejected', 'payment.validate', 'check.blocked.numbers', 'payin.pending.limit']);
-
+    ->middleware(['gateway.metrics','block.listed.phone.carrier:payin', 'log.rejected', 'payment.validate', 'check.blocked.numbers', 'payin.pending.limit']);
+*/
 
  /*Route::as('payout.')->prefix('payout')->group(function () {
 	     //Route without whitelist.ip middleware
@@ -64,7 +64,7 @@ Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProc
 */
 
 Route::as('payout.')->prefix('payout')->group(function () {
-    Route::middleware(['throttle:api', 'block.listed.phone.carrier','whitelist.ip'])->group(function () {
+    Route::middleware(['throttle:api', 'block.listed.phone.carrier:payout','whitelist.ip'])->group(function () {
         Route::post('/checkout', [PayoutController::class, 'checkout']);
     });
 });
@@ -94,11 +94,11 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
     //Route::post('payment-checkout', [TestPayinController::class, 'checkout']);// testing purpose only
     // payin route
     Route::post('payment-checkout', [PayinController::class, 'checkout'])
-        ->middleware(['gateway.metrics','block.listed.phone.carrier', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'phone.verified', 'log.rejected']);
+        ->middleware(['gateway.metrics','block.listed.phone.carrier:payin', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'phone.verified', 'log.rejected']);
 
     // Payout Route
     Route::post('payout/checkout', [PayoutController::class, 'checkout'])
-        ->middleware(['throttle:api','block.listed.phone.carrier', 'whitelist.ip']);
+        ->middleware(['throttle:api','block.listed.phone.carrier:payout', 'whitelist.ip']);
 });
 
 Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);
