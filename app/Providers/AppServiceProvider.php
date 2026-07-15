@@ -14,7 +14,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $apiDocsAutoload = base_path('modules/ApiDocs/autoload.php');
+        if (is_file($apiDocsAutoload)) {
+            require_once $apiDocsAutoload;
+        }
     }
 
     /**

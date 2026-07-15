@@ -165,6 +165,9 @@
                                 data-feather="settings"></i>Setting</a>
                     </li>
                 @endif
+                <li class="@if (Route::is('admin.api-docs.*')) active @endif nav-item">
+                    <a class="d-flex align-items-center" href="{{ route('admin.api-docs.show', 'get-started') }}"><i data-feather="book-open"></i>API Docs</a>
+                </li>
                 {{--<li class="nav-item">
                     <a class="d-flex align-items-center" href="#" onclick="logout();">
                         <i data-feather="log-out"></i>Logout</a>
