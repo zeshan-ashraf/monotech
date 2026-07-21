@@ -60,10 +60,6 @@
                                                 <option value="adlearn">Adlearn</option>
                                             </select>
                                         </div>
-                                        <div class="form-group col-md-3 d-none">
-                                            <label>Amount</label>
-                                            <input class="form-control" name="amount" id="amount" type="number" min="1" readonly>
-                                        </div>
                                         <div class="form-group col-md-3 d-flex align-items-end">
                                             <button class="btn btn-primary" type="submit">Submit</button>
                                         </div>
