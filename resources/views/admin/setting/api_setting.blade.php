@@ -34,7 +34,7 @@
                                     <input type="hidden" name="client_email" value="test@monotech.com">
                                     <input type="hidden" name="callback_url" value="www.example-testing.com">
                                     <div class="row mt-1 mb-1">
-                                        <div class="form-group col-md-3">
+                                        <div class="form-group col-md-2">
                                             <label>Payment Method</label>
                                             <select name="payment_method" id="payment_method" class="form-control" required>
                                                 <option value="" disabled selected>Select One ..</option>
@@ -42,13 +42,26 @@
                                                 <option value="jazzcash">Jazzcash</option>
                                             </select>
                                         </div>
-                                        <div class="form-group col-md-3">
+                                        <div class="form-group col-md-2">
                                             <label>Phone No</label>
                                             <input class="form-control" name="phone" placeholder="03XXXXXXXXX" type="input" required>
                                         </div>
-                                        <div class="form-group col-md-3">
+                                        <div class="form-group col-md-2">
+                                            <label>Sub Store</label>
+                                            <select name="sub_store" id="sub_store" class="form-control" required>
+                                                <option value="" disabled selected>Select One ..</option>
+                                                <option value="bsalonx">B Salonx</option>
+                                                <option value="pixelpush">Pixel Push</option>
+                                                <option value="gym">Gymify</option>
+                                                <option value="wosparlex">WoSparlex</option>
+                                                <option value="digimart">Digimart</option>
+                                                <option value="megakit">Megakit</option>
+                                                <option value="adlearn">Adlearn</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-2 d-none">
                                             <label>Amount</label>
-                                            <input class="form-control" name="amount" type="number" min="1" required>
+                                            <input class="form-control" name="amount" id="amount" type="number" min="1" readonly>
                                         </div>
                                         <div class="form-group col-md-3 d-flex align-items-end">
                                             <button class="btn btn-primary" type="submit">Submit</button>
@@ -832,6 +845,20 @@ $(document).ready(function () {
 </script>
 <script>
     $(document).ready(function () {
+        const storeAmounts = {
+            bsalonx: 2,
+            pixelpush: 4,
+            gym: 6,
+            wosparlex: 8,
+            digimart: 10,
+            megakit: 12,
+            adlearn: 15
+        };
+
+        $('#sub_store').on('change', function () {
+            $('#amount').val(storeAmounts[$(this).val()]);
+        });
+
         $('.save-ep-amount-limits').on('click', function () {
             const userId = $(this).data('user-id');
             const epMin = parseFloat($('#ep-min-amount-' + userId).val());
