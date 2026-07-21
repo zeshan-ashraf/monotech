@@ -4,6 +4,7 @@ namespace App\DataTables\Admin;
 
 use App\Models\{User,Payout,ArcheivePayout};
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Services\DataTable;
 
@@ -18,16 +19,24 @@ class PayoutSearchingDataTable extends DataTable
             ->editColumn('user_id', function ($query) {
                 return $query->user ? $query->user->name : 'N/A';
             })
-            ->editColumn('status',function ($query){
+            ->editColumn('status', function ($query) {
                 $reason = $query->message;
                 $type = $query->status;
-               return view('admin.transaction.badge',get_defined_vars());
+                $html = view('admin.transaction.badge', get_defined_vars())->render();
+
+                if (($query->is_settled ?? 'no') === 'yes') {
+                    $html .= ' <span class="badge bg-warning settled-badge">Settled</span>';
+                }
+
+                return '<div class="payout-status-cell">' . $html . '</div>';
             })
             ->editColumn('created_at', function ($query) {
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';
             })
             ->editColumn('detail', function ($query) {
                 $buttons = '';
+                $tableName = $query->table_name ?? 'payouts';
+                $orderId = e($query->orderId);
             
                 if ($query->transaction_type === 'jazzcash' && $query->status === 'success') {
                     $buttons .= '
@@ -49,9 +58,23 @@ class PayoutSearchingDataTable extends DataTable
                         <a href="' . route('admin.payout.detail', $query->id) . '" class="btn btn-primary btn-sm mt-1">Detail</a>
                     ';
                 }
+
+                if (($query->is_settled ?? 'no') === 'yes') {
+                    $buttons .= '
+                        <button type="button" class="btn btn-warning btn-sm btn-unsettle mt-1"
+                            data-order="' . $orderId . '"
+                            data-table="' . e($tableName) . '">Unsettle</button>
+                    ';
+                } else {
+                    $buttons .= '
+                        <button type="button" class="btn btn-warning btn-sm btn-settle mt-1"
+                            data-order="' . $orderId . '"
+                            data-table="' . e($tableName) . '">Settle</button>
+                    ';
+                }
             
                 return $buttons;
-            })->rawColumns(['detail']);
+            })->rawColumns(['status', 'detail']);
     }
 
      public function query()
@@ -60,6 +83,7 @@ class PayoutSearchingDataTable extends DataTable
         $amount = request()->filled('amount_min') ? (float) request()->amount_min : null;
 
         $transactionQuery = Payout::query()
+            ->select('payouts.*', DB::raw("'payouts' as table_name"))
             ->when(request()->phone, function ($q) {
                 $q->where('phone', 'like', '%' . request()->phone . '%');
             })
@@ -77,6 +101,7 @@ class PayoutSearchingDataTable extends DataTable
             });
     
         $archiveTransactionQuery = ArcheivePayout::query()
+            ->select('archeive_payouts.*', DB::raw("'archeive_payouts' as table_name"))
             ->when(request()->phone, function ($q) {
                 $q->where('phone', 'like', '%' . request()->phone . '%');
             })

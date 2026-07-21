@@ -121,6 +121,88 @@
 @push('js')
     @include('admin.components.datatablesScript')
     <script>
+$(document).on('click', '.btn-settle', function() {
+    var button = $(this);
+    var orderId = button.attr('data-order');
+    var tableName = button.attr('data-table');
+    var originalHtml = button.html();
 
+    button.prop('disabled', true).addClass('disabled').html('...');
+
+    $.ajax({
+        url: '{{ route("admin.payout.settle") }}',
+        type: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            order_id: orderId,
+            table_name: tableName
+        },
+        success: function(response) {
+            if (response.success) {
+                var $row = button.closest('tr');
+                var unsettleBtn = $('<button type="button" class="btn btn-warning btn-sm btn-unsettle mt-1"></button>')
+                    .attr('data-order', orderId)
+                    .attr('data-table', tableName)
+                    .text('Unsettle');
+                button.replaceWith(unsettleBtn);
+
+                var statusCell = $row.find('.payout-status-cell');
+                if (statusCell.length && statusCell.find('.settled-badge').length === 0) {
+                    statusCell.append(' <span class="badge bg-warning settled-badge">Settled</span>');
+                }
+            } else {
+                button.prop('disabled', false).removeClass('disabled').html(originalHtml);
+                alert(response.message || 'Failed to settle payout');
+            }
+        },
+        error: function(xhr) {
+            button.prop('disabled', false).removeClass('disabled').html(originalHtml);
+            var message = (xhr.responseJSON && xhr.responseJSON.message)
+                ? xhr.responseJSON.message
+                : 'Failed to settle payout';
+            alert(message);
+        }
+    });
+});
+
+$(document).on('click', '.btn-unsettle', function() {
+    var button = $(this);
+    var orderId = button.attr('data-order');
+    var tableName = button.attr('data-table');
+    var originalHtml = button.html();
+
+    button.prop('disabled', true).addClass('disabled').html('...');
+
+    $.ajax({
+        url: '{{ route("admin.payout.unsettle") }}',
+        type: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            order_id: orderId,
+            table_name: tableName
+        },
+        success: function(response) {
+            if (response.success) {
+                var settleBtn = $('<button type="button" class="btn btn-warning btn-sm btn-settle mt-1"></button>')
+                    .attr('data-order', orderId)
+                    .attr('data-table', tableName)
+                    .text('Settle');
+                var $row = button.closest('tr');
+                button.replaceWith(settleBtn);
+                $row.find('.settled-badge').remove();
+            } else {
+                button.prop('disabled', false).removeClass('disabled').html(originalHtml);
+                alert(response.message || 'Failed to unsettle payout');
+            }
+        },
+        error: function(xhr) {
+            button.prop('disabled', false).removeClass('disabled').html(originalHtml);
+            var message = (xhr.responseJSON && xhr.responseJSON.message)
+                ? xhr.responseJSON.message
+                : 'Failed to unsettle payout';
+            alert(message);
+        }
+    });
+});
     </script>
 @endpush

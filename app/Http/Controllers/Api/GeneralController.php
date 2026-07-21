@@ -11,6 +11,8 @@ use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class GeneralController extends Controller
 {
@@ -549,86 +551,123 @@ class GeneralController extends Controller
         $encryptedData = base64_encode($encryptedData);
         return $encryptedData;
     }
-    public function novaPayoutMMBL(Request $request)
-    {    
-        $data=$request->all();
-        $payload = $data['data'];
-        $token=$this->getToken();
-        $encryptionData=$this->encryptionFunc($payload);
-        $transactionUrl=env('JAZZCASH_MATOIBFTINQ_URL');
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => $transactionUrl,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode([
-                "data" => $encryptionData,
-            ]),
-            CURLOPT_HTTPHEADER => [
-                'Accept: application/json',
-                'Content-Type: application/json',
-                "Authorization: Bearer $token",
-            ],
-        ]);
-        
-        $response = curl_exec($curl);
-        curl_close($curl);
-        $decodeData=json_decode($response, true);
-        $decrptionData=$this->decrytionFunc($decodeData['data']);
-        $data=json_decode($decrptionData, true);
+    public function novaPayoutMMBL(Request $request): JsonResponse
+    {
+        $requestId = (string) Str::uuid();
+        $apiName = 'novaPayoutMMBL';
+        $orderId = $this->extractOrderId($request);
 
+        try {
+            if (! $request->has('data') || ! is_array($request->input('data'))) {
+                $this->logApiFailure($orderId, $requestId, $apiName, 'REQUEST_VALIDATION', [
+                    'request_payload' => $this->maskSensitivePayload($request->all()),
+                ]);
 
-        if($data['responseCode'] == "G2P-T-0"){
-            $encryptionIbftData=$this->encryptionIbftFunc($data);
-            $transactionConfirmUrl=env('JAZZCASH_MATOIBFTCONFIRM_URL');
-            $curl_new = curl_init();
-            curl_setopt_array($curl_new, [
-                CURLOPT_URL => $transactionConfirmUrl,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => json_encode([
-                    "data" => $encryptionIbftData,
-                ]),
-                CURLOPT_HTTPHEADER => [
-                    'Accept: application/json',
-                    'Content-Type: application/json',
-                    "Authorization: Bearer $token",
-                ],
-            ]);
-            $response = curl_exec($curl_new);
-            curl_close($curl_new);
-            $decodeData=json_decode($response, true);
-            $decrptionData=$this->decrytionFunc($decodeData['data']);
-            $data=json_decode($decrptionData, true);
+                return $this->buildErrorResponse('The data field is required.', 400);
+            }
 
-            if($data['responseCode'] === 'G2P-T-0'){
-                
+            $payload = $request->input('data');
+
+            try {
+                $token = $this->getToken();
+                if (empty($token)) {
+                    throw new \RuntimeException('Token generation returned empty access token');
+                }
+            } catch (Throwable $e) {
+                $this->logApiFailure($orderId, $requestId, $apiName, 'TOKEN_GENERATION', [
+                    'request_payload' => $this->maskSensitivePayload($request->all()),
+                ], $e);
+
+                return $this->buildErrorResponse();
+            }
+
+            try {
+                $encryptionData = $this->encryptionFunc($payload);
+                if (empty($encryptionData)) {
+                    throw new \RuntimeException('Encryption returned empty payload');
+                }
+            } catch (Throwable $e) {
+                $this->logApiFailure($orderId, $requestId, $apiName, 'ENCRYPTION', [
+                    'request_payload' => $this->maskSensitivePayload(['data' => $payload]),
+                ], $e);
+
+                return $this->buildErrorResponse();
+            }
+
+            $firstStep = $this->executeJazzCashApiStep(
+                (string) env('JAZZCASH_MATOIBFTINQ_URL'),
+                ['data' => $encryptionData],
+                $token,
+                'FIRST',
+                $orderId,
+                $requestId,
+                $apiName
+            );
+
+            if (! $firstStep['success']) {
+                return $firstStep['response'];
+            }
+
+            $firstData = $firstStep['data'];
+
+            if (($firstData['responseCode'] ?? null) !== 'G2P-T-0') {
+                $this->logApiWarning($orderId, $requestId, $apiName, 'FIRST_RESPONSE_VALIDATION', [
+                    'request_url' => (string) env('JAZZCASH_MATOIBFTINQ_URL'),
+                    'decoded_response' => $firstData,
+                ]);
+
+                return $this->buildBusinessErrorResponse($firstData);
+            }
+
+            try {
+                $encryptionIbftData = $this->encryptionIbftFunc($firstData);
+                if (empty($encryptionIbftData)) {
+                    throw new \RuntimeException('IBFT encryption returned empty payload');
+                }
+            } catch (Throwable $e) {
+                $this->logApiFailure($orderId, $requestId, $apiName, 'ENCRYPTION', [
+                    'request_payload' => $this->maskSensitivePayload(['data' => $firstData]),
+                    'decoded_response' => $firstData,
+                ], $e);
+
+                return $this->buildErrorResponse();
+            }
+
+            $secondStep = $this->executeJazzCashApiStep(
+                (string) env('JAZZCASH_MATOIBFTCONFIRM_URL'),
+                ['data' => $encryptionIbftData],
+                $token,
+                'SECOND',
+                $orderId,
+                $requestId,
+                $apiName
+            );
+
+            if (! $secondStep['success']) {
+                return $secondStep['response'];
+            }
+
+            $secondData = $secondStep['data'];
+
+            if (($secondData['responseCode'] ?? null) === 'G2P-T-0') {
                 return response()->json([
                     'status' => true,
-                    'data' => $data
+                    'data' => $secondData,
                 ]);
-            }else{
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Your payout cannot be processed due to '. $data['responseDescription']. ' , please try again.',
-                ], 400);
             }
-        }
-        else{
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Your payout cannot be processed due to '. $data['responseDescription']. ' , please try again.',
-            ], 400);
+
+            $this->logApiWarning($orderId, $requestId, $apiName, 'SECOND_RESPONSE_VALIDATION', [
+                'request_url' => (string) env('JAZZCASH_MATOIBFTCONFIRM_URL'),
+                'decoded_response' => $secondData,
+            ]);
+
+            return $this->buildBusinessErrorResponse($secondData);
+        } catch (Throwable $e) {
+            $this->logApiFailure($orderId, $requestId, $apiName, 'UNKNOWN_EXCEPTION', [
+                'request_payload' => $this->maskSensitivePayload($request->all()),
+            ], $e);
+
+            return $this->buildErrorResponse();
         }
     }
     public function getToken()
@@ -719,5 +758,369 @@ class GeneralController extends Controller
         $decryptedData = openssl_decrypt($binaryData, 'AES-128-CBC', $decryptionKey, OPENSSL_RAW_DATA, $iv);
         
         return $decryptedData;
+    }
+
+    private function executeJazzCashApiStep(
+        string $url,
+        array $requestPayload,
+        string $token,
+        string $stagePrefix,
+        string $orderId,
+        string $requestId,
+        string $apiName
+    ): array {
+        $headers = [
+            'Accept: application/json',
+            'Content-Type: application/json',
+            "Authorization: Bearer $token",
+        ];
+
+        $curlResult = $this->performCurlRequest($url, $requestPayload, $headers);
+
+        if (! $curlResult['success']) {
+            $this->logApiFailure($orderId, $requestId, $apiName, $stagePrefix . '_API_CALL', [
+                'http_status' => $curlResult['http_status'],
+                'curl_errno' => $curlResult['curl_errno'],
+                'curl_error' => $curlResult['curl_error'],
+                'request_url' => $curlResult['request_url'],
+                'request_payload' => $this->maskSensitivePayload($curlResult['request_payload']),
+                'raw_api_response' => $curlResult['body'],
+            ]);
+
+            return ['success' => false, 'response' => $this->buildErrorResponse()];
+        }
+
+        $jsonResult = $this->decodeApiResponse($curlResult['body']);
+
+        if (! $jsonResult['success']) {
+            $this->logApiFailure($orderId, $requestId, $apiName, $stagePrefix . '_JSON_DECODE', [
+                'http_status' => $curlResult['http_status'],
+                'curl_errno' => $curlResult['curl_errno'],
+                'curl_error' => $curlResult['curl_error'],
+                'request_url' => $curlResult['request_url'],
+                'request_payload' => $this->maskSensitivePayload($curlResult['request_payload']),
+                'raw_api_response' => $curlResult['body'],
+                'decoded_response' => $jsonResult['data'],
+            ]);
+
+            return ['success' => false, 'response' => $this->buildErrorResponse()];
+        }
+
+        $decryptResult = $this->decryptResponse($jsonResult['data']);
+
+        if (! $decryptResult['success']) {
+            $this->logApiFailure($orderId, $requestId, $apiName, $stagePrefix . '_DECRYPTION', [
+                'http_status' => $curlResult['http_status'],
+                'curl_errno' => $curlResult['curl_errno'],
+                'curl_error' => $curlResult['curl_error'],
+                'request_url' => $curlResult['request_url'],
+                'request_payload' => $this->maskSensitivePayload($curlResult['request_payload']),
+                'raw_api_response' => $curlResult['body'],
+                'decoded_response' => $jsonResult['data'],
+            ], $decryptResult['exception'] ?? null);
+
+            return ['success' => false, 'response' => $this->buildErrorResponse()];
+        }
+
+        $validateResult = $this->validateDecodedResponse($decryptResult['data']);
+
+        if (! $validateResult['success']) {
+            $this->logApiFailure($orderId, $requestId, $apiName, $stagePrefix . '_RESPONSE_VALIDATION', [
+                'http_status' => $curlResult['http_status'],
+                'curl_errno' => $curlResult['curl_errno'],
+                'curl_error' => $curlResult['curl_error'],
+                'request_url' => $curlResult['request_url'],
+                'request_payload' => $this->maskSensitivePayload($curlResult['request_payload']),
+                'raw_api_response' => $curlResult['body'],
+                'decoded_response' => $decryptResult['data'],
+            ]);
+
+            return ['success' => false, 'response' => $this->buildErrorResponse()];
+        }
+
+        return [
+            'success' => true,
+            'data' => $decryptResult['data'],
+        ];
+    }
+
+    private function performCurlRequest(string $url, array $payload, array $headers, int $timeout = 60): array
+    {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => $timeout,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => $headers,
+        ]);
+
+        $response = curl_exec($curl);
+        $curlErrno = curl_errno($curl);
+        $curlError = curl_error($curl);
+        $httpStatus = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        curl_close($curl);
+
+        $body = $response !== false ? $response : null;
+        $isSuccess = $response !== false
+            && $curlErrno === 0
+            && $httpStatus === 200
+            && is_string($response)
+            && $response !== '';
+
+        return [
+            'success' => $isSuccess,
+            'body' => $body,
+            'http_status' => $httpStatus,
+            'curl_errno' => $curlErrno,
+            'curl_error' => $curlError !== '' ? $curlError : null,
+            'request_url' => $url,
+            'request_payload' => $payload,
+        ];
+    }
+
+    private function decodeApiResponse(?string $rawResponse): array
+    {
+        if ($rawResponse === null || $rawResponse === '') {
+            return [
+                'success' => false,
+                'data' => null,
+                'error' => 'Empty API response',
+            ];
+        }
+
+        $decoded = json_decode($rawResponse, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+            return [
+                'success' => false,
+                'data' => $decoded,
+                'error' => json_last_error_msg(),
+            ];
+        }
+
+        return [
+            'success' => true,
+            'data' => $decoded,
+            'error' => null,
+        ];
+    }
+
+    private function decryptResponse(array $apiResponse): array
+    {
+        if (! isset($apiResponse['data']) || $apiResponse['data'] === null || $apiResponse['data'] === '') {
+            return [
+                'success' => false,
+                'data' => null,
+                'error' => 'Missing or empty encrypted data field',
+                'exception' => null,
+            ];
+        }
+
+        try {
+            $decrypted = $this->decrytionFunc($apiResponse['data']);
+
+            if ($decrypted === false || $decrypted === null || $decrypted === '') {
+                return [
+                    'success' => false,
+                    'data' => null,
+                    'error' => 'Decryption returned empty result',
+                    'exception' => null,
+                ];
+            }
+
+            $decoded = json_decode($decrypted, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+                return [
+                    'success' => false,
+                    'data' => null,
+                    'error' => 'Invalid decrypted JSON: ' . json_last_error_msg(),
+                    'exception' => null,
+                ];
+            }
+
+            return [
+                'success' => true,
+                'data' => $decoded,
+                'error' => null,
+                'exception' => null,
+            ];
+        } catch (Throwable $e) {
+            return [
+                'success' => false,
+                'data' => null,
+                'error' => $e->getMessage(),
+                'exception' => $e,
+            ];
+        }
+    }
+
+    private function validateDecodedResponse(array $data): array
+    {
+        if (! isset($data['responseCode'])) {
+            return [
+                'success' => false,
+                'error' => 'Missing responseCode in decrypted response',
+            ];
+        }
+
+        if (! isset($data['responseDescription'])) {
+            return [
+                'success' => false,
+                'error' => 'Missing responseDescription in decrypted response',
+            ];
+        }
+
+        return ['success' => true, 'error' => null];
+    }
+
+    private function extractOrderId(Request $request): string
+    {
+        $candidates = [
+            $request->input('order_id'),
+            $request->input('merchantTxnRef'),
+            $request->input('data.orderId'),
+            $request->input('data.order_id'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (! empty($candidate) && is_scalar($candidate)) {
+                return (string) $candidate;
+            }
+        }
+
+        return 'UNKNOWN_ORDER';
+    }
+
+    private function maskSensitivePayload(mixed $payload): mixed
+    {
+        if (! is_array($payload)) {
+            return $payload;
+        }
+
+        $masked = $payload;
+
+        if (isset($masked['data']) && is_string($masked['data'])) {
+            $masked['data'] = substr($masked['data'], 0, 20) . '...[MASKED]';
+        }
+
+        if (isset($masked['data']) && is_array($masked['data'])) {
+            if (isset($masked['data']['phone']) && is_scalar($masked['data']['phone'])) {
+                $phone = (string) $masked['data']['phone'];
+                $masked['data']['phone'] = str_repeat('*', max(0, strlen($phone) - 4)) . substr($phone, -4);
+            }
+        }
+
+        if (isset($masked['phone']) && is_scalar($masked['phone'])) {
+            $phone = (string) $masked['phone'];
+            $masked['phone'] = str_repeat('*', max(0, strlen($phone) - 4)) . substr($phone, -4);
+        }
+
+        return $masked;
+    }
+
+    private function logApiFailure(
+        string $orderId,
+        string $requestId,
+        string $apiName,
+        string $stage,
+        array $context = [],
+        ?Throwable $exception = null
+    ): void {
+        $exceptionContext = $this->buildExceptionContext($exception);
+
+        Log::channel('daily')->error($apiName . ' failed at ' . $stage, array_merge([
+            'order_id' => $orderId,
+            'request_id' => $requestId,
+            'api_name' => $apiName,
+            'stage' => $stage,
+            'http_status' => $context['http_status'] ?? null,
+            'curl_errno' => $context['curl_errno'] ?? null,
+            'curl_error' => $context['curl_error'] ?? null,
+            'request_url' => $context['request_url'] ?? null,
+            'request_payload' => $context['request_payload'] ?? null,
+            'raw_api_response' => $context['raw_api_response'] ?? null,
+            'decoded_response' => $context['decoded_response'] ?? null,
+            'exception_message' => $exceptionContext['exception_message'],
+            'exception_file' => $exceptionContext['exception_file'],
+            'exception_line' => $exceptionContext['exception_line'],
+            'stack_trace' => $exceptionContext['stack_trace'],
+            'timestamp' => now()->toIso8601String(),
+        ], $context));
+    }
+
+    private function logApiWarning(
+        string $orderId,
+        string $requestId,
+        string $apiName,
+        string $stage,
+        array $context = []
+    ): void {
+        Log::channel('daily')->warning($apiName . ' returned unexpected response at ' . $stage, array_merge([
+            'order_id' => $orderId,
+            'request_id' => $requestId,
+            'api_name' => $apiName,
+            'stage' => $stage,
+            'http_status' => $context['http_status'] ?? null,
+            'curl_errno' => $context['curl_errno'] ?? null,
+            'curl_error' => $context['curl_error'] ?? null,
+            'request_url' => $context['request_url'] ?? null,
+            'request_payload' => $context['request_payload'] ?? null,
+            'raw_api_response' => $context['raw_api_response'] ?? null,
+            'decoded_response' => $context['decoded_response'] ?? null,
+            'exception_message' => null,
+            'exception_file' => null,
+            'exception_line' => null,
+            'stack_trace' => null,
+            'timestamp' => now()->toIso8601String(),
+        ], $context));
+    }
+
+    private function buildExceptionContext(?Throwable $exception): array
+    {
+        if ($exception === null) {
+            return [
+                'exception_message' => null,
+                'exception_file' => null,
+                'exception_line' => null,
+                'stack_trace' => null,
+            ];
+        }
+
+        return [
+            'exception_message' => $exception->getMessage(),
+            'exception_file' => $exception->getFile(),
+            'exception_line' => $exception->getLine(),
+            'stack_trace' => $exception->getTraceAsString(),
+        ];
+    }
+
+    private function buildErrorResponse(?string $message = null, int $status = 500): JsonResponse
+    {
+        return response()->json([
+            'status' => false,
+            'message' => $message ?? 'Unable to process payout at the moment. Please try again later.',
+        ], $status);
+    }
+
+    private function buildBusinessErrorResponse(array $data): JsonResponse
+    {
+        $description = isset($data['responseDescription']) && $data['responseDescription'] !== ''
+            ? $data['responseDescription']
+            : 'an unknown error';
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Your payout cannot be processed due to ' . $description . ' , please try again.',
+        ], 400);
     }
 }

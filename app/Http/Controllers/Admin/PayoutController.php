@@ -17,7 +17,7 @@ class PayoutController extends Controller
 
     public function __construct() 
     {
-        $this->middleware(['permission:Payouts'])->except('detail','easyReceipt','jazzReceipt');
+        $this->middleware(['permission:Payouts'])->except('detail','easyReceipt','jazzReceipt','settle','unsettle');
         $this->payoutDatatable = new PayoutDataTable();
         $this->payoutZigDatatable = new PayoutZigDataTable();
     }
@@ -157,5 +157,61 @@ class PayoutController extends Controller
             $item = ArcheivePayout::find($id);
         }
         return view('admin.receipt.jazzcash',get_defined_vars());
+    }
+
+    public function settle(Request $request)
+    {
+        $validated = $request->validate([
+            'order_id' => 'required',
+            'table_name' => 'required|in:payouts,archeive_payouts',
+        ]);
+
+        $model = $this->resolvePayoutModel($validated['table_name']);
+
+        $updated = $model::where('orderId', $validated['order_id'])
+            ->limit(1)
+            ->update([
+                'is_settled' => 'yes',
+                'settled_date' => now(),
+            ]);
+
+        if (! $updated) {
+            return response()->json(['success' => false, 'message' => 'Payout not found'], 404);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function unsettle(Request $request)
+    {
+        $validated = $request->validate([
+            'order_id' => 'required',
+            'table_name' => 'required|in:payouts,archeive_payouts',
+        ]);
+
+        $model = $this->resolvePayoutModel($validated['table_name']);
+
+        $updated = $model::where('orderId', $validated['order_id'])
+            ->limit(1)
+            ->update([
+                'is_settled' => 'no',
+                'settled_date' => null,
+            ]);
+
+        if (! $updated) {
+            return response()->json(['success' => false, 'message' => 'Payout not found'], 404);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    private function resolvePayoutModel(string $tableName): string
+    {
+        $models = [
+            'payouts' => Payout::class,
+            'archeive_payouts' => ArcheivePayout::class,
+        ];
+
+        return $models[$tableName];
     }
 }
