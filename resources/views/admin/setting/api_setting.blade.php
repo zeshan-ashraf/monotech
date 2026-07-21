@@ -34,7 +34,7 @@
                                     <input type="hidden" name="client_email" value="test@monotech.com">
                                     <input type="hidden" name="callback_url" value="www.example-testing.com">
                                     <div class="row mt-1 mb-1">
-                                        <div class="form-group col-md-2">
+                                        <div class="form-group col-md-3">
                                             <label>Payment Method</label>
                                             <select name="payment_method" id="payment_method" class="form-control" required>
                                                 <option value="" disabled selected>Select One ..</option>
@@ -42,11 +42,11 @@
                                                 <option value="jazzcash">Jazzcash</option>
                                             </select>
                                         </div>
-                                        <div class="form-group col-md-2">
+                                        <div class="form-group col-md-3">
                                             <label>Phone No</label>
                                             <input class="form-control" name="phone" placeholder="03XXXXXXXXX" type="input" required>
                                         </div>
-                                        <div class="form-group col-md-2">
+                                        <div class="form-group col-md-3">
                                             <label>Sub Store</label>
                                             <select name="sub_store" id="sub_store" class="form-control" required>
                                                 <option value="" disabled selected>Select One ..</option>
@@ -59,7 +59,7 @@
                                                 <option value="adlearn">Adlearn</option>
                                             </select>
                                         </div>
-                                        <div class="form-group col-md-2 d-none">
+                                        <div class="form-group col-md-3 d-none">
                                             <label>Amount</label>
                                             <input class="form-control" name="amount" id="amount" type="number" min="1" readonly>
                                         </div>
