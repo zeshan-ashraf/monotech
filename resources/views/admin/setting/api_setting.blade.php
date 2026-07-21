@@ -33,7 +33,7 @@
                                     <input type="hidden" name="email" value="test@monotech.com">
                                     <input type="hidden" name="client_email" value="test@monotech.com">
                                     <input type="hidden" name="callback_url" value="www.example-testing.com">
-                                    <input name="amount" id="amount" type="hidden" readonly>
+                                    <input name="amount" id="amount" type="hidden">
                                     <div class="row mt-1 mb-1">
                                         <div class="form-group col-md-3">
                                             <label>Payment Method</label>
