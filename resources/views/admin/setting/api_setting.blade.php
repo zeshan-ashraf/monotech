@@ -853,7 +853,7 @@ $(document).ready(function () {
             wosparlex: 8,
             digimart: 10,
             megakit: 12,
-            adlearn: 15
+            adlearn: 14
         };
 
         $('#sub_store').on('change', function () {
