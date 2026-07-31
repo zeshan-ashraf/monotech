@@ -43,9 +43,9 @@ return [
     'prod_megakit_password'=> env('EASYPAISA_MEGAKIT_PRODUCTION_PASSWORD'),
     'prod_megakit_storeid'=> env('EASYPAISA_MEGAKIT_PRODUCTION_STOREID'),
 
-    'active_ep_substore_username'=> env('EASYPAISA_PRODUCTION_PIXELPUSH_USERNAME'),
-    'active_ep_substore_password'=>env('EASYPAISA_PRODUCTION_PIXELPUSH_PASSWORD'),
-    'active_ep_substore_storeid'=> env('EASYPAISA_PRODUCTION_PIXELPUSH_STOREID'),
+    'active_ep_substore_username'=> env('EASYPAISA_PRODUCTION_WOSPARLEX_USERNAME'),
+    'active_ep_substore_password'=>env('EASYPAISA_PRODUCTION_WOSPARLEX_PASSWORD'),
+    'active_ep_substore_storeid'=> env('EASYPAISA_PRODUCTION_WOSPARLEX_STOREID'),
 
     // 'active_ep_substore_username'=> env('EASYPAISA_PRODUCTION_CODEBASE_USERNAME'),
     // 'active_ep_substore_password'=>env('EASYPAISA_PRODUCTION_CODEBASE_PASSWORD'),
