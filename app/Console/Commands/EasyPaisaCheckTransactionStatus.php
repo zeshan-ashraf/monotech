@@ -64,7 +64,7 @@ class EasyPaisaCheckTransactionStatus extends Command
                 ->where('status', 'pending')
                 ->where('txn_type', 'easypaisa')
                 ->where('created_at', '<=', now()->subMinutes($minAgeMinutes))
-                ->orderBy('id', 'desc')
+                //->orderBy('id', 'desc')
                 ->limit($chunk)
                 ->get();
 
