@@ -64,9 +64,8 @@ class PaymentServiceNew
         ]);
 
 		$pp_Amount = $request->amount*100;
-		$DateTime = new \DateTime();
-		$pp_TxnDateTime = $DateTime->format('YmdHis');
-		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
+		$pp_TxnRefNo = generateTxnRefNo();
+		$pp_TxnDateTime = substr($pp_TxnRefNo, 1, 14);
 
 		$post_data = array(
             "pp_Amount" => (string)$pp_Amount,
@@ -132,9 +131,7 @@ class PaymentServiceNew
         ]);
 
 		$pp_Amount = (int)$request->amount;
-		$DateTime = new \DateTime();
-		$pp_TxnDateTime = $DateTime->format('YmdHis');
-        $pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
+        $pp_TxnRefNo = generateTxnRefNo();
         $date = Carbon::now();
         $expiryDate = $date->addHours(10)->format('Ymd His');
 

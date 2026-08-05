@@ -127,3 +127,18 @@ function payoutEPFunc($id){
     $epPayoutAmount = Settlement::where('user_id', $id)->whereDate('date', today())->value('ep_payout');
     return $epPayoutAmount;
 }
+
+/**
+ * Generate a unique 20-character transaction reference number.
+ *
+ * Delegates to App\Service\TxnRefNoGenerator — the single implementation
+ * of txn_ref_no generation in this project.
+ *
+ * @return string
+ *
+ * @throws \RuntimeException
+ */
+function generateTxnRefNo(): string
+{
+    return app(\App\Service\TxnRefNoGenerator::class)->generateTxnRefNo();
+}

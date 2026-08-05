@@ -840,10 +840,8 @@ class PayoutController extends Controller
     }
     public function encryptionFunc($data)
     {
-        $DateTime 		= new \DateTime();
-		$pp_TxnDateTime = $DateTime->format('YmdHis');
-		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
-		
+		$pp_TxnRefNo = generateTxnRefNo();
+
         $encodeData = json_encode([
             "receiverMSISDN" => $data['phone'],
             "amount" => $data['amount'],

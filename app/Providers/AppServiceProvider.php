@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Service\TxnRefNoGenerator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Blade;
@@ -14,6 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(TxnRefNoGenerator::class);
+
         $apiDocsAutoload = base_path('modules/ApiDocs/autoload.php');
         if (is_file($apiDocsAutoload)) {
             require_once $apiDocsAutoload;

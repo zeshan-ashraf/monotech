@@ -708,10 +708,8 @@ class GeneralController extends Controller
     public function encryptionFunc($data)
     {
         $phone = preg_replace('/^92/', '0', $data['phone']);
-        $DateTime 		= new \DateTime();
-		$pp_TxnDateTime = $DateTime->format('YmdHis');
-		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
-		
+		$pp_TxnRefNo = generateTxnRefNo();
+
         $encodeData = json_encode([
             "receiverMSISDN" => $phone,
             "amount" => $data['amount'],
