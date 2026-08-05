@@ -31,9 +31,10 @@ class TxnRefNoGenerator
         for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
             $txnRefNo = $this->buildTxnRefNo();
 
-            if (! Transaction::where('txn_ref_no', $txnRefNo)->exists()) {
-                return $txnRefNo;
-            }
+            //if (! Transaction::where('txn_ref_no', $txnRefNo)->exists()) {
+            //    return $txnRefNo;
+            //}
+            return $txnRefNo;
         }
 
         throw new RuntimeException(
