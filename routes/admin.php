@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\SettlementController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\SearchingController;
+use App\Http\Controllers\Admin\ExportPayinController;
 use App\Http\Controllers\Admin\ArchiveController;
 use App\Http\Controllers\Admin\ArchivePayoutController;
 use App\Http\Controllers\Admin\BackupTransactionController;
@@ -95,6 +96,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/sr/calculator', [SearchingController::class,'srList'])->name('sr_list');
         Route::get('/callback/{id?}', [SearchingController::class,'callback'])->name('callback.send');
         Route::get('/payout_callback/{id?}', [SearchingController::class,'payoutCallback'])->name('payout_callback.send');
+    });
+    // Export Payin slice — drop-in routes for other projects
+    Route::as('export_payin.')->prefix('export-payin')->group(function () {
+        Route::get('/list', [ExportPayinController::class, 'list'])->name('list');
+        Route::get('/export', [ExportPayinController::class, 'export'])->name('export');
     });
     Route::as('setting.')->prefix('setting')->group(function () {
         Route::get('/reverse/list', [SettingController::class,'list'])->name('list');
