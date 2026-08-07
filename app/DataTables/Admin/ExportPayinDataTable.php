@@ -21,11 +21,8 @@ use Yajra\DataTables\Services\DataTable;
  */
 class ExportPayinDataTable extends DataTable
 {
-    /** @var int Cap for on-screen results only. Export ignores this and fetches all matches. */
-    private const DISPLAY_PER_TABLE_LIMIT = 100;
-
-    /** @var int Safety cap when exporting all filtered rows. */
-    public const EXPORT_MAX_ROWS = 50000;
+    /** @var int Max rows for list display and CSV/Excel export (avoids nginx 502 on large ranges). */
+    public const PER_TABLE_LIMIT = 100;
 
     /** @var array<int, string> */
     private array $usersById = [];
@@ -63,7 +60,7 @@ class ExportPayinDataTable extends DataTable
             return collect();
         }
 
-        $results = static::searchResults(forExport: false);
+        $results = static::searchResults();
         $this->usersById = static::resolveUsersById($results);
 
         return $results;
@@ -71,9 +68,9 @@ class ExportPayinDataTable extends DataTable
 
     /**
      * Shared search used by list + CSV/Excel export.
-     * Export pulls all matching rows across live → archive → backup (safety-capped).
+     * Same 100-row cap as Payin Search (live → archive → backup, stop on first hit).
      */
-    public static function searchResults(bool $forExport = false): Collection
+    public static function searchResults(): Collection
     {
         $filters = static::resolveFilters();
 
@@ -81,20 +78,11 @@ class ExportPayinDataTable extends DataTable
             return collect();
         }
 
-        $limit = $forExport ? null : self::DISPLAY_PER_TABLE_LIMIT;
-        $stopOnFirstTable = !$forExport;
-
         $results = $filters['order_id']
-            ? static::searchByOrderReference($filters, $limit, $stopOnFirstTable)
-            : static::searchWithFilters($filters, 'exact', $limit, $stopOnFirstTable);
+            ? static::searchByOrderReference($filters, self::PER_TABLE_LIMIT, true)
+            : static::searchWithFilters($filters, 'exact', self::PER_TABLE_LIMIT, true);
 
-        $sorted = $results->sortByDesc('created_at')->values();
-
-        if ($forExport && $sorted->count() > self::EXPORT_MAX_ROWS) {
-            return $sorted->take(self::EXPORT_MAX_ROWS)->values();
-        }
-
-        return $sorted;
+        return $results->sortByDesc('created_at')->values();
     }
 
     public static function resolveUsersById(Collection $results): array

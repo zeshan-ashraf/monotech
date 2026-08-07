@@ -64,13 +64,23 @@ class ExportPayinController extends Controller
             'format' => ['required', 'in:csv,xlsx'],
         ]);
 
-        $rows = ExportPayinDataTable::searchResults(forExport: true);
+        $rows = ExportPayinDataTable::searchResults();
         $usersById = ExportPayinDataTable::resolveUsersById($rows);
         $export = new ExportPayinExport($rows, $usersById);
         $filename = 'export_payin_' . date('YmdHis');
 
+        // CSV: stream directly (lighter than Maatwebsite; avoids 502 under nginx timeouts).
         if ($request->input('format') === 'csv') {
-            return Excel::download($export, $filename . '.csv', ExcelFormat::CSV);
+            return response()->streamDownload(function () use ($export) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, $export->headings());
+                foreach ($export->collection() as $row) {
+                    fputcsv($handle, $export->map($row));
+                }
+                fclose($handle);
+            }, $filename . '.csv', [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+            ]);
         }
 
         return Excel::download($export, $filename . '.xlsx', ExcelFormat::XLSX);
