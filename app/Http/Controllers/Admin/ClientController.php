@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\{Client,User};
+use App\Services\ClientSiteHealthService;
 use Illuminate\Http\Request;
 
 class ClientController extends Controller
@@ -101,5 +102,21 @@ class ClientController extends Controller
         $msg = "Client Fee Updated Successfully!";
         
         return redirect()->back()->with('message',$msg);
+    }
+
+    /**
+     * Live-check a client site URL (always hits the live URL).
+     */
+    public function checkUrl(string $id, ClientSiteHealthService $healthService)
+    {
+        $client = Client::findOrFail($id);
+
+        $result = $healthService->check((string) $client->url);
+
+        return response()->json(array_merge([
+            'id' => $client->id,
+            'name' => $client->name,
+            'url' => $client->url,
+        ], $result));
     }
 }

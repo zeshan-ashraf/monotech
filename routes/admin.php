@@ -62,6 +62,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/user/list', [ClientController::class,'userList'])->name('user_list');
         Route::post('/user/store', [ClientController::class,'userStore'])->name('user.store');
         Route::get('/sec-modal/{id?}', [ClientController::class,'modalSec'])->name('modal.sec');
+        Route::get('/check-url/{id}', [ClientController::class, 'checkUrl'])->name('check_url');
     });
     
     Route::as('transaction.')->prefix('transaction')->group(function () {
