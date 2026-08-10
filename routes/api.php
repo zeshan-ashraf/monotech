@@ -64,7 +64,7 @@ Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProc
 */
 
 Route::as('payout.')->prefix('payout')->group(function () {
-    Route::middleware(['throttle:api', 'block.listed.phone.carrier:payout','whitelist.ip'])->group(function () {
+    Route::middleware(['throttle:api', 'block.listed.phone.carrier:payout','whitelist.ip','payout.amount','payout.daily.limit'])->group(function () {
         Route::post('/checkout', [PayoutController::class, 'checkout']);
     });
 });
@@ -98,7 +98,7 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
 
     // Payout Route
     Route::post('payout/checkout', [PayoutController::class, 'checkout'])
-        ->middleware(['throttle:api','block.listed.phone.carrier:payout', 'whitelist.ip']);
+        ->middleware(['throttle:api','block.listed.phone.carrier:payout', 'whitelist.ip','payout.amount','payout.daily.limit']);
 });
 
 Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);

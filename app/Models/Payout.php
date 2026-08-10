@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Payout extends Model
 {
     use HasFactory;
+    public const STATUS_SUCCESS = 'success';    
 
     protected $table = 'payouts';
 

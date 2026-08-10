@@ -79,10 +79,12 @@ class Kernel extends HttpKernel
         'throttle.phone' => \App\Http\Middleware\ThrottlePhoneNumberMiddleware::class,
         'throttle.payin.global' => \App\Http\Middleware\ThrottlePayinCheckoutGlobalMiddleware::class,
 		'phone.verified' => \App\Http\Middleware\EnsurePhoneIsVerified::class,
-        'payout.daily.limit' => \App\Http\Middleware\CheckPayoutDailyLimit::class,
+        //'payout.daily.limit' => \App\Http\Middleware\CheckPayoutDailyLimit::class,
         'payin.pending.limit' => \App\Http\Middleware\CheckPayinPendingBacklogMiddleware::class,
         'api.traffic' => \App\Http\Middleware\ApiTrafficMiddleware::class,
         'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
         'block.listed.phone.carrier' => \App\Http\Middleware\BlockListedPhoneAndCarrierMiddleware::class,
+        'payout.amount' => \App\Http\Middleware\CheckPayoutAmount::class,
+        'payout.daily.limit' => \App\Http\Middleware\CheckPayoutDailyLimit::class,
     ];
 }

@@ -41,6 +41,7 @@ class User extends Authenticatable
         'db_metrics_order',
         'new_user_verification',
         'new_user_max_amount',
+        'payout_daily_limit',
     ];
 
     /**
