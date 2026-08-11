@@ -43,7 +43,7 @@
                                                 @if(auth()->user()->user_role === 'Super Admin')
                                                 <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
-                                                        <label>User</label>
+                                                        <label>Clients</label>
                                                         <select name="user_id" class="form-control">
                                                             <option value="">All</option>
                                                             @foreach(($users ?? []) as $item)
@@ -69,26 +69,10 @@
                                                 </div>
                                                 <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
-                                                        <label>Order Id</label>
-                                                        <input type="text" name="order_id"
-                                                            class="form-control"
-                                                            value="{{ request()->order_id }}" autocomplete="off">
-                                                    </div>
-                                                </div>
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
                                                         <label>Phone</label>
                                                         <input type="text" name="phone"
                                                             class="form-control"
                                                             value="{{ request()->phone }}" autocomplete="off">
-                                                    </div>
-                                                </div>
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
-                                                        <label>Transaction Id</label>
-                                                        <input type="text" name="transaction_Id"
-                                                            class="form-control"
-                                                            value="{{ request()->transaction_Id }}" autocomplete="off">
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-2 col-md-4">
