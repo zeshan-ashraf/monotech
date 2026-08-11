@@ -121,6 +121,11 @@
                                 </div>
                             </div>
                             <div class="card-body">
+                                <div class="alert alert-info mb-2 py-1 px-2 small">
+                                    On-screen preview shows up to {{ \App\DataTables\Admin\ExportPayinDataTable::DISPLAY_LIMIT }} rows
+                                    (live + archive + backup). Use <strong>Export CSV</strong> for the full filtered range
+                                    (up to {{ number_format(\App\DataTables\Admin\ExportPayinDataTable::EXPORT_MAX_ROWS) }} rows).
+                                </div>
                                 <div class="table-responsive">
                                     {{ $dataTable->table(['class' => 'table text-center table-striped w-100'], true) }}
                                 </div>

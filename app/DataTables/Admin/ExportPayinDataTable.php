@@ -21,8 +21,11 @@ use Yajra\DataTables\Services\DataTable;
  */
 class ExportPayinDataTable extends DataTable
 {
-    /** @var int Max rows for list display and CSV/Excel export (avoids nginx 502 on large ranges). */
-    public const PER_TABLE_LIMIT = 100;
+    /** @var int On-screen preview cap (DataTables loads the full collection in memory). */
+    public const DISPLAY_LIMIT = 1000;
+
+    /** @var int Safety cap for CSV/Excel export. */
+    public const EXPORT_MAX_ROWS = 50000;
 
     /** @var array<int, string> */
     private array $usersById = [];
@@ -60,17 +63,17 @@ class ExportPayinDataTable extends DataTable
             return collect();
         }
 
-        $results = static::searchResults();
+        $results = static::searchResults(self::DISPLAY_LIMIT);
         $this->usersById = static::resolveUsersById($results);
 
         return $results;
     }
 
     /**
-     * Shared search used by list + CSV/Excel export.
-     * Same 100-row cap as Payin Search (live → archive → backup, stop on first hit).
+     * Shared search used by list preview.
+     * Searches live → archive → backup and merges until $limit is reached.
      */
-    public static function searchResults(): Collection
+    public static function searchResults(?int $limit = self::DISPLAY_LIMIT): Collection
     {
         $filters = static::resolveFilters();
 
@@ -79,10 +82,60 @@ class ExportPayinDataTable extends DataTable
         }
 
         $results = $filters['order_id']
-            ? static::searchByOrderReference($filters, self::PER_TABLE_LIMIT, true)
-            : static::searchWithFilters($filters, 'exact', self::PER_TABLE_LIMIT, true);
+            ? static::searchByOrderReference($filters, $limit)
+            : static::searchWithFilters($filters, 'exact', $limit);
 
         return $results->sortByDesc('created_at')->values();
+    }
+
+    /**
+     * Stream matching rows for export (all tables, up to EXPORT_MAX_ROWS).
+     * Yields model instances; caller should not retain the full set in memory.
+     *
+     * @return \Generator<int, object>
+     */
+    public static function exportRowCursor(): \Generator
+    {
+        $filters = static::resolveFilters();
+
+        if (!$filters['start_date'] || !$filters['end_date']) {
+            return;
+        }
+
+        $emitted = 0;
+        $matchModes = $filters['order_id']
+            ? ['exact', 'prefix', 'contains']
+            : ['exact'];
+
+        foreach ($matchModes as $matchMode) {
+            $modeEmitted = 0;
+
+            foreach (static::sources() as $source) {
+                if ($emitted >= self::EXPORT_MAX_ROWS) {
+                    return;
+                }
+
+                $query = static::applySearchFilters($source['model']::query(), $filters, $matchMode)
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id');
+
+                foreach ($query->cursor() as $row) {
+                    $row->table_type = $source['type'];
+                    yield $row;
+                    $emitted++;
+                    $modeEmitted++;
+
+                    if ($emitted >= self::EXPORT_MAX_ROWS) {
+                        return;
+                    }
+                }
+            }
+
+            // For order_id: stop after the first match mode that finds rows.
+            if ($filters['order_id'] && $modeEmitted > 0) {
+                return;
+            }
+        }
     }
 
     public static function resolveUsersById(Collection $results): array
@@ -93,18 +146,21 @@ class ExportPayinDataTable extends DataTable
             ->all();
     }
 
+    /** @return array<int, string> */
+    public static function resolveAllUserNames(): array
+    {
+        return User::query()->pluck('name', 'id')->all();
+    }
+
     public static function hasRequiredDateRange(): bool
     {
         return request()->filled('start_date') && request()->filled('end_date');
     }
 
-    private static function searchByOrderReference(
-        array $filters,
-        ?int $limit,
-        bool $stopOnFirstTableWithResults
-    ): Collection {
+    private static function searchByOrderReference(array $filters, ?int $limit): Collection
+    {
         foreach (['exact', 'prefix', 'contains'] as $matchMode) {
-            $results = static::searchWithFilters($filters, $matchMode, $limit, $stopOnFirstTableWithResults);
+            $results = static::searchWithFilters($filters, $matchMode, $limit);
 
             if ($results->isNotEmpty()) {
                 return $results;
@@ -117,28 +173,28 @@ class ExportPayinDataTable extends DataTable
     private static function searchWithFilters(
         array $filters,
         string $orderMatchMode,
-        ?int $limit,
-        bool $stopOnFirstTableWithResults = true
+        ?int $limit
     ): Collection {
         $results = collect();
 
         foreach (static::sources() as $source) {
-            $query = static::applySearchFilters($source['model']::query(), $filters, $orderMatchMode)
-                ->orderByDesc('created_at');
+            $remaining = $limit !== null ? $limit - $results->count() : null;
 
-            if ($limit !== null) {
-                $query->limit($limit);
+            if ($remaining !== null && $remaining <= 0) {
+                break;
             }
 
-            $rows = $query->get();
+            $query = static::applySearchFilters($source['model']::query(), $filters, $orderMatchMode)
+                ->orderByDesc('created_at')
+                ->orderByDesc('id');
 
-            foreach ($rows as $row) {
+            if ($remaining !== null) {
+                $query->limit($remaining);
+            }
+
+            foreach ($query->get() as $row) {
                 $row->table_type = $source['type'];
                 $results->push($row);
-            }
-
-            if ($stopOnFirstTableWithResults && $results->isNotEmpty()) {
-                return $results;
             }
         }
 

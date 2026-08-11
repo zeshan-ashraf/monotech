@@ -6,6 +6,7 @@ use App\DataTables\Admin\ExportPayinDataTable;
 use App\Exports\ExportPayinExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Excel as ExcelFormat;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -64,25 +65,41 @@ class ExportPayinController extends Controller
             'format' => ['required', 'in:csv,xlsx'],
         ]);
 
-        $rows = ExportPayinDataTable::searchResults();
-        $usersById = ExportPayinDataTable::resolveUsersById($rows);
-        $export = new ExportPayinExport($rows, $usersById);
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
+
+        $usersById = ExportPayinDataTable::resolveAllUserNames();
         $filename = 'export_payin_' . date('YmdHis');
 
-        // CSV: stream directly (lighter than Maatwebsite; avoids 502 under nginx timeouts).
+        // CSV: stream row-by-row (avoids loading the full set / nginx 502).
         if ($request->input('format') === 'csv') {
+            $export = new ExportPayinExport(collect(), $usersById);
+
             return response()->streamDownload(function () use ($export) {
                 $handle = fopen('php://output', 'w');
                 fputcsv($handle, $export->headings());
-                foreach ($export->collection() as $row) {
+
+                foreach (ExportPayinDataTable::exportRowCursor() as $row) {
                     fputcsv($handle, $export->map($row));
                 }
+
                 fclose($handle);
             }, $filename . '.csv', [
                 'Content-Type' => 'text/csv; charset=UTF-8',
+                'X-Accel-Buffering' => 'no',
             ]);
         }
 
-        return Excel::download($export, $filename . '.xlsx', ExcelFormat::XLSX);
+        // Excel: collect up to EXPORT_MAX_ROWS (prefer CSV for very large ranges).
+        $rows = new Collection();
+        foreach (ExportPayinDataTable::exportRowCursor() as $row) {
+            $rows->push($row);
+        }
+
+        return Excel::download(
+            new ExportPayinExport($rows, $usersById),
+            $filename . '.xlsx',
+            ExcelFormat::XLSX
+        );
     }
 }
