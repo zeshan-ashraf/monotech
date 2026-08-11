@@ -55,6 +55,7 @@ class ExportPayinController extends Controller
                 'end_date' => ['required', 'date', 'after_or_equal:start_date'],
                 'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
                 'user_id' => ['nullable'],
+                'q' => ['nullable', 'string', 'max:255'],
             ]);
         }
 
@@ -64,6 +65,13 @@ class ExportPayinController extends Controller
                 ->where('active', 1)
                 ->orderBy('name')
                 ->get(['id', 'name']);
+        }
+
+        $summary = null;
+        $isDataTableAjax = $request->ajax() || $request->has('draw');
+        if ($request->boolean('params') && ! $isDataTableAjax) {
+            @set_time_limit(120);
+            $summary = ExportPayinDataTable::summaryStats();
         }
 
         return $dataTable->render('admin.export_payin.list', get_defined_vars());

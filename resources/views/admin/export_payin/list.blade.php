@@ -58,12 +58,13 @@
                                                 <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
                                                         <label>Status</label>
+                                                        @php $selectedStatus = request()->has('status') ? (string) request()->status : 'success'; @endphp
                                                         <select name="status" class="form-control">
-                                                            <option value="">All</option>
-                                                            <option value="failed" {{ request()->status === 'failed' ? 'selected' : '' }}>Failed</option>
-                                                            <option value="success" {{ request()->status === 'success' ? 'selected' : '' }}>Success</option>
-                                                            <option value="pending" {{ request()->status === 'pending' ? 'selected' : '' }}>Pending</option>
-                                                            <option value="reverse" {{ request()->status === 'reverse' ? 'selected' : '' }}>Reverse</option>
+                                                            <option value="" {{ $selectedStatus === '' ? 'selected' : '' }}>All</option>
+                                                            <option value="failed" {{ $selectedStatus === 'failed' ? 'selected' : '' }}>Failed</option>
+                                                            <option value="success" {{ $selectedStatus === 'success' ? 'selected' : '' }}>Success</option>
+                                                            <option value="pending" {{ $selectedStatus === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                            <option value="reverse" {{ $selectedStatus === 'reverse' ? 'selected' : '' }}>Reverse</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -102,6 +103,15 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-2 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Search</label>
+                                                        <input type="text" name="q"
+                                                            class="form-control"
+                                                            placeholder="All columns"
+                                                            value="{{ request()->q }}" autocomplete="off">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-2 col-md-4">
                                                     <button type="submit" class="btn btn-outline-primary waves-effect">
                                                         <i data-feather='search'></i>
                                                     </button>
@@ -115,6 +125,78 @@
                     </div>
                 </div>
                 @if(request()->params)
+                @php
+                    $summary = $summary ?? null;
+                    $statusColors = [
+                        'failed' => 'bg-danger',
+                        'success' => 'bg-success',
+                        'pending' => 'bg-warning',
+                        'reverse' => 'bg-secondary',
+                    ];
+                @endphp
+                @if($summary)
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-primary">
+                            <div class="card-body pb-50">
+                                <h5 class="text-white">Dated: <span class="fw-bolder" style="font-size:20px">{{ $summary['date_label'] }}</span></h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success">
+                            <div class="card-body pb-50">
+                                <h5 class="text-white">
+                                    Total Payin:
+                                    <span class="fw-bolder" style="font-size:20px">{{ number_format(round($summary['total_payin'], 2)) }} PKR</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning">
+                            <div class="card-body pb-50">
+                                <h5 class="text-white">
+                                    No Of Orders:
+                                    <span class="fw-bolder" style="font-size:20px">{{ number_format($summary['total_orders']) }}</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                    @if($summary['show_sr'])
+                    <div class="col-md-3">
+                        <div class="card bg-info">
+                            <div class="card-body pb-50">
+                                <h5 class="text-white">
+                                    SR:
+                                    <span class="fw-bolder" style="font-size:20px">{{ number_format($summary['success_rate'], 2) }}%</span>
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @if(!empty($summary['show_status_breakdown']))
+                <div class="row">
+                    @foreach(['failed' => 'Failed', 'success' => 'Success', 'pending' => 'Pending', 'reverse' => 'Reverse'] as $statusKey => $statusLabel)
+                        @php $stat = $summary['by_status'][$statusKey] ?? ['count' => 0, 'amount' => 0]; @endphp
+                        <div class="col-md-3">
+                            <div class="card {{ $statusColors[$statusKey] ?? 'bg-secondary' }}">
+                                <div class="card-body pb-50">
+                                    <h5 class="text-white mb-1">{{ $statusLabel }}</h5>
+                                    <h5 class="text-white mb-0">
+                                        Orders: <span class="fw-bolder" style="font-size:18px">{{ number_format($stat['count']) }}</span>
+                                    </h5>
+                                    <h5 class="text-white mb-0">
+                                        Amount: <span class="fw-bolder" style="font-size:18px">{{ number_format(round($stat['amount'], 2)) }} PKR</span>
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                @endif
+                @endif
                 <div class="row invoice-preview">
                     <div class="col-md-12">
                         <div class="card">
@@ -133,9 +215,8 @@
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-info mb-2 py-1 px-2 small">
-                                    On-screen preview shows up to {{ \App\DataTables\Admin\ExportPayinDataTable::DISPLAY_LIMIT }} rows
-                                    (live + archive + backup). Use <strong>Export CSV</strong> for <strong>all</strong> matching rows
-                                    (no row cap). Prefer CSV over Excel for large date ranges.
+                                    Table loads <strong>all</strong> matching rows (live + archive + backup). Large date ranges may take longer.
+                                    Prefer <strong>Export CSV</strong> for very large downloads. Use the Search box above or the table filter to refine.
                                 </div>
                                 <div class="table-responsive">
                                     {{ $dataTable->table(['class' => 'table text-center table-striped w-100'], true) }}

@@ -21,8 +21,8 @@ use Yajra\DataTables\Services\DataTable;
  */
 class ExportPayinDataTable extends DataTable
 {
-    /** @var int On-screen preview cap (DataTables loads the full collection in memory). */
-    public const DISPLAY_LIMIT = 1000;
+    /** @var list<string> */
+    public const STATUSES = ['failed', 'success', 'pending', 'reverse'];
 
     /** @var array<int, string> */
     private array $usersById = [];
@@ -60,7 +60,11 @@ class ExportPayinDataTable extends DataTable
             return collect();
         }
 
-        $results = static::searchResults(self::DISPLAY_LIMIT);
+        @set_time_limit(0);
+        @ini_set('memory_limit', '1024M');
+
+        // No preview cap — load all matching rows (live + archive + backup).
+        $results = static::searchResults(null);
         $this->usersById = static::resolveUsersById($results);
 
         return $results;
@@ -68,9 +72,9 @@ class ExportPayinDataTable extends DataTable
 
     /**
      * Shared search used by list preview.
-     * Searches live → archive → backup and merges until $limit is reached.
+     * Searches live → archive → backup and merges until $limit is reached (null = all).
      */
-    public static function searchResults(?int $limit = self::DISPLAY_LIMIT): Collection
+    public static function searchResults(?int $limit = null): Collection
     {
         $filters = static::resolveFilters();
 
@@ -83,6 +87,94 @@ class ExportPayinDataTable extends DataTable
             : static::searchWithFilters($filters, 'exact', $limit);
 
         return $results->sortByDesc('created_at')->values();
+    }
+
+    /**
+     * Aggregate counts/amounts across live + archive + backup (same filters as list).
+     * Status filter is ignored here so we can build both grand totals and per-status cards.
+     *
+     * @return array{
+     *     date_label: string,
+     *     selected_status: ?string,
+     *     show_sr: bool,
+     *     show_status_breakdown: bool,
+     *     total_payin: float,
+     *     total_orders: int,
+     *     success_rate: float,
+     *     by_status: array<string, array{count: int, amount: float}>
+     * }
+     */
+    public static function summaryStats(): array
+    {
+        $filters = static::resolveFilters();
+        $selectedStatus = $filters['status'];
+
+        $byStatus = [];
+        foreach (self::STATUSES as $status) {
+            $byStatus[$status] = ['count' => 0, 'amount' => 0.0];
+        }
+
+        // Build aggregates without the status filter so breakdown is always available.
+        $aggregateFilters = $filters;
+        $aggregateFilters['status'] = null;
+
+        if ($filters['start_date'] && $filters['end_date']) {
+            foreach (static::sources() as $source) {
+                $rows = static::applySearchFilters($source['model']::query(), $aggregateFilters, 'exact')
+                    ->selectRaw('status, COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total')
+                    ->groupBy('status')
+                    ->get();
+
+                foreach ($rows as $row) {
+                    $key = strtolower((string) $row->status);
+                    if (!isset($byStatus[$key])) {
+                        $byStatus[$key] = ['count' => 0, 'amount' => 0.0];
+                    }
+                    $byStatus[$key]['count'] += (int) $row->cnt;
+                    $byStatus[$key]['amount'] += (float) $row->total;
+                }
+            }
+        }
+
+        $totalOrdersAll = (int) collect($byStatus)->sum('count');
+        $successCount = (int) ($byStatus['success']['count'] ?? 0);
+        $successAmount = (float) ($byStatus['success']['amount'] ?? 0);
+
+        $dateLabel = '';
+        if ($filters['start_date'] && $filters['end_date']) {
+            $dateLabel = Carbon::parse($filters['start_date'])->format('d-m-Y')
+                . ' to '
+                . Carbon::parse($filters['end_date'])->format('d-m-Y');
+        }
+
+        if ($selectedStatus === null) {
+            return [
+                'date_label' => $dateLabel,
+                'selected_status' => null,
+                'show_sr' => true,
+                'show_status_breakdown' => true,
+                'total_payin' => $successAmount,
+                'total_orders' => $totalOrdersAll,
+                'success_rate' => $totalOrdersAll > 0
+                    ? round(($successCount / $totalOrdersAll) * 100, 2)
+                    : 0.0,
+                'by_status' => $byStatus,
+            ];
+        }
+
+        $statusCount = (int) ($byStatus[$selectedStatus]['count'] ?? 0);
+        $statusAmount = (float) ($byStatus[$selectedStatus]['amount'] ?? 0);
+
+        return [
+            'date_label' => $dateLabel,
+            'selected_status' => $selectedStatus,
+            'show_sr' => false,
+            'show_status_breakdown' => false,
+            'total_payin' => $statusAmount,
+            'total_orders' => $statusCount,
+            'success_rate' => 0.0,
+            'by_status' => $byStatus,
+        ];
     }
 
     /**
@@ -201,7 +293,17 @@ class ExportPayinDataTable extends DataTable
     }
 
     /**
-     * @return array{txn_ref_no: ?string, phone: ?string, order_id: ?string, start_date: ?string, end_date: ?string, amount: ?float, status: ?string, user_id: ?int}
+     * @return array{
+     *     txn_ref_no: ?string,
+     *     phone: ?string,
+     *     order_id: ?string,
+     *     start_date: ?string,
+     *     end_date: ?string,
+     *     amount: ?float,
+     *     status: ?string,
+     *     user_id: ?int,
+     *     q: ?string
+     * }
      */
     private static function resolveFilters(): array
     {
@@ -218,8 +320,10 @@ class ExportPayinDataTable extends DataTable
             }
         }
 
-        $status = static::trimFilter('status');
-        $allowedStatuses = ['failed', 'success', 'pending', 'reverse'];
+        $status = request()->has('status')
+            ? static::trimFilter('status')
+            : 'success';
+        $allowedStatuses = self::STATUSES;
         if ($status !== null && !in_array($status, $allowedStatuses, true)) {
             $status = null;
         }
@@ -237,6 +341,7 @@ class ExportPayinDataTable extends DataTable
             'amount' => request()->filled('amount_min') ? (float) request()->amount_min : null,
             'status' => $status,
             'user_id' => $userId,
+            'q' => static::trimFilter('q'),
         ];
     }
 
@@ -273,7 +378,34 @@ class ExportPayinDataTable extends DataTable
             })
             ->when($filters['amount'] !== null, function (Builder $q) use ($filters) {
                 $q->where('amount', $filters['amount']);
+            })
+            ->when($filters['q'] ?? null, function (Builder $q) use ($filters) {
+                static::applyGlobalSearch($q, $filters['q']);
             });
+    }
+
+    private static function applyGlobalSearch(Builder $query, string $term): void
+    {
+        $like = '%' . $term . '%';
+        $matchingUserIds = User::query()
+            ->where('name', 'like', $like)
+            ->pluck('id')
+            ->all();
+
+        $query->where(function (Builder $inner) use ($like, $matchingUserIds) {
+            $inner->where('orderId', 'like', $like)
+                ->orWhere('transactionId', 'like', $like)
+                ->orWhere('phone', 'like', $like)
+                ->orWhere('txn_ref_no', 'like', $like)
+                ->orWhere('txn_type', 'like', $like)
+                ->orWhere('status', 'like', $like)
+                ->orWhere('amount', 'like', $like)
+                ->orWhere('pp_message', 'like', $like);
+
+            if ($matchingUserIds !== []) {
+                $inner->orWhereIn('user_id', $matchingUserIds);
+            }
+        });
     }
 
     private static function applyOrderIdFilter(Builder $query, string $term, string $matchMode): void
@@ -300,7 +432,7 @@ class ExportPayinDataTable extends DataTable
                 'processing' => true,
                 'autoWidth' => false,
                 'lengthChange' => true,
-                'searching' => false,
+                'searching' => true,
                 'drawCallback' => 'function () {}',
             ]);
     }
