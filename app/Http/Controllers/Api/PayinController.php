@@ -472,7 +472,7 @@ class PayinController extends Controller
                                     } catch (\Throwable $e) {
                                         $this->logger->info('Failed to mark phone verified after success', [
                                             'request_id' => $requestId,
-                                            'payment_method' => $paymentMethod,
+                                            'payment_method' => $request->payment_method,
                                             'phone' => (string) $request->phone,
                                             'error' => $e->getMessage(),
                                         ]);
