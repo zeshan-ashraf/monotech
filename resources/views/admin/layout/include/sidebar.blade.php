@@ -163,7 +163,7 @@
                 @can('Export Payin')
                     <li class="nav-item">
                         <a class="d-flex align-items-center @if (url()->current() == route('admin.export_payin.list')) active @endif"
-                            href="{{ route('admin.export_payin.list') }}"><i data-feather='download'></i>Export Payin</a>
+                            href="{{ route('admin.export_payin.list') }}"><i data-feather='download'></i>Export Transactions</a>
                     </li>
                 @endcan
                 @if(auth()->user()->user_role == "Super Admin")

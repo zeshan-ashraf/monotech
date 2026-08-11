@@ -21,6 +21,9 @@ use Yajra\DataTables\Services\DataTable;
  */
 class ExportPayinDataTable extends DataTable
 {
+    /** @var int On-screen preview cap (DataTables loads the full collection in memory). */
+    public const DISPLAY_LIMIT = 1000;
+
     /** @var list<string> */
     public const STATUSES = ['failed', 'success', 'pending', 'reverse'];
 
@@ -63,8 +66,7 @@ class ExportPayinDataTable extends DataTable
         @set_time_limit(0);
         @ini_set('memory_limit', '1024M');
 
-        // No preview cap — load all matching rows (live + archive + backup).
-        $results = static::searchResults(null);
+        $results = static::searchResults(self::DISPLAY_LIMIT);
         $this->usersById = static::resolveUsersById($results);
 
         return $results;
@@ -74,7 +76,7 @@ class ExportPayinDataTable extends DataTable
      * Shared search used by list preview.
      * Searches live → archive → backup and merges until $limit is reached (null = all).
      */
-    public static function searchResults(?int $limit = null): Collection
+    public static function searchResults(?int $limit = self::DISPLAY_LIMIT): Collection
     {
         $filters = static::resolveFilters();
 
@@ -301,8 +303,7 @@ class ExportPayinDataTable extends DataTable
      *     end_date: ?string,
      *     amount: ?float,
      *     status: ?string,
-     *     user_id: ?int,
-     *     q: ?string
+     *     user_id: ?int
      * }
      */
     private static function resolveFilters(): array
@@ -341,7 +342,6 @@ class ExportPayinDataTable extends DataTable
             'amount' => request()->filled('amount_min') ? (float) request()->amount_min : null,
             'status' => $status,
             'user_id' => $userId,
-            'q' => static::trimFilter('q'),
         ];
     }
 
@@ -378,34 +378,7 @@ class ExportPayinDataTable extends DataTable
             })
             ->when($filters['amount'] !== null, function (Builder $q) use ($filters) {
                 $q->where('amount', $filters['amount']);
-            })
-            ->when($filters['q'] ?? null, function (Builder $q) use ($filters) {
-                static::applyGlobalSearch($q, $filters['q']);
             });
-    }
-
-    private static function applyGlobalSearch(Builder $query, string $term): void
-    {
-        $like = '%' . $term . '%';
-        $matchingUserIds = User::query()
-            ->where('name', 'like', $like)
-            ->pluck('id')
-            ->all();
-
-        $query->where(function (Builder $inner) use ($like, $matchingUserIds) {
-            $inner->where('orderId', 'like', $like)
-                ->orWhere('transactionId', 'like', $like)
-                ->orWhere('phone', 'like', $like)
-                ->orWhere('txn_ref_no', 'like', $like)
-                ->orWhere('txn_type', 'like', $like)
-                ->orWhere('status', 'like', $like)
-                ->orWhere('amount', 'like', $like)
-                ->orWhere('pp_message', 'like', $like);
-
-            if ($matchingUserIds !== []) {
-                $inner->orWhereIn('user_id', $matchingUserIds);
-            }
-        });
     }
 
     private static function applyOrderIdFilter(Builder $query, string $term, string $matchMode): void

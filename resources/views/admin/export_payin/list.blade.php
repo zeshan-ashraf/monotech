@@ -1,5 +1,5 @@
 @extends('admin.layout.app')
-@section('title','Export Payin')
+@section('title','Export Transactions')
 @push('css')
 <link rel="stylesheet" href="{{ asset('admin/assets/dashboard/css/dataTables.bootstrap4.min.css') }}" />
 <style>
@@ -32,7 +32,7 @@
                     <div class="col-12">
                         <div class="card w-100">
                             <div class="card-header border-bottom d-flex justify-content-between">
-                                <h4 class="card-title text-capitalize">Export Payin</h4>
+                                <h4 class="card-title text-capitalize">Export Transactions</h4>
                             </div>
                             <div class="card-body mt-3">
                                 <div>
@@ -100,15 +100,6 @@
                                                             class="form-control"
                                                             value="{{ request()->end_date }}"
                                                             required>
-                                                    </div>
-                                                </div>
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
-                                                        <label>Search</label>
-                                                        <input type="text" name="q"
-                                                            class="form-control"
-                                                            placeholder="All columns"
-                                                            value="{{ request()->q }}" autocomplete="off">
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-2 col-md-4">
@@ -215,8 +206,9 @@
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-info mb-2 py-1 px-2 small">
-                                    Table loads <strong>all</strong> matching rows (live + archive + backup). Large date ranges may take longer.
-                                    Prefer <strong>Export CSV</strong> for very large downloads. Use the Search box above or the table filter to refine.
+                                    On-screen preview shows up to {{ \App\DataTables\Admin\ExportPayinDataTable::DISPLAY_LIMIT }} rows
+                                    (live + archive + backup). Summary cards use full matching totals.
+                                    Use <strong>Export CSV</strong> for all matching rows.
                                 </div>
                                 <div class="table-responsive">
                                     {{ $dataTable->table(['class' => 'table text-center table-striped w-100'], true) }}

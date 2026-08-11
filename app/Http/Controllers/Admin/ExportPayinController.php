@@ -55,7 +55,6 @@ class ExportPayinController extends Controller
                 'end_date' => ['required', 'date', 'after_or_equal:start_date'],
                 'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
                 'user_id' => ['nullable'],
-                'q' => ['nullable', 'string', 'max:255'],
             ]);
         }
 
