@@ -79,13 +79,15 @@ class ExportPayinController extends Controller
             'user_id' => ['nullable'],
         ]);
 
-        @set_time_limit(300);
+        // No PHP time cap — large date ranges can take several minutes.
+        @set_time_limit(0);
         @ini_set('memory_limit', '512M');
+        @ini_set('max_execution_time', '0');
 
         $usersById = ExportPayinDataTable::resolveAllUserNames();
         $filename = 'export_payin_' . date('YmdHis');
 
-        // CSV: stream row-by-row (avoids loading the full set / nginx 502).
+        // CSV: stream every matching row (no row cap; preferred for large exports).
         if ($request->input('format') === 'csv') {
             $export = new ExportPayinExport(collect(), $usersById);
 
@@ -104,7 +106,8 @@ class ExportPayinController extends Controller
             ]);
         }
 
-        // Excel: collect up to EXPORT_MAX_ROWS (prefer CSV for very large ranges).
+        // Excel still buffers in memory — prefer CSV when the range is very large.
+        @ini_set('memory_limit', '1024M');
         $rows = new Collection();
         foreach (ExportPayinDataTable::exportRowCursor() as $row) {
             $rows->push($row);

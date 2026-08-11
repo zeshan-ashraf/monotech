@@ -24,9 +24,6 @@ class ExportPayinDataTable extends DataTable
     /** @var int On-screen preview cap (DataTables loads the full collection in memory). */
     public const DISPLAY_LIMIT = 1000;
 
-    /** @var int Safety cap for CSV/Excel export. */
-    public const EXPORT_MAX_ROWS = 50000;
-
     /** @var array<int, string> */
     private array $usersById = [];
 
@@ -89,7 +86,7 @@ class ExportPayinDataTable extends DataTable
     }
 
     /**
-     * Stream matching rows for export (all tables, up to EXPORT_MAX_ROWS).
+     * Stream all matching rows for export (live → archive → backup, no row cap).
      * Yields model instances; caller should not retain the full set in memory.
      *
      * @return \Generator<int, object>
@@ -102,7 +99,6 @@ class ExportPayinDataTable extends DataTable
             return;
         }
 
-        $emitted = 0;
         $matchModes = $filters['order_id']
             ? ['exact', 'prefix', 'contains']
             : ['exact'];
@@ -111,10 +107,6 @@ class ExportPayinDataTable extends DataTable
             $modeEmitted = 0;
 
             foreach (static::sources() as $source) {
-                if ($emitted >= self::EXPORT_MAX_ROWS) {
-                    return;
-                }
-
                 $query = static::applySearchFilters($source['model']::query(), $filters, $matchMode)
                     ->orderByDesc('created_at')
                     ->orderByDesc('id');
@@ -122,12 +114,7 @@ class ExportPayinDataTable extends DataTable
                 foreach ($query->cursor() as $row) {
                     $row->table_type = $source['type'];
                     yield $row;
-                    $emitted++;
                     $modeEmitted++;
-
-                    if ($emitted >= self::EXPORT_MAX_ROWS) {
-                        return;
-                    }
                 }
             }
 
