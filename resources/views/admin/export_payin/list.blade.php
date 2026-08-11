@@ -40,6 +40,33 @@
                                         <form method="GET" action="{{ route('admin.export_payin.list') }}">
                                             <input type="hidden" name="params" value="true">
                                             <div class="row g-1 align-items-end">
+                                                @if(auth()->user()->user_role === 'Super Admin')
+                                                <div class="col-lg-2 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>User</label>
+                                                        <select name="user_id" class="form-control">
+                                                            <option value="">All</option>
+                                                            @foreach(($users ?? []) as $item)
+                                                                <option value="{{ $item->id }}" {{ (string) $item->id === (string) request()->user_id ? 'selected' : '' }}>
+                                                                    {{ $item->name }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                                <div class="col-lg-2 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Status</label>
+                                                        <select name="status" class="form-control">
+                                                            <option value="">All</option>
+                                                            <option value="failed" {{ request()->status === 'failed' ? 'selected' : '' }}>Failed</option>
+                                                            <option value="success" {{ request()->status === 'success' ? 'selected' : '' }}>Success</option>
+                                                            <option value="pending" {{ request()->status === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                            <option value="reverse" {{ request()->status === 'reverse' ? 'selected' : '' }}>Reverse</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
                                                 <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
                                                         <label>Order Id</label>

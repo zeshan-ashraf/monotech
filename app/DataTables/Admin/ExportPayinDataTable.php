@@ -214,10 +214,29 @@ class ExportPayinDataTable extends DataTable
     }
 
     /**
-     * @return array{txn_ref_no: ?string, phone: ?string, order_id: ?string, start_date: ?string, end_date: ?string, amount: ?float}
+     * @return array{txn_ref_no: ?string, phone: ?string, order_id: ?string, start_date: ?string, end_date: ?string, amount: ?float, status: ?string, user_id: ?int}
      */
     private static function resolveFilters(): array
     {
+        $authUser = auth()->user();
+        $userId = null;
+
+        // Clients always see only their own rows.
+        if ($authUser && $authUser->user_role === 'Client') {
+            $userId = (int) $authUser->id;
+        } elseif ($authUser && $authUser->user_role === 'Super Admin') {
+            $requestedUserId = request()->input('user_id');
+            if ($requestedUserId !== null && $requestedUserId !== '' && $requestedUserId !== 'All') {
+                $userId = (int) $requestedUserId;
+            }
+        }
+
+        $status = static::trimFilter('status');
+        $allowedStatuses = ['failed', 'success', 'pending', 'reverse'];
+        if ($status !== null && !in_array($status, $allowedStatuses, true)) {
+            $status = null;
+        }
+
         return [
             'txn_ref_no' => static::trimFilter('transaction_Id'),
             'phone' => static::trimFilter('phone'),
@@ -229,6 +248,8 @@ class ExportPayinDataTable extends DataTable
                 ? Carbon::parse(request()->end_date)->toDateString()
                 : null,
             'amount' => request()->filled('amount_min') ? (float) request()->amount_min : null,
+            'status' => $status,
+            'user_id' => $userId,
         ];
     }
 
@@ -241,11 +262,13 @@ class ExportPayinDataTable extends DataTable
 
     private static function applySearchFilters(Builder $query, array $filters, string $orderMatchMode = 'exact'): Builder
     {
-        if (auth()->user()->user_role === 'Client') {
-            $query->where('user_id', auth()->id());
-        }
-
         return $query
+            ->when($filters['user_id'] !== null, function (Builder $q) use ($filters) {
+                $q->where('user_id', $filters['user_id']);
+            })
+            ->when($filters['status'], function (Builder $q) use ($filters) {
+                $q->where('status', $filters['status']);
+            })
             ->when($filters['txn_ref_no'], function (Builder $q) use ($filters) {
                 $q->where('txn_ref_no', 'like', $filters['txn_ref_no'] . '%');
             })

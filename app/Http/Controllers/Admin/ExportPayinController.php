@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\DataTables\Admin\ExportPayinDataTable;
 use App\Exports\ExportPayinExport;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Excel as ExcelFormat;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -51,7 +53,17 @@ class ExportPayinController extends Controller
             $request->validate([
                 'start_date' => ['required', 'date'],
                 'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+                'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
+                'user_id' => ['nullable'],
             ]);
+        }
+
+        $users = collect();
+        if (auth()->user()->user_role === 'Super Admin') {
+            $users = User::query()
+                ->where('active', 1)
+                ->orderBy('name')
+                ->get(['id', 'name']);
         }
 
         return $dataTable->render('admin.export_payin.list', get_defined_vars());
@@ -63,6 +75,8 @@ class ExportPayinController extends Controller
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'format' => ['required', 'in:csv,xlsx'],
+            'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
+            'user_id' => ['nullable'],
         ]);
 
         @set_time_limit(300);
