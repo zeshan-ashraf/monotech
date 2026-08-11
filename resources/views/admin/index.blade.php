@@ -327,13 +327,16 @@
                                                 <thead>
                                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                     <tr class="bg-warning">
+                                                        @if(auth()->user()->user_role == "Super Admin")
                                                         <th colspan="6">Payout EP Setting</th>
+                                                        @endif
                                                         <th colspan="@if (auth()->user()->user_role == "Super Admin") 7 @else 5 @endif"  rowspan="2">Surplus Amount Interface</th>
                                                         <th>JC</th>
                                                         <th>EP</th>
                                                         <th colspan="6">Action</th>
                                                     </tr>
                                                     <tr class="bg-warning">
+                                                        @if(auth()->user()->user_role == "Super Admin")
                                                         @foreach($payout_setting as $item)
                                                             <th  colspan="2">
                                                                 <div class="d-flex align-items-center gap-2">
@@ -352,6 +355,7 @@
                                                                 </div>
                                                             </th>
                                                         @endforeach
+                                                        @endif
                                                         <th data-poll-scope="surplus" data-poll-metric="jazzcash">{{number_format(round($surplusAmount->jazzcash,0))}}</th>
                                                         <th data-poll-scope="surplus" data-poll-metric="easypaisa">{{number_format(round($surplusAmount->easypaisa,0))}}</th>
                                                         <th colspan="6"><a data-target="#attributeModal" class="btn btn-primary waves-effect waves-float waves-light open_modal" data-url="{{route('admin.setting.modal_sec')}}">Add Amount</a></th>
