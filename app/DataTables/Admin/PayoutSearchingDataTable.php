@@ -28,7 +28,7 @@ class PayoutSearchingDataTable extends DataTable
                     $html .= ' <span class="badge bg-warning settled-badge">Settled</span>';
                 }
 
-                if (auth()->user()->user_role === 'Admin' && $query->status === 'pending') {
+                if (auth()->user()->user_role === 'Super Admin' && $query->status === 'pending') {
                     $html .= '
                         <select class="form-control status-dropdown mt-2"
                                 data-id="' . $query->id . '"
