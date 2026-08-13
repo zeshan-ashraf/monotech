@@ -170,7 +170,7 @@ class PayoutSearchingDataTable extends DataTable
             ['data' => 'transaction_type', 'name' => 'transaction_type', 'title' => 'Trans Type', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => true, 'searchable' => true, 'width' => '10%'],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created At', 'orderable' => true, 'searchable' => true, 'width' => '25%'],
-            ['data' => 'message', 'name' => 'message', 'title' => 'Message', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
+            ['data' => 'change_status', 'name' => 'change_status', 'title' => 'Change Status', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'detail', 'name' => 'detail', 'title' => 'Action', 'width' => '15%', 'orderable' => false, 'searchable' => false,],
 
         ];
