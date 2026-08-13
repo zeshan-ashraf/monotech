@@ -90,6 +90,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('jazz-recipt/{id?}', [PayoutController::class,'jazzReceipt'])->name('jazz_receipt');
         Route::post('/settle', [PayoutController::class, 'settle'])->name('settle');
         Route::post('/unsettle', [PayoutController::class, 'unsettle'])->name('unsettle');
+        Route::post('change-status', [PayoutController::class,'changeStatus'])->name('change_status');
     });
     Route::as('searching.')->prefix('searching')->group(function () {
         Route::get('/list', [SearchingController::class,'list'])->name('list');

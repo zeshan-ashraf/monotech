@@ -211,7 +211,7 @@ $(document).on('click', '.btn-unsettle', function() {
             var id = $(this).data('id');
     
             $.ajax({
-                url: '{{ route("admin.transaction.change_status") }}', // Correct route
+                url: '{{ route("admin.payout.change_status") }}', // Correct route
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}', // CSRF protection

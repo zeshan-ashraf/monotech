@@ -7,6 +7,7 @@ use App\DataTables\Admin\PayoutZigDataTable;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{Payout,ArcheivePayout};
+use Illuminate\Support\Facades\Http;
 use App\Models\Setting;
 use Carbon\Carbon;
 
@@ -213,5 +214,34 @@ class PayoutController extends Controller
         ];
 
         return $models[$tableName];
+    }
+    public function changeStatus(Request $request)
+    {
+        // Fetch the transaction first
+        $transaction = Payout::find($request->id);
+        
+        if (!$transaction) {
+            $transaction = ArcheivePayout::find($request->id);
+        }
+
+        if (!$transaction) {
+            return response()->json(['error' => 'Transaction not found'], 404);
+        }
+    
+        // Update the status
+        $transaction->status = $request->status;
+        $transaction->save();
+    
+        // Prepare the data for the HTTP request
+        $data = [
+            'orderId' => $transaction->orderId,
+            'amount' => $transaction->amount,
+            'status' => $transaction->status,
+        ];
+    
+        // Make an HTTP request
+        $response = Http::timeout(60)->post($transaction->url, $data);
+    
+        return response()->json(['message' => 'Status changed successfully!']);
     }
 }
