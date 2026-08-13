@@ -33,6 +33,22 @@ class PayoutSearchingDataTable extends DataTable
             ->editColumn('created_at', function ($query) {
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';
             })
+            ->addColumn('change_status', function ($query) {
+
+                if ($query->status == 'pending') {
+                    return '
+                        <select class="form-control status-dropdown mt-1"
+                                data-id="' . $query->id . '">
+                            <option value="pending" selected>Pending</option>
+                            <option value="success">Success</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    ';
+                }
+
+                return '<span class="text-muted">N/A</span>';
+
+            })->rawColumns(['change_status'])
             ->editColumn('detail', function ($query) {
                 $buttons = '';
                 $tableName = $query->table_name ?? 'payouts';
@@ -147,16 +163,14 @@ class PayoutSearchingDataTable extends DataTable
         return [
 
             ['data' => 'DT_RowIndex', 'name' => 'iteration', 'title' => '#', 'orderable' => false, 'searchable' => false, 'width' => '5%'],
-            // ['data' => 'user_id', 'name' => 'user_id', 'title' => 'Client', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'orderId', 'name' => 'orderId', 'title' => 'OrderId', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'transaction_reference', 'name' => 'transaction_reference', 'title' => 'Transaction Id', 'orderable' => true, 'searchable' => true, 'width' => '20%'],
-            // ['data' => 'transaction_id', 'name' => 'transaction_id', 'title' => 'Transaction Id', 'orderable' => true, 'searchable' => true, 'width' => '20%'],
             ['data' => 'amount', 'name' => 'amount', 'title' => 'Amount', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'phone', 'name' => 'phone', 'title' => 'Phone', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'transaction_type', 'name' => 'transaction_type', 'title' => 'Trans Type', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
-            // ['data' => 'message', 'name' => 'message', 'title' => 'Message', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => true, 'searchable' => true, 'width' => '10%'],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created At', 'orderable' => true, 'searchable' => true, 'width' => '25%'],
+            ['data' => 'message', 'name' => 'message', 'title' => 'Message', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'detail', 'name' => 'detail', 'title' => 'Action', 'width' => '15%', 'orderable' => false, 'searchable' => false,],
 
         ];
