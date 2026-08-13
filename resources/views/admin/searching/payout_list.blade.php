@@ -205,4 +205,27 @@ $(document).on('click', '.btn-unsettle', function() {
     });
 });
     </script>
+    <script>
+        $(document).on('change', '.status-dropdown', function() {
+            var status = $(this).val();
+            var id = $(this).data('id');
+    
+            $.ajax({
+                url: '{{ route("admin.transaction.change_status") }}', // Correct route
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}', // CSRF protection
+                    id: id,
+                    status: status
+                },
+                success: function(response) {
+                    alert('Status updated successfully!');
+                    location.reload(); // Reload page to reflect changes
+                },
+                error: function(xhr, status, error) {
+                    alert('Failed to update status: ' + xhr.responseJSON.message);
+                }
+            });
+        });
+    </script>
 @endpush
