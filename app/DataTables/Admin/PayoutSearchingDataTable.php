@@ -28,27 +28,26 @@ class PayoutSearchingDataTable extends DataTable
                     $html .= ' <span class="badge bg-warning settled-badge">Settled</span>';
                 }
 
+                if ($query->status === 'pending') {
+
+                    $html .= '
+                        <select class="form-control status-dropdown mt-2"
+                                data-id="' . $query->id . '"
+                                style="width: 130px;">
+
+                            <option value="pending" selected>Pending</option>
+                            <option value="success">Success</option>
+                            <option value="failed">Failed</option>
+
+                        </select>
+                    ';
+                }
+
                 return '<div class="payout-status-cell">' . $html . '</div>';
             })
             ->editColumn('created_at', function ($query) {
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';
             })
-            ->addColumn('change_status', function ($query) {
-
-                if ($query->status == 'pending') {
-                    return '
-                        <select class="form-control status-dropdown mt-1"
-                                data-id="' . $query->id . '">
-                            <option value="pending" selected>Pending</option>
-                            <option value="success">Success</option>
-                            <option value="failed">Failed</option>
-                        </select>
-                    ';
-                }
-
-                return '<span class="text-muted">N/A</span>';
-
-            })->rawColumns(['change_status'])
             ->editColumn('detail', function ($query) {
                 $buttons = '';
                 $tableName = $query->table_name ?? 'payouts';
@@ -170,7 +169,7 @@ class PayoutSearchingDataTable extends DataTable
             ['data' => 'transaction_type', 'name' => 'transaction_type', 'title' => 'Trans Type', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => true, 'searchable' => true, 'width' => '10%'],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created At', 'orderable' => true, 'searchable' => true, 'width' => '25%'],
-            ['data' => 'change_status', 'name' => 'change_status', 'title' => 'Change Status', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
+            // ['data' => 'change_status', 'name' => 'change_status', 'title' => 'Change Status', 'orderable' => true, 'searchable' => true, 'width' => '15%'],
             ['data' => 'detail', 'name' => 'detail', 'title' => 'Action', 'width' => '15%', 'orderable' => false, 'searchable' => false,],
 
         ];
