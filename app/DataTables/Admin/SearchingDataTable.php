@@ -61,8 +61,8 @@ class SearchingDataTable extends DataTable
 
                 if ($user->user_role == 'Super Admin' && $query->status == 'success') {
                     return '
-                        <select class="form-control status-dropdown-reverse mt-1" data-id="' . $query->id . '">
-                            <option value="" selected disabled>Select Option..</option>
+                        <select class="form-control form-control-sm status-dropdown-reverse" data-id="' . $query->id . '">
+                            <option value="" selected disabled>Select...</option>
                             <option value="reverse">Reverse</option>
                         </select>
                     ';

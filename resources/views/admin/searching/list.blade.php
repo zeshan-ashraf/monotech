@@ -12,6 +12,16 @@
         line-height: 1.2;
         white-space: nowrap;
     }
+    #dataTable .status-dropdown-reverse {
+        min-height: 0;
+        height: auto;
+        padding: 0.15rem 0.4rem;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        width: 100%;
+        max-width: 110px;
+        display: inline-block;
+    }
 </style>
 @endpush
 @section('content')
