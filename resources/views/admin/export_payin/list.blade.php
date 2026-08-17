@@ -127,6 +127,9 @@
     .dark-layout .export-amount-range input[type="range"] {
         background: #3b4253;
     }
+    .export-primary-filters .form-control {
+        width: 100%;
+    }
 </style>
 @endpush
 @section('content')
@@ -148,9 +151,9 @@
                                     <div class="toolbar w-100">
                                         <form method="GET" action="{{ route('admin.export_payin.list') }}">
                                             <input type="hidden" name="params" value="true">
-                                            <div class="row g-1 align-items-end">
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
+                                            <div class="row g-2 align-items-end export-primary-filters">
+                                                <div class="col-12 col-md">
+                                                    <div class="form-group mb-50">
                                                         <label>Transaction Type</label>
                                                         @php $selectedTransactionType = request()->input('transaction_type', 'payin'); @endphp
                                                         <select name="transaction_type" class="form-control">
@@ -159,8 +162,8 @@
                                                         </select>
                                                     </div>
                                                 </div>
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
+                                                <div class="col-12 col-md">
+                                                    <div class="form-group mb-50">
                                                         <label>Network</label>
                                                         @php $selectedNetwork = request()->input('network', ''); @endphp
                                                         <select name="network" class="form-control">
@@ -171,8 +174,8 @@
                                                     </div>
                                                 </div>
                                                 @if(auth()->user()->user_role === 'Super Admin')
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
+                                                <div class="col-12 col-md">
+                                                    <div class="form-group mb-50">
                                                         <label>Clients</label>
                                                         <select name="user_id" class="form-control">
                                                             <option value="">All</option>
@@ -185,8 +188,8 @@
                                                     </div>
                                                 </div>
                                                 @endif
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
+                                                <div class="col-12 col-md">
+                                                    <div class="form-group mb-50">
                                                         <label>Status</label>
                                                         @php $selectedStatus = request()->has('status') ? (string) request()->status : 'success'; @endphp
                                                         <select name="status" class="form-control">
@@ -198,14 +201,16 @@
                                                         </select>
                                                     </div>
                                                 </div>
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
+                                                <div class="col-12 col-md">
+                                                    <div class="form-group mb-50">
                                                         <label>Phone</label>
                                                         <input type="text" name="phone"
                                                             class="form-control"
                                                             value="{{ request()->phone }}" autocomplete="off">
                                                     </div>
                                                 </div>
+                                            </div>
+                                            <div class="row g-2 align-items-end">
                                                 <div class="col-lg-4 col-md-6">
                                                     @php
                                                         $amountMinBound = \App\DataTables\Admin\ExportPayinDataTable::AMOUNT_MIN;
