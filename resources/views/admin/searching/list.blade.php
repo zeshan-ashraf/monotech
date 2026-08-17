@@ -12,6 +12,14 @@
         line-height: 1.2;
         white-space: nowrap;
     }
+    #dataTable tbody tr.row-has-copy-error,
+    #dataTable tbody tr.row-has-copy-error > td {
+        background-color: rgba(234, 84, 85, 0.12) !important;
+    }
+    .dark-layout #dataTable tbody tr.row-has-copy-error,
+    .dark-layout #dataTable tbody tr.row-has-copy-error > td {
+        background-color: rgba(234, 84, 85, 0.18) !important;
+    }
 </style>
 @endpush
 @section('content')
