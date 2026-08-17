@@ -55,6 +55,7 @@ class ExportPayinController extends Controller
                 'end_date' => ['required', 'date', 'after_or_equal:start_date'],
                 'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
                 'user_id' => ['nullable'],
+                'transaction_type' => ['nullable', Rule::in(['payin', 'payout'])],
             ]);
         }
 
@@ -84,6 +85,7 @@ class ExportPayinController extends Controller
             'format' => ['required', 'in:csv,xlsx'],
             'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
             'user_id' => ['nullable'],
+            'transaction_type' => ['nullable', Rule::in(['payin', 'payout'])],
         ]);
 
         // No PHP time cap — large date ranges can take several minutes.
@@ -92,7 +94,7 @@ class ExportPayinController extends Controller
         @ini_set('max_execution_time', '0');
 
         $usersById = ExportPayinDataTable::resolveAllUserNames();
-        $filename = 'export_payin_' . date('YmdHis');
+        $filename = (ExportPayinDataTable::isPayoutRequest() ? 'export_payout_' : 'export_payin_') . date('YmdHis');
 
         // CSV: stream every matching row (no row cap; preferred for large exports).
         if ($request->input('format') === 'csv') {

@@ -40,6 +40,16 @@
                                         <form method="GET" action="{{ route('admin.export_payin.list') }}">
                                             <input type="hidden" name="params" value="true">
                                             <div class="row g-1 align-items-end">
+                                                <div class="col-lg-2 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Transaction Type</label>
+                                                        @php $selectedTransactionType = request()->input('transaction_type', 'payin'); @endphp
+                                                        <select name="transaction_type" class="form-control">
+                                                            <option value="payin" {{ $selectedTransactionType === 'payin' ? 'selected' : '' }}>Payin</option>
+                                                            <option value="payout" {{ $selectedTransactionType === 'payout' ? 'selected' : '' }}>Payout</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
                                                 @if(auth()->user()->user_role === 'Super Admin')
                                                 <div class="col-lg-2 col-md-4">
                                                     <div class="form-group">
@@ -118,6 +128,7 @@
                 @if(request()->params)
                 @php
                     $summary = $summary ?? null;
+                    $isPayout = \App\DataTables\Admin\ExportPayinDataTable::isPayoutRequest();
                     $statusColors = [
                         'failed' => 'bg-danger',
                         'success' => 'bg-success',
@@ -138,7 +149,7 @@
                         <div class="card bg-success">
                             <div class="card-body pb-50">
                                 <h5 class="text-white">
-                                    Total Payin:
+                                    Total {{ $isPayout ? 'Payout' : 'Payin' }}:
                                     <span class="fw-bolder" style="font-size:20px">{{ number_format(round($summary['total_payin'], 2)) }} PKR</span>
                                 </h5>
                             </div>
@@ -207,7 +218,12 @@
                             <div class="card-body">
                                 <div class="alert alert-info mb-2 py-1 px-2 small">
                                     On-screen preview shows up to {{ \App\DataTables\Admin\ExportPayinDataTable::DISPLAY_LIMIT }} rows
-                                    (live + archive + backup). Summary cards use full matching totals.
+                                    @if($isPayout)
+                                        (current payouts + archived payouts).
+                                    @else
+                                        (live + archive + backup).
+                                    @endif
+                                    Summary cards use full matching totals.
                                     Use <strong>Export CSV</strong> for all matching rows.
                                 </div>
                                 <div class="table-responsive">
@@ -227,4 +243,12 @@
 
 @push('js')
     @include('admin.components.datatablesScript')
+    <script>
+        document.querySelector('select[name="transaction_type"]')?.addEventListener('change', function () {
+            const form = this.form;
+            if (form && form.start_date?.value && form.end_date?.value) {
+                form.submit();
+            }
+        });
+    </script>
 @endpush
