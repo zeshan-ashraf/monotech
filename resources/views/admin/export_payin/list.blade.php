@@ -105,22 +105,43 @@
                                                             value="{{ request()->amount_min }}" autocomplete="off">
                                                     </div>
                                                 </div>
+                                                @php
+                                                    $selectedDateRange = request()->input('date_range', 'today');
+                                                    if (!in_array($selectedDateRange, \App\DataTables\Admin\ExportPayinDataTable::DATE_RANGES, true)) {
+                                                        $selectedDateRange = 'today';
+                                                    }
+                                                    $showCustomDates = $selectedDateRange === 'custom';
+                                                @endphp
                                                 <div class="col-lg-2 col-md-4">
+                                                    <div class="form-group">
+                                                        <label>Date</label>
+                                                        <select name="date_range" id="export-date-range" class="form-control">
+                                                            <option value="today" {{ $selectedDateRange === 'today' ? 'selected' : '' }}>Today</option>
+                                                            <option value="yesterday" {{ $selectedDateRange === 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                            <option value="this_week" {{ $selectedDateRange === 'this_week' ? 'selected' : '' }}>This week</option>
+                                                            <option value="this_month" {{ $selectedDateRange === 'this_month' ? 'selected' : '' }}>This month</option>
+                                                            <option value="last_month" {{ $selectedDateRange === 'last_month' ? 'selected' : '' }}>Last month</option>
+                                                            <option value="this_year" {{ $selectedDateRange === 'this_year' ? 'selected' : '' }}>This year</option>
+                                                            <option value="custom" {{ $selectedDateRange === 'custom' ? 'selected' : '' }}>Custom</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-2 col-md-4 js-custom-date" @if(!$showCustomDates) style="display:none" @endif>
                                                     <div class="form-group">
                                                         <label>Start Date <span class="text-danger">*</span></label>
                                                         <input type="date" name="start_date"
                                                             class="form-control"
                                                             value="{{ request()->start_date }}"
-                                                            required>
+                                                            @if($showCustomDates) required @endif>
                                                     </div>
                                                 </div>
-                                                <div class="col-lg-2 col-md-4">
+                                                <div class="col-lg-2 col-md-4 js-custom-date" @if(!$showCustomDates) style="display:none" @endif>
                                                     <div class="form-group">
                                                         <label>End Date <span class="text-danger">*</span></label>
                                                         <input type="date" name="end_date"
                                                             class="form-control"
                                                             value="{{ request()->end_date }}"
-                                                            required>
+                                                            @if($showCustomDates) required @endif>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-2 col-md-4">
@@ -148,15 +169,16 @@
                     ];
                 @endphp
                 @if($summary)
+                @php $summaryCol = !empty($summary['show_sr']) ? 'col-md-3' : 'col-md-4'; @endphp
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="{{ $summaryCol }}">
                         <div class="card bg-primary">
                             <div class="card-body pb-50">
                                 <h5 class="text-white">Dated: <span class="fw-bolder" style="font-size:20px">{{ $summary['date_label'] }}</span></h5>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="{{ $summaryCol }}">
                         <div class="card bg-success">
                             <div class="card-body pb-50">
                                 <h5 class="text-white">
@@ -166,7 +188,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="{{ $summaryCol }}">
                         <div class="card bg-warning">
                             <div class="card-body pb-50">
                                 <h5 class="text-white">
@@ -177,7 +199,7 @@
                         </div>
                     </div>
                     @if($summary['show_sr'])
-                    <div class="col-md-3">
+                    <div class="{{ $summaryCol }}">
                         <div class="card bg-info">
                             <div class="card-body pb-50">
                                 <h5 class="text-white">
@@ -255,11 +277,83 @@
 @push('js')
     @include('admin.components.datatablesScript')
     <script>
-        document.querySelector('select[name="transaction_type"]')?.addEventListener('change', function () {
-            const form = this.form;
-            if (form && form.start_date?.value && form.end_date?.value) {
-                form.submit();
+        (function () {
+            const form = document.querySelector('form[action="{{ route('admin.export_payin.list') }}"]');
+            if (!form) {
+                return;
             }
-        });
+
+            const dateRangeSelect = form.querySelector('#export-date-range');
+            const startInput = form.querySelector('input[name="start_date"]');
+            const endInput = form.querySelector('input[name="end_date"]');
+            const customFields = form.querySelectorAll('.js-custom-date');
+
+            function pad(n) {
+                return String(n).padStart(2, '0');
+            }
+
+            function formatYmd(date) {
+                return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+            }
+
+            function presetDates(preset) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let start = new Date(today);
+                let end = new Date(today);
+
+                if (preset === 'yesterday') {
+                    start.setDate(start.getDate() - 1);
+                    end = new Date(start);
+                } else if (preset === 'this_week') {
+                    const diff = (today.getDay() + 6) % 7;
+                    start.setDate(today.getDate() - diff);
+                } else if (preset === 'this_month') {
+                    start = new Date(today.getFullYear(), today.getMonth(), 1);
+                } else if (preset === 'last_month') {
+                    start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    end = new Date(today.getFullYear(), today.getMonth(), 0);
+                } else if (preset === 'this_year') {
+                    start = new Date(today.getFullYear(), 0, 1);
+                }
+
+                return { start: formatYmd(start), end: formatYmd(end) };
+            }
+
+            function applyDateRange() {
+                const preset = dateRangeSelect.value;
+                const isCustom = preset === 'custom';
+
+                customFields.forEach(function (el) {
+                    el.style.display = isCustom ? '' : 'none';
+                });
+                startInput.required = isCustom;
+                endInput.required = isCustom;
+
+                if (!isCustom) {
+                    const dates = presetDates(preset);
+                    startInput.value = dates.start;
+                    endInput.value = dates.end;
+                }
+            }
+
+            function canSubmitDates() {
+                if (dateRangeSelect.value !== 'custom') {
+                    return true;
+                }
+                return Boolean(startInput.value && endInput.value);
+            }
+
+            dateRangeSelect.addEventListener('change', applyDateRange);
+            form.addEventListener('submit', applyDateRange);
+            applyDateRange();
+
+            form.querySelector('select[name="transaction_type"]')?.addEventListener('change', function () {
+                applyDateRange();
+                if (canSubmitDates()) {
+                    form.submit();
+                }
+            });
+        })();
     </script>
 @endpush

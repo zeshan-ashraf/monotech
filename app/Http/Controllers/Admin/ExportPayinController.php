@@ -50,9 +50,12 @@ class ExportPayinController extends Controller
     public function list(Request $request, ExportPayinDataTable $dataTable)
     {
         if ($request->boolean('params')) {
+            ExportPayinDataTable::applyIncomingDateRange($request);
+
             $request->validate([
-                'start_date' => ['required', 'date'],
-                'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+                'date_range' => ['required', Rule::in(ExportPayinDataTable::DATE_RANGES)],
+                'start_date' => ['required_if:date_range,custom', 'nullable', 'date'],
+                'end_date' => ['required_if:date_range,custom', 'nullable', 'date', 'after_or_equal:start_date'],
                 'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
                 'user_id' => ['nullable'],
                 'transaction_type' => ['nullable', Rule::in(['payin', 'payout'])],
@@ -80,9 +83,12 @@ class ExportPayinController extends Controller
 
     public function export(Request $request): BinaryFileResponse|StreamedResponse
     {
+        ExportPayinDataTable::applyIncomingDateRange($request);
+
         $request->validate([
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'date_range' => ['required', Rule::in(ExportPayinDataTable::DATE_RANGES)],
+            'start_date' => ['required_if:date_range,custom', 'nullable', 'date'],
+            'end_date' => ['required_if:date_range,custom', 'nullable', 'date', 'after_or_equal:start_date'],
             'format' => ['required', 'in:csv,xlsx'],
             'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
             'user_id' => ['nullable'],

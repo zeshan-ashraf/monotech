@@ -6,6 +6,7 @@ use App\Models\{ArcheivePayout, ArcheiveTransaction, BackupTransaction, Payout, 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Services\DataTable;
@@ -28,6 +29,9 @@ class ExportPayinDataTable extends DataTable
 
     /** @var list<string> */
     public const STATUSES = ['failed', 'success', 'pending', 'reverse'];
+
+    /** @var list<string> */
+    public const DATE_RANGES = ['today', 'yesterday', 'this_week', 'this_month', 'last_month', 'this_year', 'custom'];
 
     /** @var array<int, string> */
     private array $usersById = [];
@@ -253,7 +257,89 @@ class ExportPayinDataTable extends DataTable
 
     public static function hasRequiredDateRange(): bool
     {
-        return request()->filled('start_date') && request()->filled('end_date');
+        $dates = static::resolvePresetDates();
+
+        return !empty($dates['start_date']) && !empty($dates['end_date']);
+    }
+
+    /**
+     * Normalize date_range on the incoming request and fill start/end for presets.
+     */
+    public static function applyIncomingDateRange(Request $request): void
+    {
+        $preset = strtolower(trim((string) $request->input('date_range', '')));
+
+        if ($preset === '' && ($request->filled('start_date') || $request->filled('end_date'))) {
+            $preset = 'custom';
+        } elseif ($preset === '' || !in_array($preset, self::DATE_RANGES, true)) {
+            $preset = 'today';
+        }
+
+        $request->merge(['date_range' => $preset]);
+
+        if ($preset !== 'custom') {
+            $request->merge(static::presetDates($preset));
+        }
+    }
+
+    /**
+     * @return array{start_date: ?string, end_date: ?string}
+     */
+    public static function resolvePresetDates(?string $preset = null): array
+    {
+        $preset = strtolower((string) ($preset ?? request()->input('date_range', 'today')));
+
+        if (!in_array($preset, self::DATE_RANGES, true)) {
+            $preset = 'today';
+        }
+
+        if ($preset === 'custom') {
+            return [
+                'start_date' => request()->filled('start_date')
+                    ? Carbon::parse(request()->start_date)->toDateString()
+                    : null,
+                'end_date' => request()->filled('end_date')
+                    ? Carbon::parse(request()->end_date)->toDateString()
+                    : null,
+            ];
+        }
+
+        return static::presetDates($preset);
+    }
+
+    /**
+     * @return array{start_date: string, end_date: string}
+     */
+    public static function presetDates(string $preset): array
+    {
+        $today = Carbon::today();
+
+        return match ($preset) {
+            'yesterday' => [
+                'start_date' => $today->copy()->subDay()->toDateString(),
+                'end_date' => $today->copy()->subDay()->toDateString(),
+            ],
+            'this_week' => [
+                'start_date' => $today->copy()->startOfWeek(Carbon::MONDAY)->toDateString(),
+                'end_date' => $today->toDateString(),
+            ],
+            'this_month' => [
+                'start_date' => $today->copy()->startOfMonth()->toDateString(),
+                'end_date' => $today->toDateString(),
+            ],
+            'last_month' => [
+                'start_date' => $today->copy()->subMonthNoOverflow()->startOfMonth()->toDateString(),
+                'end_date' => $today->copy()->subMonthNoOverflow()->endOfMonth()->toDateString(),
+            ],
+            'this_year' => [
+                'start_date' => $today->copy()->startOfYear()->toDateString(),
+                'end_date' => $today->toDateString(),
+            ],
+            default => [
+                'start_date' => $today->toDateString(),
+                'end_date' => $today->toDateString(),
+            ],
+        };
     }
 
     public static function isPayoutRequest(): bool
@@ -358,16 +444,14 @@ class ExportPayinDataTable extends DataTable
             $network = null;
         }
 
+        $dates = static::resolvePresetDates();
+
         return [
             'txn_ref_no' => static::trimFilter('transaction_Id'),
             'phone' => static::trimFilter('phone'),
             'order_id' => static::trimFilter('order_id'),
-            'start_date' => request()->start_date
-                ? Carbon::parse(request()->start_date)->toDateString()
-                : null,
-            'end_date' => request()->end_date
-                ? Carbon::parse(request()->end_date)->toDateString()
-                : null,
+            'start_date' => $dates['start_date'],
+            'end_date' => $dates['end_date'],
             'amount' => request()->filled('amount_min') ? (float) request()->amount_min : null,
             'status' => $status,
             'user_id' => $userId,
