@@ -13,6 +13,11 @@
         width: 12px;
         height: 12px;
     }
+    table.dataTable td,
+    table.dataTable th {
+        padding: 5px 5px;
+        vertical-align: middle;
+    }
 </style>
 @endpush
 @section('content')
