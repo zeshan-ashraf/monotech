@@ -47,12 +47,16 @@ class ExportPayinDataTable extends DataTable
 
                 return view('admin.transaction.badge', get_defined_vars());
             })
+            ->editColumn('txn_type', function ($query) {
+                return static::formatNetwork($query->txn_type ?? null);
+            })
             ->editColumn('created_at', function ($query) {
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';
             })
             ->editColumn('amount', function ($query) {
-                return $query->amount . ' PKR';
-            });
+                return $query->amount;
+            })
+            ->rawColumns(['status']);
     }
 
     public function query(): Collection
@@ -322,7 +326,8 @@ class ExportPayinDataTable extends DataTable
      *     end_date: ?string,
      *     amount: ?float,
      *     status: ?string,
-     *     user_id: ?int
+     *     user_id: ?int,
+     *     network: ?string
      * }
      */
     private static function resolveFilters(): array
@@ -348,6 +353,11 @@ class ExportPayinDataTable extends DataTable
             $status = null;
         }
 
+        $network = strtolower((string) (static::trimFilter('network') ?? ''));
+        if (!in_array($network, ['jazzcash', 'easypaisa'], true)) {
+            $network = null;
+        }
+
         return [
             'txn_ref_no' => static::trimFilter('transaction_Id'),
             'phone' => static::trimFilter('phone'),
@@ -361,7 +371,19 @@ class ExportPayinDataTable extends DataTable
             'amount' => request()->filled('amount_min') ? (float) request()->amount_min : null,
             'status' => $status,
             'user_id' => $userId,
+            'network' => $network,
         ];
+    }
+
+    public static function formatNetwork(?string $value): string
+    {
+        $normalized = strtolower(trim((string) $value));
+
+        return match ($normalized) {
+            'jazzcash' => 'JC',
+            'easypaisa' => 'EP',
+            default => $value !== null && $value !== '' ? (string) $value : '-',
+        };
     }
 
     private static function trimFilter(string $key): ?string
@@ -379,6 +401,9 @@ class ExportPayinDataTable extends DataTable
             })
             ->when($filters['status'], function (Builder $q) use ($filters) {
                 $q->where('status', $filters['status']);
+            })
+            ->when($filters['network'], function (Builder $q) use ($filters) {
+                $q->where('txn_type', $filters['network']);
             })
             ->when($filters['txn_ref_no'], function (Builder $q) use ($filters) {
                 $q->where('txn_ref_no', 'like', $filters['txn_ref_no'] . '%');
@@ -631,6 +656,9 @@ class ExportPayinDataTable extends DataTable
             ->when($filters['status'], function ($q) use ($filters) {
                 $q->where('status', $filters['status']);
             })
+            ->when($filters['network'], function ($q) use ($filters) {
+                $q->where('transaction_type', $filters['network']);
+            })
             ->when($filters['txn_ref_no'], function ($q) use ($filters) {
                 $q->where('transaction_reference', 'like', $filters['txn_ref_no'] . '%');
             })
@@ -687,6 +715,8 @@ class ExportPayinDataTable extends DataTable
                 'autoWidth' => false,
                 'lengthChange' => true,
                 'searching' => true,
+                'ordering' => false,
+                'order' => [],
                 'drawCallback' => 'function () {}',
             ]);
     }
@@ -694,15 +724,15 @@ class ExportPayinDataTable extends DataTable
     protected function getColumns()
     {
         return [
-            ['data' => 'orderId', 'name' => 'orderId', 'title' => 'Order Id', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'client_name', 'name' => 'user.name', 'title' => 'Client Name', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'transactionId', 'name' => 'transactionId', 'title' => 'Trans Id', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'phone', 'name' => 'phone', 'title' => 'Phone', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'txn_ref_no', 'name' => 'txn_ref_no', 'title' => 'Trans Ref No', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'txn_type', 'name' => 'txn_type', 'title' => 'Trans type', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'amount', 'name' => 'amount', 'title' => 'Amount', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created at', 'orderable' => true, 'searchable' => true, 'width' => 30],
+            ['data' => 'orderId', 'name' => 'orderId', 'title' => 'Order Id', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'client_name', 'name' => 'user.name', 'title' => 'Client Name', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'transactionId', 'name' => 'transactionId', 'title' => 'Trans Id', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'phone', 'name' => 'phone', 'title' => 'Phone', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'txn_ref_no', 'name' => 'txn_ref_no', 'title' => 'Trans Ref No', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'txn_type', 'name' => 'txn_type', 'title' => 'Network', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'amount', 'name' => 'amount', 'title' => 'Amount', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created at', 'orderable' => false, 'searchable' => true, 'width' => 30],
         ];
     }
 

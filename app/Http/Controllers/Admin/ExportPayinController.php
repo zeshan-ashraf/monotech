@@ -56,6 +56,7 @@ class ExportPayinController extends Controller
                 'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
                 'user_id' => ['nullable'],
                 'transaction_type' => ['nullable', Rule::in(['payin', 'payout'])],
+                'network' => ['nullable', Rule::in(['', 'all', 'easypaisa', 'jazzcash'])],
             ]);
         }
 
@@ -86,6 +87,7 @@ class ExportPayinController extends Controller
             'status' => ['nullable', Rule::in(['', 'failed', 'success', 'pending', 'reverse'])],
             'user_id' => ['nullable'],
             'transaction_type' => ['nullable', Rule::in(['payin', 'payout'])],
+            'network' => ['nullable', Rule::in(['', 'all', 'easypaisa', 'jazzcash'])],
         ]);
 
         // No PHP time cap — large date ranges can take several minutes.

@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\DataTables\Admin\ExportPayinDataTable;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -32,7 +33,7 @@ class ExportPayinExport implements FromCollection, WithHeadings, WithMapping
             'Trans Id',
             'Phone',
             'Trans Ref No',
-            'Trans Type',
+            'Network',
             'Amount',
             'Status',
             'Created At',
@@ -50,7 +51,7 @@ class ExportPayinExport implements FromCollection, WithHeadings, WithMapping
             $row->transactionId,
             $row->phone,
             $row->txn_ref_no,
-            $row->txn_type,
+            ExportPayinDataTable::formatNetwork($row->txn_type ?? null),
             $row->amount,
             $row->status,
             $row->created_at ? $row->created_at->format('d-m-Y H:i:s') : 'N/A',
