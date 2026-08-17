@@ -70,9 +70,6 @@ class SearchingDataTable extends DataTable
 
                 return '';
             })
-            ->setRowClass(function ($row) {
-                return ($row->status === 'failed' && !empty($row->pp_message)) ? 'row-has-copy-error' : '';
-            })
             ->rawColumns(['status', 'detail', 'reverse']);
     }
 
