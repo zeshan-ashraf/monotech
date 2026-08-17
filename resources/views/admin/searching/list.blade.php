@@ -3,20 +3,14 @@
 @push('css')
 <link rel="stylesheet" href="{{ asset('admin/assets/dashboard/css/dataTables.bootstrap4.min.css') }}" />
 <style>
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting_asc:before {
-        opacity: 0 !important;
+    #dataTable .searching-action-btns {
+        gap: 4px;
     }
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting_asc:after {
-        opacity: 0 !important;
-    }
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting_desc:before {
-        opacity: 0 !important;
-    }
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting_desc:after {
-        opacity: 0 !important;
-    }
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting:before, .dark-layout .dataTables_wrapper .table.dataTable thead .sorting:after{
-        opacity: 0 !important;
+    #dataTable .searching-action-btns .btn-sm {
+        padding: 0.15rem 0.4rem;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        white-space: nowrap;
     }
 </style>
 @endpush

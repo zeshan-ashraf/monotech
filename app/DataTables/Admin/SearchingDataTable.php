@@ -39,18 +39,20 @@ class SearchingDataTable extends DataTable
             })
             ->editColumn('detail', function ($query) {
                 $user = auth()->user();
-                $buttons = '';
-                $buttons .= '<a href="' . route('admin.searching.callback.send', $query->id) . '" class="btn btn-success btn-sm">Send Callback</a> ';
-                $buttons .= '<a href="' . route('admin.jazzcash.status-inquiry', ['id' => $query->txn_ref_no, 'type' => $query->txn_type]) . '" class="btn btn-primary btn-sm mt-1">Inquiry</a>';
+                $buttons = '<div class="d-flex flex-wrap justify-content-center align-items-center searching-action-btns">';
+                $buttons .= '<a href="' . route('admin.searching.callback.send', $query->id) . '" class="btn btn-success btn-sm">Send Callback</a>';
+                $buttons .= '<a href="' . route('admin.jazzcash.status-inquiry', ['id' => $query->txn_ref_no, 'type' => $query->txn_type]) . '" class="btn btn-primary btn-sm">Inquiry</a>';
 
                 if ($user && method_exists($user, 'can') && $user->can('Reverse Transactions') && $query->status == 'success') {
                     $reverseRequested = $query->reverse_requested_at ?? null;
 
                     if (!$reverseRequested) {
                         $tableType = $query->table_type ?? 'transactions';
-                        $buttons .= ' <button class="btn btn-warning btn-sm mt-1 mark-for-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Mark for Reversal</button>';
+                        $buttons .= '<button class="btn btn-warning btn-sm mark-for-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Mark for Reversal</button>';
                     }
                 }
+
+                $buttons .= '</div>';
 
                 return $buttons;
             })
@@ -227,7 +229,9 @@ class SearchingDataTable extends DataTable
                 'processing' => true,
                 'autoWidth' => false,
                 'lengthChange' => false,
-                'searching' => false,
+                'searching' => true,
+                'ordering' => false,
+                'order' => [],
                 'drawCallback' => 'function () {
                         }',
             ]);
@@ -236,15 +240,15 @@ class SearchingDataTable extends DataTable
     protected function getColumns()
     {
         return [
-            ['data' => 'orderId', 'name' => 'orderId', 'title' => 'Order Id', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'client_name', 'name' => 'user.name', 'title' => 'Client Name', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'transactionId', 'name' => 'transactionId', 'title' => 'Trans Id', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'phone', 'name' => 'phone', 'title' => 'Phone', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'txn_ref_no', 'name' => 'txn_ref_no', 'title' => 'Trans Ref No', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'txn_type', 'name' => 'txn_type', 'title' => 'Trans type', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'amount', 'name' => 'amount', 'title' => 'Amount', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created at', 'orderable' => true, 'searchable' => true, 'width' => 30],
+            ['data' => 'orderId', 'name' => 'orderId', 'title' => 'Order Id', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'client_name', 'name' => 'user.name', 'title' => 'Client Name', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'transactionId', 'name' => 'transactionId', 'title' => 'Trans Id', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'phone', 'name' => 'phone', 'title' => 'Phone', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'txn_ref_no', 'name' => 'txn_ref_no', 'title' => 'Trans Ref No', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'txn_type', 'name' => 'txn_type', 'title' => 'Trans type', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'amount', 'name' => 'amount', 'title' => 'Amount', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created at', 'orderable' => false, 'searchable' => true, 'width' => 30],
             ['data' => 'detail', 'name' => 'detail', 'title' => 'Action', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
             ['data' => 'reverse', 'name' => 'reverse', 'title' => 'Change Status', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
         ];
