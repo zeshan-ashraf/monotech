@@ -33,6 +33,10 @@ class ExportPayinDataTable extends DataTable
     /** @var list<string> */
     public const DATE_RANGES = ['today', 'yesterday', 'this_week', 'this_month', 'last_month', 'this_year', 'custom'];
 
+    public const AMOUNT_MIN = 1;
+
+    public const AMOUNT_MAX = 50000;
+
     /** @var array<int, string> */
     private array $usersById = [];
 
@@ -410,7 +414,8 @@ class ExportPayinDataTable extends DataTable
      *     order_id: ?string,
      *     start_date: ?string,
      *     end_date: ?string,
-     *     amount: ?float,
+     *     amount_from: ?float,
+     *     amount_to: ?float,
      *     status: ?string,
      *     user_id: ?int,
      *     network: ?string
@@ -445,6 +450,7 @@ class ExportPayinDataTable extends DataTable
         }
 
         $dates = static::resolvePresetDates();
+        $amountRange = static::resolveAmountRange();
 
         return [
             'txn_ref_no' => static::trimFilter('transaction_Id'),
@@ -452,11 +458,36 @@ class ExportPayinDataTable extends DataTable
             'order_id' => static::trimFilter('order_id'),
             'start_date' => $dates['start_date'],
             'end_date' => $dates['end_date'],
-            'amount' => request()->filled('amount_min') ? (float) request()->amount_min : null,
+            'amount_from' => $amountRange['amount_from'],
+            'amount_to' => $amountRange['amount_to'],
             'status' => $status,
             'user_id' => $userId,
             'network' => $network,
         ];
+    }
+
+    /**
+     * @return array{amount_from: ?float, amount_to: ?float}
+     */
+    public static function resolveAmountRange(): array
+    {
+        $from = request()->filled('amount_from') ? (float) request()->amount_from : null;
+        $to = request()->filled('amount_to') ? (float) request()->amount_to : null;
+
+        if ($from === null && $to === null) {
+            return ['amount_from' => null, 'amount_to' => null];
+        }
+
+        $from = $from ?? (float) self::AMOUNT_MIN;
+        $to = $to ?? (float) self::AMOUNT_MAX;
+        $from = max((float) self::AMOUNT_MIN, min((float) self::AMOUNT_MAX, $from));
+        $to = max((float) self::AMOUNT_MIN, min((float) self::AMOUNT_MAX, $to));
+
+        if ($from > $to) {
+            [$from, $to] = [$to, $from];
+        }
+
+        return ['amount_from' => $from, 'amount_to' => $to];
     }
 
     public static function formatNetwork(?string $value): string
@@ -504,8 +535,8 @@ class ExportPayinDataTable extends DataTable
                     $filters['end_date'] . ' 23:59:59',
                 ]);
             })
-            ->when($filters['amount'] !== null, function (Builder $q) use ($filters) {
-                $q->where('amount', $filters['amount']);
+            ->when($filters['amount_from'] !== null && $filters['amount_to'] !== null, function (Builder $q) use ($filters) {
+                $q->whereBetween('amount', [$filters['amount_from'], $filters['amount_to']]);
             });
     }
 
@@ -758,8 +789,8 @@ class ExportPayinDataTable extends DataTable
                     $filters['end_date'] . ' 23:59:59',
                 ]);
             })
-            ->when($filters['amount'] !== null, function ($q) use ($filters) {
-                $q->where('amount', $filters['amount']);
+            ->when($filters['amount_from'] !== null && $filters['amount_to'] !== null, function ($q) use ($filters) {
+                $q->whereBetween('amount', [$filters['amount_from'], $filters['amount_to']]);
             });
     }
 

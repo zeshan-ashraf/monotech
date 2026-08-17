@@ -18,6 +18,115 @@
         padding: 5px 5px;
         vertical-align: middle;
     }
+    .export-amount-range {
+        background: linear-gradient(135deg, rgba(115, 103, 240, 0.08) 0%, rgba(40, 199, 111, 0.08) 100%);
+        border: 1px solid rgba(115, 103, 240, 0.22);
+        border-radius: 12px;
+        padding: 10px 12px 8px;
+        min-width: 220px;
+    }
+    .export-amount-range__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .export-amount-range__title {
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #5e5873;
+        margin: 0;
+    }
+    .export-amount-range__pills {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    .export-amount-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        line-height: 1.3;
+        white-space: nowrap;
+    }
+    .export-amount-pill.from {
+        background: rgba(115, 103, 240, 0.16);
+        color: #7367f0;
+    }
+    .export-amount-pill.to {
+        background: rgba(40, 199, 111, 0.16);
+        color: #28c76f;
+    }
+    .export-amount-range__row {
+        display: grid;
+        grid-template-columns: 42px 1fr;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+    .export-amount-range__row span {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #6e6b7b;
+        text-transform: uppercase;
+    }
+    .export-amount-range input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 8px;
+        border-radius: 999px;
+        outline: none;
+        cursor: pointer;
+        background: #e9ecef;
+    }
+    .export-amount-range input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid #7367f0;
+        box-shadow: 0 2px 8px rgba(115, 103, 240, 0.35);
+        cursor: grab;
+    }
+    .export-amount-range input[type="range"].amount-to-slider::-webkit-slider-thumb {
+        border-color: #28c76f;
+        box-shadow: 0 2px 8px rgba(40, 199, 111, 0.35);
+    }
+    .export-amount-range input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid #7367f0;
+        box-shadow: 0 2px 8px rgba(115, 103, 240, 0.35);
+        cursor: grab;
+    }
+    .export-amount-range input[type="range"].amount-to-slider::-moz-range-thumb {
+        border-color: #28c76f;
+        box-shadow: 0 2px 8px rgba(40, 199, 111, 0.35);
+    }
+    .dark-layout .export-amount-range {
+        background: linear-gradient(135deg, rgba(115, 103, 240, 0.16) 0%, rgba(40, 199, 111, 0.12) 100%);
+        border-color: rgba(115, 103, 240, 0.35);
+    }
+    .dark-layout .export-amount-range__title,
+    .dark-layout .export-amount-range__row span {
+        color: #d0d2d6;
+    }
+    .dark-layout .export-amount-range input[type="range"] {
+        background: #3b4253;
+    }
 </style>
 @endpush
 @section('content')
@@ -97,12 +206,50 @@
                                                             value="{{ request()->phone }}" autocomplete="off">
                                                     </div>
                                                 </div>
-                                                <div class="col-lg-2 col-md-4">
-                                                    <div class="form-group">
-                                                        <label>Amount</label>
-                                                        <input type="number" step="0.01" min="0" name="amount_min"
-                                                            class="form-control"
-                                                            value="{{ request()->amount_min }}" autocomplete="off">
+                                                <div class="col-lg-4 col-md-6">
+                                                    @php
+                                                        $amountMinBound = \App\DataTables\Admin\ExportPayinDataTable::AMOUNT_MIN;
+                                                        $amountMaxBound = \App\DataTables\Admin\ExportPayinDataTable::AMOUNT_MAX;
+                                                        $amountFrom = (int) request()->input('amount_from', $amountMinBound);
+                                                        $amountTo = (int) request()->input('amount_to', $amountMaxBound);
+                                                        $amountFrom = max($amountMinBound, min($amountMaxBound, $amountFrom));
+                                                        $amountTo = max($amountMinBound, min($amountMaxBound, $amountTo));
+                                                        if ($amountFrom > $amountTo) {
+                                                            [$amountFrom, $amountTo] = [$amountTo, $amountFrom];
+                                                        }
+                                                    @endphp
+                                                    <div class="form-group mb-0">
+                                                        <div class="export-amount-range" id="export-amount-range">
+                                                            <div class="export-amount-range__header">
+                                                                <label class="export-amount-range__title">Amount</label>
+                                                                <div class="export-amount-range__pills">
+                                                                    <span class="export-amount-pill from">From <strong id="amount-from-label">{{ number_format($amountFrom) }}</strong></span>
+                                                                    <span class="export-amount-pill to">To <strong id="amount-to-label">{{ number_format($amountTo) }}</strong></span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="export-amount-range__row">
+                                                                <span>From</span>
+                                                                <input type="range"
+                                                                    name="amount_from"
+                                                                    id="amount-from-slider"
+                                                                    class="amount-from-slider"
+                                                                    min="{{ $amountMinBound }}"
+                                                                    max="{{ $amountMaxBound }}"
+                                                                    step="1"
+                                                                    value="{{ $amountFrom }}">
+                                                            </div>
+                                                            <div class="export-amount-range__row mb-0">
+                                                                <span>To</span>
+                                                                <input type="range"
+                                                                    name="amount_to"
+                                                                    id="amount-to-slider"
+                                                                    class="amount-to-slider"
+                                                                    min="{{ $amountMinBound }}"
+                                                                    max="{{ $amountMaxBound }}"
+                                                                    step="1"
+                                                                    value="{{ $amountTo }}">
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 @php
@@ -354,6 +501,61 @@
                     form.submit();
                 }
             });
+
+            const fromSlider = form.querySelector('#amount-from-slider');
+            const toSlider = form.querySelector('#amount-to-slider');
+            const fromLabel = document.getElementById('amount-from-label');
+            const toLabel = document.getElementById('amount-to-label');
+
+            function formatAmount(value) {
+                return Number(value).toLocaleString('en-US');
+            }
+
+            function fillTrack(slider, color) {
+                const min = Number(slider.min);
+                const max = Number(slider.max);
+                const val = Number(slider.value);
+                const pct = ((val - min) / (max - min)) * 100;
+                slider.style.background = 'linear-gradient(to right, ' + color + ' 0%, ' + color + ' ' + pct + '%, rgba(115, 103, 240, 0.12) ' + pct + '%, rgba(115, 103, 240, 0.12) 100%)';
+            }
+
+            function syncAmountSliders(changed) {
+                if (!fromSlider || !toSlider) {
+                    return;
+                }
+
+                let fromVal = Number(fromSlider.value);
+                let toVal = Number(toSlider.value);
+
+                if (changed === 'from' && fromVal > toVal) {
+                    fromVal = toVal;
+                    fromSlider.value = fromVal;
+                }
+                if (changed === 'to' && toVal < fromVal) {
+                    toVal = fromVal;
+                    toSlider.value = toVal;
+                }
+
+                if (fromLabel) {
+                    fromLabel.textContent = formatAmount(fromVal);
+                }
+                if (toLabel) {
+                    toLabel.textContent = formatAmount(toVal);
+                }
+
+                fillTrack(fromSlider, '#7367f0');
+                fillTrack(toSlider, '#28c76f');
+            }
+
+            if (fromSlider && toSlider) {
+                fromSlider.addEventListener('input', function () {
+                    syncAmountSliders('from');
+                });
+                toSlider.addEventListener('input', function () {
+                    syncAmountSliders('to');
+                });
+                syncAmountSliders();
+            }
         })();
     </script>
 @endpush

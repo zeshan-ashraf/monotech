@@ -60,6 +60,8 @@ class ExportPayinController extends Controller
                 'user_id' => ['nullable'],
                 'transaction_type' => ['nullable', Rule::in(['payin', 'payout'])],
                 'network' => ['nullable', Rule::in(['', 'all', 'easypaisa', 'jazzcash'])],
+                'amount_from' => ['nullable', 'numeric', 'min:1', 'max:50000'],
+                'amount_to' => ['nullable', 'numeric', 'min:1', 'max:50000', 'gte:amount_from'],
             ]);
         }
 
@@ -94,6 +96,8 @@ class ExportPayinController extends Controller
             'user_id' => ['nullable'],
             'transaction_type' => ['nullable', Rule::in(['payin', 'payout'])],
             'network' => ['nullable', Rule::in(['', 'all', 'easypaisa', 'jazzcash'])],
+            'amount_from' => ['nullable', 'numeric', 'min:1', 'max:50000'],
+            'amount_to' => ['nullable', 'numeric', 'min:1', 'max:50000', 'gte:amount_from'],
         ]);
 
         // No PHP time cap — large date ranges can take several minutes.
