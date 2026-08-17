@@ -13,6 +13,8 @@ class ExportPayinExport implements FromCollection, WithHeadings, WithMapping
     /** @var array<int, string> */
     private array $usersById;
 
+    private int $serial = 0;
+
     public function __construct(
         private readonly Collection $rows,
         array $usersById = []
@@ -28,6 +30,7 @@ class ExportPayinExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
+            'Sr No',
             'Order Id',
             'Client Name',
             'Trans Id',
@@ -45,7 +48,10 @@ class ExportPayinExport implements FromCollection, WithHeadings, WithMapping
      */
     public function map($row): array
     {
+        $this->serial++;
+
         return [
+            $this->serial,
             $row->orderId,
             $this->usersById[$row->user_id] ?? '-',
             $row->transactionId,
