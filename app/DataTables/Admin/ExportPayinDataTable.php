@@ -136,13 +136,19 @@ class ExportPayinDataTable extends DataTable
             $byStatus[$status] = ['count' => 0, 'amount' => 0.0];
         }
 
-        // Build aggregates without the status filter so breakdown is always available.
+        // Only scan every status when the Status filter is All (breakdown cards).
+        // A specific status (e.g. success) must stay in the WHERE so indexes can be used.
         $aggregateFilters = $filters;
-        $aggregateFilters['status'] = null;
+        if ($selectedStatus !== null) {
+            $aggregateFilters['status'] = $selectedStatus;
+        } else {
+            $aggregateFilters['status'] = null;
+        }
 
         if ($filters['start_date'] && $filters['end_date']) {
             foreach (static::sources() as $source) {
                 $rows = static::applySearchFilters($source['model']::query(), $aggregateFilters, 'exact')
+                    ->toBase()
                     ->selectRaw('status, COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total')
                     ->groupBy('status')
                     ->get();
@@ -379,6 +385,19 @@ class ExportPayinDataTable extends DataTable
             }
 
             $query = static::applySearchFilters($source['model']::query(), $filters, $orderMatchMode)
+                ->select([
+                    'id',
+                    'user_id',
+                    'orderId',
+                    'transactionId',
+                    'phone',
+                    'txn_ref_no',
+                    'txn_type',
+                    'amount',
+                    'status',
+                    'created_at',
+                    'pp_message',
+                ])
                 ->orderByDesc('created_at')
                 ->orderByDesc('id');
 
@@ -485,6 +504,12 @@ class ExportPayinDataTable extends DataTable
 
         if ($from > $to) {
             [$from, $to] = [$to, $from];
+        }
+
+        // Full slider span is "any amount". Applying BETWEEN 1 AND 50000
+        // prevents MySQL from using created_at/status indexes.
+        if ((int) $from === self::AMOUNT_MIN && (int) $to === self::AMOUNT_MAX) {
+            return ['amount_from' => null, 'amount_to' => null];
         }
 
         return ['amount_from' => $from, 'amount_to' => $to];
@@ -633,11 +658,16 @@ class ExportPayinDataTable extends DataTable
         }
 
         $aggregateFilters = $filters;
-        $aggregateFilters['status'] = null;
+        if ($selectedStatus !== null) {
+            $aggregateFilters['status'] = $selectedStatus;
+        } else {
+            $aggregateFilters['status'] = null;
+        }
 
         if ($filters['start_date'] && $filters['end_date']) {
             foreach (static::payoutSources() as $source) {
                 $rows = static::applyPayoutSearchFilters($source['model']::query(), $aggregateFilters, 'exact')
+                    ->toBase()
                     ->selectRaw('status, COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total')
                     ->groupBy('status')
                     ->get();
