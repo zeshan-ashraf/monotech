@@ -459,13 +459,21 @@ class SettingController extends Controller
 
     public function payoutSetting(Request $request)
     {
-        $setting = PayoutSetting::first();
+        $selectedId = $request->id;
 
-        $setting->type = $request->type;
-        $setting->save();
+        // Set all payout settings to 0
+        PayoutSetting::query()->update([
+            'value' => 0
+        ]);
+
+        // Set selected setting to 1
+        PayoutSetting::where('id', $selectedId)->update([
+            'value' => 1
+        ]);
 
         return response()->json([
-            'success' => true
+            'status' => true,
+            'message' => 'Payout setting updated successfully.'
         ]);
     }
 }
