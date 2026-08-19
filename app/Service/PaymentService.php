@@ -32,8 +32,8 @@ class PaymentService
         $this->language = config('jazzcash.constants.LANGUAGE');
         $this->password = config('jazzcash.constants.PASSWORD');
         $this->currency_code = config('jazzcash.constants.CURRENCY_CODE');
-        //$this->return_url = config('jazzcash.constants.RETURN_URL');
-        $this->return_url = url('/api/jazzcash/callback');
+        $this->return_url = config('jazzcash.constants.RETURN_URL');
+        //$this->return_url = url('/api/jazzcash/callback');
         $this->transactionPostUrl = config('jazzcash.constants.TRANSACTION_POST_URL');
         $this->integritySalt = config('jazzcash.constants.INTEGERITY_SALT');
         $this->logger = Log::channel('payin');
