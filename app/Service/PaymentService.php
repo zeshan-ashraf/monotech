@@ -83,7 +83,7 @@ class PaymentService
             "pp_Language" => $this->language,
             "pp_MerchantID" => $this->merchantId,
             "pp_Password" => $this->password,
-            "pp_ReturnURL" => $this->return_url,
+            //"pp_ReturnURL" => $this->return_url,
             "pp_SubMerchantID" => "",
             "pp_SubMerchantName" => $subStore,
             "pp_SecureHash" => "",
