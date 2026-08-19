@@ -97,11 +97,10 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
         ->middleware(['gateway.metrics','block.listed.phone.carrier:payin', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'phone.verified', 'log.rejected']);
 
     // Payout Route
-    Route::post('payout/checkout', [PayoutController::class, 'checkout'])
-        ->middleware(['throttle:api','block.listed.phone.carrier:payout', 'whitelist.ip','payout.amount','payout.daily.limit']);
+    Route::post('payout/checkout', [PayoutController::class, 'checkout'])->middleware(['throttle:api','block.listed.phone.carrier:payout', 'whitelist.ip','payout.amount','payout.daily.limit']);
 });
 
-Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);
+Route::match(['get', 'post'], '/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);
 
 /*
 |--------------------------------------------------------------------------
