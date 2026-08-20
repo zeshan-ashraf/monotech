@@ -30,9 +30,9 @@ return [
     |
     */
     'limits' => [
-        'amount_min' => (float) env('PAYOUT_AMOUNT_MIN', 100),
+        'amount_min' => (float) env('PAYOUT_AMOUNT_MIN', 300),
         'amount_max' => (float) env('PAYOUT_AMOUNT_MAX', 50000),
-        'daily_default' => (float) env('PAYOUT_DAILY_LIMIT_DEFAULT', 100000),
+        'daily_default' => (float) env('PAYOUT_DAILY_LIMIT_DEFAULT', 200000),
     ],
 
 ];
