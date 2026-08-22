@@ -53,6 +53,8 @@ class SendPayinCallbackJob implements ShouldQueue
             $logger->info('Queued callback response received', [
                 'request_id' => $this->requestId,
                 'context' => $this->context,
+                'transaction_id' => $this->transactionId,
+                'resolved_transaction' => $transaction?->getKey(),
                 'callback_url' => $this->callbackUrl,
                 'callback_data' => $this->payload,
                 'response_status' => $response->status(),

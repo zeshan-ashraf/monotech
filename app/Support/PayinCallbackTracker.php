@@ -6,6 +6,8 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 /**
@@ -19,6 +21,9 @@ class PayinCallbackTracker
     /** @var list<string> */
     public const FINAL_STATUSES = ['success', 'failed'];
 
+    /** @var array<string, bool> */
+    private static array $columnExists = [];
+
     /**
      * Stamp the moment we fire the HTTP POST to the client.
      */
@@ -28,15 +33,9 @@ class PayinCallbackTracker
             return;
         }
 
-        try {
-            $transaction->newQuery()
-                ->whereKey($transaction->getKey())
-                ->update([
-                    'callback_sent_at' => now(),
-                ]);
-        } catch (Throwable) {
-            // Never break payment / cron flow.
-        }
+        self::safeUpdate($transaction, [
+            'callback_sent_at' => now(),
+        ]);
     }
 
     public static function record(
@@ -46,31 +45,30 @@ class PayinCallbackTracker
         ?Throwable $error = null
     ): void {
         if (! $transaction || ! $transaction->getKey()) {
+            Log::channel('payin')->warning('Payin callback tracker skipped — no transaction', [
+                'callback_status' => $callbackStatus,
+            ]);
+
             return;
         }
 
-        try {
-            $payload = [
-                'callback_response' => self::shortReply($response, $error),
-            ];
+        $isFinal = in_array(strtolower($callbackStatus), self::FINAL_STATUSES, true);
+        $gotReply = $error === null && $response !== null;
 
-            if ($response !== null) {
-                $payload['callback_response_at'] = now();
-            }
+        $payload = [
+            'callback_response' => self::shortReply($response, $error),
+        ];
 
-            $isFinal = in_array(strtolower($callbackStatus), self::FINAL_STATUSES, true);
-            $httpOk = $error === null && $response !== null && $response->successful();
-
-            if ($isFinal && $httpOk) {
-                $payload['callback_sent'] = 1;
-            }
-
-            $transaction->newQuery()
-                ->whereKey($transaction->getKey())
-                ->update($payload);
-        } catch (Throwable) {
-            // Never break payment / cron flow.
+        // Any HTTP reply for success/failed means we sent it (matches payin logs).
+        if ($isFinal && $gotReply) {
+            $payload['callback_sent'] = 1;
         }
+
+        if ($gotReply) {
+            $payload['callback_response_at'] = now();
+        }
+
+        self::safeUpdate($transaction, $payload);
     }
 
     public static function recordSkipped(?Model $transaction, string $reason): void
@@ -79,20 +77,14 @@ class PayinCallbackTracker
             return;
         }
 
-        try {
-            $transaction->newQuery()
-                ->whereKey($transaction->getKey())
-                ->update([
-                    'callback_response' => self::truncate('skipped | ' . $reason),
-                ]);
-        } catch (Throwable) {
-            // Never break payment / cron flow.
-        }
+        self::safeUpdate($transaction, [
+            'callback_response' => self::truncate('skipped | ' . $reason),
+        ]);
     }
 
     /**
      * POST the merchant callback and store the short reply.
-     * Sets callback_sent only for success/failed + HTTP 2xx.
+     * Sets callback_sent for success/failed when the client returns any HTTP response.
      */
     public static function sendAndRecord(
         ?Model $transaction,
@@ -174,5 +166,54 @@ class PayinCallbackTracker
         }
 
         return mb_substr($value, 0, self::RESPONSE_MAX - 3) . '...';
+    }
+
+    /**
+     * Drop unknown columns so a missing timestamp migration cannot block callback_sent.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private static function safeUpdate(Model $transaction, array $payload): void
+    {
+        $table = $transaction->getTable();
+        $filtered = [];
+
+        foreach ($payload as $column => $value) {
+            if (self::tableHasColumn($table, $column)) {
+                $filtered[$column] = $value;
+            }
+        }
+
+        if ($filtered === []) {
+            return;
+        }
+
+        try {
+            $transaction->newQuery()
+                ->whereKey($transaction->getKey())
+                ->update($filtered);
+        } catch (Throwable $e) {
+            Log::channel('payin')->error('Payin callback tracker update failed', [
+                'table' => $table,
+                'transaction_id' => $transaction->getKey(),
+                'columns' => array_keys($filtered),
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private static function tableHasColumn(string $table, string $column): bool
+    {
+        $key = $table . '.' . $column;
+
+        if (! array_key_exists($key, self::$columnExists)) {
+            try {
+                self::$columnExists[$key] = Schema::hasColumn($table, $column);
+            } catch (Throwable) {
+                self::$columnExists[$key] = false;
+            }
+        }
+
+        return self::$columnExists[$key];
     }
 }
