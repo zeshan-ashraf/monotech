@@ -23,6 +23,8 @@ class Transaction extends Model
         'status',
         'src',
         'url',
+        'callback_sent',
+        'callback_response',
         'reverse_requested_at',
     ];
 

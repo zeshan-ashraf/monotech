@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\{User,Transaction,ArcheiveTransaction,BackupTransaction,Settlement};
+use App\Support\PayinCallbackTracker;
 use Carbon\Carbon;
 
 class TransactionController extends Controller
@@ -313,10 +314,9 @@ class TransactionController extends Controller
             'amount' => $transaction->amount,
             'status' => $transaction->status,
         ];
-    
-        // Make an HTTP request
-        $response = Http::timeout(60)->post($transaction->url, $data);
-    
+
+        PayinCallbackTracker::sendAndRecord($transaction, $transaction->url, $data);
+
         return response()->json(['message' => 'Status changed successfully!']);
     }
     public function changeStatusReverse(Request $request)

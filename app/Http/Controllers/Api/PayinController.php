@@ -18,6 +18,7 @@ use App\Services\PhoneVerificationService;
 use App\Services\Dashboard\PayinCheckoutMetricsRecorder;
 use App\Helpers\GatewayMetricHelper;
 use App\Support\PayinAmountRules;
+use App\Support\PayinCallbackTracker;
 
 class PayinController extends Controller
 {
@@ -798,10 +799,19 @@ class PayinController extends Controller
                 'context' => $context,
                 'reason' => !$transaction ? 'no_transaction' : 'empty_callback_url',
             ]);
+            if ($transaction) {
+                PayinCallbackTracker::recordSkipped($transaction, 'empty callback url');
+            }
             return;
         }
 
-        $job = new SendPayinCallbackJob($transaction->url, $payload, $requestId, $context);
+        $job = new SendPayinCallbackJob(
+            $transaction->url,
+            $payload,
+            $requestId,
+            $context,
+            $transaction->id
+        );
         $jobId = Queue::connection('database')->pushOn('default', $job);
 
         $this->logger->info('Payin callback queued', [

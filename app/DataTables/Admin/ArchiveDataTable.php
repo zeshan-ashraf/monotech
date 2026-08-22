@@ -23,11 +23,17 @@ class ArchiveDataTable extends DataTable
                 $type = $query->status;
                return view('admin.archive_transaction.badge',get_defined_vars());
             })
+            ->editColumn('callback_sent', function ($query) {
+                return view('admin.transaction.callback_badge', [
+                    'callbackSent' => $query->callback_sent ?? 0,
+                    'callbackResponse' => $query->callback_response ?? '',
+                ]);
+            })
             ->editColumn('created_at', function ($query) {
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';
             })->editColumn('status-inqury', function ($query) {
                 return '<a href="' . route('admin.jazzcash.status-inquiry', ['id' => $query->txn_ref_no, 'type' => $query->txn_type]) . '" class="btn btn-primary btn-sm">Inquiry</a>';
-            })->rawColumns(['status-inqury']);
+            })->rawColumns(['callback_sent', 'status-inqury']);
     }
 
     public function query()
@@ -88,6 +94,7 @@ class ArchiveDataTable extends DataTable
             ['data' => 'txn_type', 'name' => 'txn_type', 'title' => 'Trans type', 'orderable' => true,'searchable' => true,'width'=>30],
             ['data' => 'amount', 'name' => 'amount', 'title' => 'Amount (PKR)', 'orderable' => true,'searchable' => true,'width'=>30, ],
             ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => true,'searchable' => true,'width'=>30],
+            ['data' => 'callback_sent', 'name' => 'callback_sent', 'title' => 'Callback', 'orderable' => true,'searchable' => false,'width'=>30],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created at', 'orderable' => true,'searchable' => true,'width'=>30],
             ['data' => 'status-inqury', 'name' => 'status-inqury', 'title' => 'Inquiry', 'orderable' => true,'searchable' => false,'width'=>30],
 

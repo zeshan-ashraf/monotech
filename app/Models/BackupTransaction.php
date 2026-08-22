@@ -22,6 +22,8 @@ class BackupTransaction extends Model
         'status',
         'src',
         'url',
+        'callback_sent',
+        'callback_response',
         'reverse_requested_at',
     ];
     

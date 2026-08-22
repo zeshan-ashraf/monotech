@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use App\Models\{Transaction,ArcheiveTransaction,BackupTransaction,User,Payout,ArcheivePayout};
 use Illuminate\Http\Request;
 use App\Service\StatusService;
+use App\Support\PayinCallbackTracker;
 use Carbon\Carbon;
 
 class SearchingController extends Controller
@@ -170,7 +171,7 @@ class SearchingController extends Controller
                     'amount' => $item->amount,
                     'status' => 'success',
                 ];
-                $response = Http::timeout(120)->post($url, $data);
+                PayinCallbackTracker::sendAndRecord($item, $url, $data, 120);
             } elseif ($result['pp_PaymentResponseCode'] == '157'){
                 $item->update([
                     'status' => 'pending',
@@ -192,7 +193,7 @@ class SearchingController extends Controller
                     'amount' => $item->amount,
                     'status' => 'failed',
                 ];
-                $response = Http::timeout(120)->post($url, $data);
+                PayinCallbackTracker::sendAndRecord($item, $url, $data, 120);
             }
         }
         else{
@@ -228,7 +229,7 @@ class SearchingController extends Controller
                     //         $surplus->save();
                     //     }
                     // }
-                    $response = Http::timeout(60)->post($url, $data);
+                    PayinCallbackTracker::sendAndRecord($item, $url, $data);
                 } elseif ($result['transactionStatus'] == 'FAILED') {
                     $item->update([
                         'status' => 'failed',
@@ -241,7 +242,7 @@ class SearchingController extends Controller
                         'amount' => $item->amount,
                         'status' => 'failed',
                     ];
-                    $response = Http::timeout(60)->post($url, $data);
+                    PayinCallbackTracker::sendAndRecord($item, $url, $data);
                 }
             } elseif ($result['responseCode'] == '0003') {
                 // Transaction failed, update and notify
@@ -255,7 +256,7 @@ class SearchingController extends Controller
                     'amount' => $item->amount,
                     'status' => 'failed',
                 ];
-                $response = Http::timeout(60)->post($url, $data);
+                PayinCallbackTracker::sendAndRecord($item, $url, $data);
             }
         }
         return redirect()->back()->with('message','Callback send manually successfully!');

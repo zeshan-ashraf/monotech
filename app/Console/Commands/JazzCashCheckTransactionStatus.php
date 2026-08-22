@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\{Transaction,SurplusAmount,Setting,User};
 use App\Service\StatusService;
-use Illuminate\Support\Facades\Http;
+use App\Support\PayinCallbackTracker;
 use Carbon\Carbon;
 
 class JazzCashCheckTransactionStatus extends Command
@@ -77,7 +77,7 @@ class JazzCashCheckTransactionStatus extends Command
                             // $surplus->save();
                         }
                     }
-                    $response = Http::timeout(60)->post($url, $data);
+                    PayinCallbackTracker::sendAndRecord($item, $url, $data);
                 } elseif ($result['pp_PaymentResponseCode'] == '157'){
                     $item->update([
                         'status' => 'pending',
@@ -100,7 +100,7 @@ class JazzCashCheckTransactionStatus extends Command
                         'amount' => $item->amount,
                         'status' => 'failed',
                     ];
-                    $response = Http::timeout(60)->post($url, $data);
+                    PayinCallbackTracker::sendAndRecord($item, $url, $data);
                 }
 
             }

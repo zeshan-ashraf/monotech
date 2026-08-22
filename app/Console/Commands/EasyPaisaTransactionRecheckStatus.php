@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\Transaction;
 use App\Service\StatusService;
 use App\Services\EasypaisaCronChunkService;
+use App\Support\PayinCallbackTracker;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -115,7 +116,7 @@ class EasyPaisaTransactionRecheckStatus extends Command
         $this->info('Failed Easypaisa transactions rechecked and updated.');
     }
 
-    private function sendCronCallback(string $cron, Transaction $item, string $url, array $data): void
+    private function sendCronCallback(string $cron, Transaction $item, ?string $url, array $data): void
     {
         $logger = Log::channel('payin');
         $context = 'easypaisa_cron_' . $cron;
@@ -127,6 +128,12 @@ class EasyPaisaTransactionRecheckStatus extends Command
             'callback_url' => $url,
             'callback_data' => $data,
         ]);
+
+        if ($url === null || trim((string) $url) === '') {
+            PayinCallbackTracker::recordSkipped($item, 'empty callback url');
+
+            return;
+        }
 
         try {
             $response = Http::timeout(60)->post($url, $data);
@@ -140,6 +147,8 @@ class EasyPaisaTransactionRecheckStatus extends Command
                 'response_status' => $response->status(),
                 'response_body' => $response->json() ?? $response->body(),
             ]);
+
+            PayinCallbackTracker::record($item, (string) ($data['status'] ?? ''), $response);
         } catch (\Throwable $e) {
             $logger->error('Easypaisa cron callback failed', [
                 'context' => $context,
@@ -149,6 +158,8 @@ class EasyPaisaTransactionRecheckStatus extends Command
                 'callback_data' => $data,
                 'error' => $e->getMessage(),
             ]);
+
+            PayinCallbackTracker::record($item, (string) ($data['status'] ?? ''), null, $e);
         }
     }
 }

@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Transaction;
 use App\Service\StatusService;
-use Illuminate\Support\Facades\Http;
+use App\Support\PayinCallbackTracker;
 use Carbon\Carbon;
 
 class TransactionRecheckStatus extends Command
@@ -61,7 +61,7 @@ class TransactionRecheckStatus extends Command
                         'amount' => $item->amount,
                         'status' => 'success',
                     ];
-                    $response = Http::timeout(60)->post($url, $data);
+                    PayinCallbackTracker::sendAndRecord($item, $url, $data);
                 } elseif ($result['pp_PaymentResponseCode'] == '157'){
                     $item->update([
                         'status' => 'pending',
@@ -83,7 +83,7 @@ class TransactionRecheckStatus extends Command
                         'amount' => $item->amount,
                         'status' => 'failed',
                     ];
-                    $response = Http::timeout(120)->post($url, $data);
+                    PayinCallbackTracker::sendAndRecord($item, $url, $data, 120);
                 }
 
             }

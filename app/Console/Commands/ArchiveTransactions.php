@@ -39,6 +39,8 @@ class ArchiveTransactions extends Command
                         'status' => $transaction->status ?? null,
                         // 'src' => $transaction->src ?? null,
                         'url' => $transaction->url ?? null,
+                        'callback_sent' => (int) ($transaction->callback_sent ?? 0),
+                        'callback_response' => $transaction->callback_response ?? null,
                         'reverse_requested_at' => $transaction->reverse_requested_at ?? null,
                         'created_at' => $transaction->created_at,
                         'updated_at' => $transaction->updated_at,
