@@ -55,7 +55,7 @@ class TransactionRecheckStatus extends Command
                         'pp_code' => $result['pp_ResponseCode'],
                         'pp_message' => $result['pp_ResponseMessage']
                     ]);
-            
+                    $item->refresh();
                     $data = [
                         'orderId' => $item->orderId,
                         'amount' => $item->amount,
@@ -77,7 +77,7 @@ class TransactionRecheckStatus extends Command
                         'pp_code' => $result['pp_PaymentResponseCode'],
                         'pp_message' => $result['pp_PaymentResponseMessage']
                     ]);
-            
+                    $item->refresh();
                     $data = [
                         'orderId' => $item->orderId,
                         'amount' => $item->amount,

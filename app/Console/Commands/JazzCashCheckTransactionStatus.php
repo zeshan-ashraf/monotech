@@ -53,6 +53,7 @@ class JazzCashCheckTransactionStatus extends Command
                         'pp_code' => $result['pp_ResponseCode'],
                         'pp_message' => $result['pp_ResponseMessage']
                     ]);
+                    $item->refresh();
                     $data = [
                         'orderId' => $item->orderId,
                         'tid' => $item->transactionId,
@@ -93,7 +94,7 @@ class JazzCashCheckTransactionStatus extends Command
                         'pp_code' => $result['pp_PaymentResponseCode'],
                         'pp_message' => $result['pp_PaymentResponseMessage']
                     ]);
-            
+                    $item->refresh();
                     $data = [
                         'orderId' => $item->orderId,
                         'tid' => $item->transactionId,
