@@ -40,6 +40,8 @@ class BackupTransaction extends Command
                         'url' => $transaction->url ?? null,
                         'callback_sent' => (int) ($transaction->callback_sent ?? 0),
                         'callback_response' => $transaction->callback_response ?? null,
+                        'callback_sent_at' => $transaction->callback_sent_at ?? null,
+                        'callback_response_at' => $transaction->callback_response_at ?? null,
                         'reverse_requested_at' => $transaction->reverse_requested_at ?? null,
                         'created_at' => $transaction->created_at,
                         'updated_at' => $transaction->updated_at,

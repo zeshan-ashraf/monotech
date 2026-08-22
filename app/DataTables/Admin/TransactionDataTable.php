@@ -4,6 +4,7 @@ namespace App\DataTables\Admin;
 
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\PayinCallbackTracker;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Services\DataTable;
 use Carbon\Carbon;
@@ -24,10 +25,7 @@ class TransactionDataTable extends DataTable
                return view('admin.transaction.badge',get_defined_vars());
             })
             ->editColumn('callback_sent', function ($query) {
-                return view('admin.transaction.callback_badge', [
-                    'callbackSent' => $query->callback_sent ?? 0,
-                    'callbackResponse' => $query->callback_response ?? '',
-                ]);
+                return view('admin.transaction.callback_badge', PayinCallbackTracker::badgeData($query));
             })
             ->editColumn('created_at', function ($query) {
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';

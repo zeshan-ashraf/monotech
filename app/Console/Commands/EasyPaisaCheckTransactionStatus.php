@@ -234,6 +234,8 @@ class EasyPaisaCheckTransactionStatus extends Command
             return;
         }
 
+        PayinCallbackTracker::markSending($item);
+
         try {
             $response = Http::timeout(60)->post($url, $data);
 

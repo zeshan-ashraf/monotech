@@ -24,6 +24,8 @@ class ArcheiveTransaction extends Model
         'url',
         'callback_sent',
         'callback_response',
+        'callback_sent_at',
+        'callback_response_at',
         'reverse_requested_at',
     ];
     

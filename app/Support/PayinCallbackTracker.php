@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -9,7 +10,7 @@ use Throwable;
 
 /**
  * Records whether a final (success/failed) payin merchant callback was sent.
- * Copy this file with the callback_sent migration to other projects.
+ * Copy this file with the callback_sent migrations to other projects.
  */
 class PayinCallbackTracker
 {
@@ -17,6 +18,26 @@ class PayinCallbackTracker
 
     /** @var list<string> */
     public const FINAL_STATUSES = ['success', 'failed'];
+
+    /**
+     * Stamp the moment we fire the HTTP POST to the client.
+     */
+    public static function markSending(?Model $transaction): void
+    {
+        if (! $transaction || ! $transaction->getKey()) {
+            return;
+        }
+
+        try {
+            $transaction->newQuery()
+                ->whereKey($transaction->getKey())
+                ->update([
+                    'callback_sent_at' => now(),
+                ]);
+        } catch (Throwable) {
+            // Never break payment / cron flow.
+        }
+    }
 
     public static function record(
         ?Model $transaction,
@@ -32,6 +53,10 @@ class PayinCallbackTracker
             $payload = [
                 'callback_response' => self::shortReply($response, $error),
             ];
+
+            if ($response !== null) {
+                $payload['callback_response_at'] = now();
+            }
 
             $isFinal = in_array(strtolower($callbackStatus), self::FINAL_STATUSES, true);
             $httpOk = $error === null && $response !== null && $response->successful();
@@ -87,6 +112,8 @@ class PayinCallbackTracker
             return false;
         }
 
+        self::markSending($transaction);
+
         try {
             $response = Http::timeout($timeout)->post($url, $payload);
             self::record($transaction, $status, $response);
@@ -96,6 +123,32 @@ class PayinCallbackTracker
             self::record($transaction, $status, null, $e);
 
             return false;
+        }
+    }
+
+    /**
+     * @return array{callbackSent: mixed, callbackResponse: string, callbackSentAt: mixed, callbackResponseAt: mixed}
+     */
+    public static function badgeData(object $query): array
+    {
+        return [
+            'callbackSent' => $query->callback_sent ?? 0,
+            'callbackResponse' => $query->callback_response ?? '',
+            'callbackSentAt' => $query->callback_sent_at ?? null,
+            'callbackResponseAt' => $query->callback_response_at ?? null,
+        ];
+    }
+
+    public static function formatTimestamp(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->format('d-m-y H:i:s');
+        } catch (Throwable) {
+            return is_string($value) ? $value : null;
         }
     }
 

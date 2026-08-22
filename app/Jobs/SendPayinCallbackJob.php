@@ -44,6 +44,8 @@ class SendPayinCallbackJob implements ShouldQueue
         $callbackStatus = strtolower((string) ($this->payload['status'] ?? ''));
         $transaction = $this->resolveTransaction();
 
+        PayinCallbackTracker::markSending($transaction);
+
         try {
             $response = Http::timeout(self::CALLBACK_HTTP_TIMEOUT_SECONDS)
                 ->post($this->callbackUrl, $this->payload);

@@ -3,6 +3,7 @@
 namespace App\DataTables\Admin;
 
 use App\Models\{ArcheiveTransaction, BackupTransaction, Transaction, User};
+use App\Support\PayinCallbackTracker;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -32,10 +33,7 @@ class SearchingDataTable extends DataTable
                 return view('admin.transaction.badge', get_defined_vars());
             })
             ->editColumn('callback_sent', function ($query) {
-                return view('admin.transaction.callback_badge', [
-                    'callbackSent' => $query->callback_sent ?? 0,
-                    'callbackResponse' => $query->callback_response ?? '',
-                ]);
+                return view('admin.transaction.callback_badge', PayinCallbackTracker::badgeData($query));
             })
             ->editColumn('created_at', function ($query) {
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';
