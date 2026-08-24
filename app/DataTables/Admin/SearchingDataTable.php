@@ -46,38 +46,50 @@ class SearchingDataTable extends DataTable
             })
             ->editColumn('detail', function ($query) {
                 $user = auth()->user();
-                $buttons = '<div class="d-flex flex-wrap justify-content-center align-items-center searching-action-btns">';
-                $buttons .= '<a href="' . route('admin.searching.callback.send', $query->id) . '" class="btn btn-success btn-sm">Send Callback</a>';
-                $buttons .= '<a href="' . route('admin.jazzcash.status-inquiry', ['id' => $query->txn_ref_no, 'type' => $query->txn_type]) . '" class="btn btn-primary btn-sm">Inquiry</a>';
 
-                if ($user && method_exists($user, 'can') && $user->can('Reverse Transactions') && $query->status == 'success') {
-                    $reverseRequested = $query->reverse_requested_at ?? null;
+                $buttons = '<div class="d-flex flex-wrap justify-content-center align-items-center gap-1 searching-action-btns">';
 
-                    if (!$reverseRequested) {
-                        $tableType = $query->table_type ?? 'transactions';
-                        $buttons .= '<button class="btn btn-warning btn-sm mark-for-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Mark for Reversal</button>';
-                    }
+                // Send Callback
+                $buttons .= '<a href="' . route('admin.searching.callback.send', $query->id) . '" 
+                                class="btn btn-success btn-sm">
+                                Send Callback
+                            </a>';
+
+                // Inquiry
+                $buttons .= '<a href="' . route('admin.jazzcash.status-inquiry', [
+                                    'id' => $query->txn_ref_no,
+                                    'type' => $query->txn_type
+                                ]) . '" 
+                                class="btn btn-primary btn-sm">
+                                Inquiry
+                            </a>';
+
+                // Reverse - Only Super Admin + successful transaction
+                if ($user->user_role == 'Super Admin' && $query->status == 'success') {
+
+                    $buttons .= '
+                        <button type="button"
+                                class="btn btn-warning btn-sm reverse-btn"
+                                data-id="' . $query->id . '">
+                            Reverse
+                        </button>
+                    ';
                 }
+
+                // if ($user && method_exists($user, 'can') && $user->can('Reverse Transactions') && $query->status == 'success') {
+                //     $reverseRequested = $query->reverse_requested_at ?? null;
+
+                //     if (!$reverseRequested) {
+                //         $tableType = $query->table_type ?? 'transactions';
+                //         $buttons .= '<button class="btn btn-warning btn-sm mark-for-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Mark for Reversal</button>';
+                //     }
+                // }
 
                 $buttons .= '</div>';
 
                 return $buttons;
             })
-            ->editColumn('reverse', function ($query) {
-                $user = auth()->user();
-
-                if ($user->user_role == 'Super Admin' && $query->status == 'success') {
-                    return '
-                        <select class="form-control form-control-sm status-dropdown-reverse" data-id="' . $query->id . '">
-                            <option value="" selected disabled>Select...</option>
-                            <option value="reverse">Reverse</option>
-                        </select>
-                    ';
-                }
-
-                return '';
-            })
-            ->rawColumns(['status', 'callback_sent', 'detail', 'reverse']);
+            ->rawColumns(['status', 'callback_sent', 'detail']);
     }
 
     public function query(): Collection

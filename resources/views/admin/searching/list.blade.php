@@ -124,23 +124,53 @@
 @push('js')
     @include('admin.components.datatablesScript')
     <script>
-    $(document).on('change', '.status-dropdown-reverse', function() {
-            var status = $(this).val();
+        $(document).on('click', '.reverse-btn', function() {
+
             var id = $(this).data('id');
-    
-            $.ajax({
-                url: '{{ route("admin.transaction.change_status_reverse") }}', // Correct route
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}', // CSRF protection
-                    id: id,
-                    status: status
-                },
-                success: function(response) {
-                    location.reload(); // Reload page to reflect changes
-                },
-                error: function(xhr, status, error) {
-                    alert('Failed to update status: ' + xhr.responseJSON.message);
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you want to reverse this transaction?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Reverse',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    $.ajax({
+                        url: '{{ route("admin.transaction.change_status_reverse") }}',
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            id: id,
+                            status: 'reverse'
+                        },
+
+                        success: function(response) {
+
+                            Swal.fire({
+                                title: 'Success!',
+                                text: response.message || 'Transaction reversed successfully.',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        },
+
+                        error: function(xhr) {
+
+                            Swal.fire({
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message || 'Failed to reverse transaction.',
+                                icon: 'error'
+                            });
+                        }
+                    });
                 }
             });
         });
