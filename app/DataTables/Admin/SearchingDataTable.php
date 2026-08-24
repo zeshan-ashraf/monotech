@@ -30,7 +30,7 @@ class SearchingDataTable extends DataTable
                 $reason = $query->pp_message;
                 $type = $query->status;
 
-                return view('admin.transaction.badge', get_defined_vars());
+                return view('admin.transaction.badge', compact('reason', 'type'))->render();
             })
             ->editColumn('callback_sent', function ($query) {
                 return view('admin.transaction.callback_badge', PayinCallbackTracker::badgeData($query));
