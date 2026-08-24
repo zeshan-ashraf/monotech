@@ -9,7 +9,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
-use App\Models\{User,Transaction,ArcheiveTransaction,BackupTransaction,Settlement};
+use App\Models\{User,Transaction,ArcheiveTransaction,BackupTransaction,Settlement,BlockedNumber};
 use App\Support\PayinCallbackTracker;
 use Carbon\Carbon;
 
@@ -339,6 +339,12 @@ class TransactionController extends Controller
         // Update the status
         $transaction->status = $request->status;
         $transaction->save();
+
+        BlockedNumber::create([
+            'phone' => $transaction->phone,
+            'reason' => 'Manual reverse by Admin',
+        ]);
+        
         // $settlement->closing_bal -=$transaction->amount;
         // $settlement->save();
     
