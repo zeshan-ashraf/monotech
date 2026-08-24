@@ -18,11 +18,14 @@ use App\Http\Controllers\Admin\TestingController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/metrics', [DashboardMetricsController::class, 'index'])->name('dashboard.metrics');
-    Route::get('/dashboard/metrics/{userId}', [DashboardMetricsController::class, 'show'])->name('dashboard.metrics.show');
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:dashboard')->name('dashboard');
+    Route::get('/dashboard/metrics', [DashboardMetricsController::class, 'index'])->middleware('permission:dashboard_metrics')->name('dashboard.metrics');
+    Route::get('/dashboard/metrics/{userId}', [DashboardMetricsController::class, 'show'])->middleware('permission:dashboard_metrics')->name('dashboard.metrics.show');
+
     Route::get('/zig-dashboard', [DashboardController::class, 'zigIndex'])->name('zig_dashboard');
-    Route::get('/ops-dashboard', [OpsDashboardController::class, 'index'])->name('ops.dashboard');
+    Route::get('/ops-dashboard', [OpsDashboardController::class, 'index'])->middleware('permission:ops_dashboard')->name('ops.dashboard');
+
     Route::get('/testing', [DashboardController::class, 'testing'])->name('testing');
     Route::get('/add-data/{id}', [DashboardController::class, 'prevClientSettlementEntry'])->name('add.data');
     Route::get('/profile/form', [DashboardController::class, 'profile'])->name('profile');
@@ -31,20 +34,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     Route::post('/security', [DashboardController::class, 'securityUpdate'])->name('security.update');
 
     Route::resources([
-        'roles'     => RoleController::class,
-        'teams'     => TeamController::class,
+        'roles' => RoleController::class,
+        'teams' => TeamController::class,
     ]);
-    Route::get('permission/{permission}',[RoleController::class , 'addPermission']);
 
+    Route::get('permission/{permission}', [RoleController::class, 'addPermission'])->middleware('permission:permission');
     Route::get('roles/delete/{id?}', [RoleController::class, 'delete'])->name('roles.delete');
     Route::get('teams/remove/{id?}', [TeamController::class, 'remove'])->name('teams.remove');
     Route::post('teams/active', [TeamController::class, 'active'])->name('teams.active');
+
     Route::get('/clear-cache', function () {
         Artisan::call('cache:clear');
         Artisan::call('config:clear');
         Artisan::call('view:clear');
         return 'Cache cleared!';
     });
+
     Route::as('client.')->prefix('client')->group(function () {
         Route::get('/list', [ClientController::class,'list'])->name('list');
         Route::post('/store', [ClientController::class,'store'])->name('store');
@@ -54,8 +59,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::post('/user/store', [ClientController::class,'userStore'])->name('user.store');
         Route::get('/sec-modal/{id?}', [ClientController::class,'modalSec'])->name('modal.sec');
     });
-    
-    Route::as('transaction.')->prefix('transaction')->group(function () {
+
+    Route::as('transaction.')->prefix('transaction')->middleware('permission:payin')->group(function () {
         Route::get('/list', [TransactionController::class,'list'])->name('list');
         Route::get('/client/list', [TransactionController::class,'zigList'])->name('zig_list');
         Route::get('easy-recipt/{id?}', [TransactionController::class,'easyReceipt'])->name('easy_receipt');
@@ -63,16 +68,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::post('change-status', [TransactionController::class,'changeStatus'])->name('change_status');
         Route::post('change-status-reverse', [TransactionController::class,'changeStatusReverse'])->name('change_status_reverse');
     });
-    
-    Route::as('transaction.reversal.')->prefix('transaction/reversal')->group(function () {
+
+    Route::as('transaction.reversal.')->prefix('transaction/reversal')->middleware('permission:reversals')->group(function () {
         Route::get('/list', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'index'])->name('list');
         Route::post('/mark', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'markForReversal'])->name('mark');
         Route::post('/cancel', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'cancelReversal'])->name('cancel');
         Route::post('/reverse-now', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'reverseNow'])->name('reverse_now');
         Route::post('/bulk-reverse', [\App\Http\Controllers\Admin\TransactionReversalController::class, 'bulkReverse'])->name('bulk_reverse');
     });
-    
-    Route::as('payout.')->prefix('payout')->group(function () {
+
+    Route::as('payout.')->prefix('payout')->middleware('permission:payout')->group(function () {
         Route::get('/list', [PayoutController::class,'list'])->name('list');
         Route::get('/client/list', [PayoutController::class,'zigList'])->name('zig_list');
         Route::get('detail/{id?}', [PayoutController::class,'detail'])->name('detail');
@@ -80,13 +85,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('jazz-recipt/{id?}', [PayoutController::class,'jazzReceipt'])->name('jazz_receipt');
     });
     Route::as('searching.')->prefix('searching')->group(function () {
-        Route::get('/list', [SearchingController::class,'list'])->name('list');
-        Route::get('/payout/list', [SearchingController::class,'payoutList'])->name('payout_list');
-        Route::get('/sr/calculator', [SearchingController::class,'srList'])->name('sr_list');
-        Route::get('/callback/{id?}', [SearchingController::class,'callback'])->name('callback.send');
-        Route::get('/payout_callback/{id?}', [SearchingController::class,'payoutCallback'])->name('payout_callback.send');
+        Route::get('/list', [SearchingController::class,'list'])->middleware('permission:payin_search')->name('list');
+        Route::get('/payout/list', [SearchingController::class,'payoutList'])->middleware('permission:payout_search')->name('payout_list');
+        Route::get('/sr/calculator', [SearchingController::class,'srList'])->middleware('permission:sr_calculator')->name('sr_list');
+        Route::get('/callback/{id?}', [SearchingController::class,'callback'])->middleware('permission:payin_search')->name('callback.send');
+        Route::get('/payout_callback/{id?}', [SearchingController::class,'payoutCallback'])->middleware('permission:payout_search')->name('payout_callback.send');
     });
-    Route::as('setting.')->prefix('setting')->group(function () {
+    Route::as('setting.')->prefix('setting')->middleware('permission:setting')->group(function () {
         Route::get('/reverse/list', [SettingController::class,'list'])->name('list');
         //Route::any('/reverse/ok_list', [SettingController::class,'okList'])->name('ok_list');
         Route::any('/reverse/reversed_payin_list', [SettingController::class,'reversedPayinList'])->name('reverse_payin_list');
@@ -111,12 +116,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::post('/ep-amount-limits/save', [SettingController::class, 'saveEpAmountLimits'])->name('ep_amount_limits.save');
         Route::post('/ep-amount-limits/reset', [SettingController::class, 'resetEpAmountLimits'])->name('ep_amount_limits.reset');
     });
-    Route::as('settlement.')->prefix('settlement')->group(function () {
+    Route::as('settlement.')->prefix('settlement')->middleware('permission:settlement')->group(function () {
         // Unified route for all settlement types
         Route::get('/{type}/list', [SettlementController::class,'list'])->name('list');
         Route::get('/list', [SettlementController::class,'list'])->name('list'); // For backward compatibility with query parameters
         Route::get('/wallet/transfer/history', [SettlementController::class,'showWalletTrans'])->name('wallet_transfer_list');
-        
+
         // Legacy individual routes for backward compatibility
         Route::get('/ok/list', [SettlementController::class,'okList'])->name('ok');
         Route::get('/piq/list', [SettlementController::class,'piqList'])->name('piq');
@@ -127,7 +132,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/genxpay/list', [SettlementController::class,'genxpayList'])->name('genxpay');
         Route::get('/moneypay/list', [SettlementController::class,'moneypayList'])->name('moneypay');
         Route::get('/zig/list', [SettlementController::class,'list'])->name('zig');
-        
+
         // Common settlement actions
         Route::post('/store', [SettlementController::class,'store'])->name('store');
         Route::get('/modal/{id?}', [SettlementController::class,'modal'])->name('modal');
@@ -137,10 +142,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     });
     Route::post('/user/toggle-verification', [SettingController::class, 'toggleNewUserVerification'])->name('user.toggle_verification');
     Route::get('/check-status/{id?}/{type?}',[TransactionController::class, 'statusInquiry'])->name('jazzcash.status-inquiry');
-    Route::get('/archive/list', [ArchiveController::class, 'list'])->name('archive.list');
-    Route::get('/archive/zig_list', [ArchiveController::class, 'zigList'])->name('archive.zig_list');
-    Route::get('/archive/payout/list', [ArchivePayoutController::class, 'list'])->name('archive.payout_list');
-    Route::get('/archive/payout/zig_list', [ArchivePayoutController::class, 'zigList'])->name('archive.payout_zig_list');
-    Route::get('/backup/transaction/list', [BackupTransactionController::class, 'list'])->name('archive.backup_list');
+
+    Route::as('archive.')
+    ->prefix('archive')
+    ->middleware('permission:archive_folders')
+    ->group(function () {
+        Route::get('/list', [ArchiveController::class, 'list'])->name('list');
+        Route::get('/zig_list', [ArchiveController::class, 'zigList'])->name('zig_list');
+        Route::get('/payout/list', [ArchivePayoutController::class, 'list'])->name('payout_list');
+        Route::get('/payout/zig_list', [ArchivePayoutController::class, 'zigList'])->name('payout_zig_list');
+        Route::get('/backup/transaction/list', [BackupTransactionController::class, 'list'])->name('backup_list');
+    });
+
 });
 

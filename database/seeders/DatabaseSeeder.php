@@ -15,6 +15,11 @@ class DatabaseSeeder extends Seeder
     {
         // \App\Models\User::factory(10)->create();
 
+        $this->call([
+            PermissionSeeder::class,
+            RolePermissionSeeder::class,
+        ]);
+
         \App\Models\User::create([
             'name'=>'Admin',
             'email'=>'admin@gmail.com',

@@ -19,12 +19,14 @@
                         class="d-flex align-items-center" href="{{ route('admin.dashboard') }}">
                         <i data-feather="home"></i>Dashboard</a>
                 </li>
-                {{-- OPS Dashboard — hidden until feature is complete
+
+                {{-- OPS Dashboard — hidden until feature is complete --}}
+                @can(auth()->user()->user_role == "Super Admin" || 'ops_dashboard')
                 <li class="@if(Route::is('admin.ops.dashboard')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.ops.dashboard') }}">
                         <i data-feather="activity"></i>OPS Dashboard</a>
                 </li>
-                --}}
+                @endif
                 {{--<li class="@if(url()->current() == route('admin.profile')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.profile') }}">
                         <i data-feather="user-check"></i>Profile</a>
@@ -90,7 +92,7 @@
                             href="{{ route('admin.setting.reverse_payin_list') }}"><i data-feather='credit-card'></i>Reversed Payin</a>
                     </li>
                 @endif
-               
+
                 @can('Settlement')
                     @php
                         // Get active settlement users from database
@@ -101,7 +103,7 @@
                             //dd($sidebarSettlementUsers,$activeSettlementUsers);
                         }
                     @endphp
-                    
+
                     @if(auth()->user()->user_role == "Super Admin")
                         <li class="nav-item">
                             <a class="d-flex align-items-center" href="#"><i data-feather='briefcase'></i>Settlement</a>
@@ -127,7 +129,7 @@
                         </li>
                     @endif
 
-                    
+
                 @endcan
                 @can('Archive Transactions')
                     <li class="  nav-item">
