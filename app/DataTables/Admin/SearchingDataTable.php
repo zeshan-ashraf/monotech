@@ -270,7 +270,7 @@ class SearchingDataTable extends DataTable
             ['data' => 'callback_sent', 'name' => 'callback_sent', 'title' => 'Callback', 'orderable' => false, 'searchable' => false, 'width' => 30],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created at', 'orderable' => false, 'searchable' => true, 'width' => 30],
             ['data' => 'detail', 'name' => 'detail', 'title' => 'Action', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
-            ['data' => 'reverse', 'name' => 'reverse', 'title' => 'Change Status', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
+            // ['data' => 'reverse', 'name' => 'reverse', 'title' => 'Change Status', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
         ];
     }
 
