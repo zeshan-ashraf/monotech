@@ -38,8 +38,11 @@ class SearchingDataTable extends DataTable
             ->editColumn('created_at', function ($query) {
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';
             })
+            ->editColumn('txn_type', function ($query) {
+                return $this->formatNetwork($query->txn_type ?? null);
+            })
             ->editColumn('amount', function ($query) {
-                return $query->amount . ' PKR';
+                return $query->amount;
             })
             ->editColumn('detail', function ($query) {
                 $user = auth()->user();
@@ -249,7 +252,7 @@ class SearchingDataTable extends DataTable
             ['data' => 'transactionId', 'name' => 'transactionId', 'title' => 'Trans Id', 'orderable' => false, 'searchable' => true, 'width' => 30],
             ['data' => 'phone', 'name' => 'phone', 'title' => 'Phone', 'orderable' => false, 'searchable' => true, 'width' => 30],
             ['data' => 'txn_ref_no', 'name' => 'txn_ref_no', 'title' => 'Trans Ref No', 'orderable' => false, 'searchable' => true, 'width' => 30],
-            ['data' => 'txn_type', 'name' => 'txn_type', 'title' => 'Trans type', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'txn_type', 'name' => 'txn_type', 'title' => 'Network', 'orderable' => false, 'searchable' => true, 'width' => 30],
             ['data' => 'amount', 'name' => 'amount', 'title' => 'Amount', 'orderable' => false, 'searchable' => true, 'width' => 30],
             ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => false, 'searchable' => true, 'width' => 30],
             ['data' => 'callback_sent', 'name' => 'callback_sent', 'title' => 'Callback', 'orderable' => false, 'searchable' => false, 'width' => 30],
@@ -257,6 +260,17 @@ class SearchingDataTable extends DataTable
             ['data' => 'detail', 'name' => 'detail', 'title' => 'Action', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
             ['data' => 'reverse', 'name' => 'reverse', 'title' => 'Change Status', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
         ];
+    }
+
+    private function formatNetwork(?string $value): string
+    {
+        $normalized = strtolower(trim((string) $value));
+
+        return match ($normalized) {
+            'jazzcash' => 'JC',
+            'easypaisa' => 'EP',
+            default => $value !== null && $value !== '' ? (string) $value : '-',
+        };
     }
 
     protected function filename(): string

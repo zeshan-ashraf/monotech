@@ -3,6 +3,16 @@
 @push('css')
 <link rel="stylesheet" href="{{ asset('admin/assets/dashboard/css/dataTables.bootstrap4.min.css') }}" />
 <style>
+    #dataTable .badge {
+        font-size: 0.65rem;
+        padding: 0.18em 0.4em;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+    #dataTable .status-badge-wrap .copy-btn svg {
+        width: 12px;
+        height: 12px;
+    }
     #dataTable .searching-action-btns {
         gap: 4px;
     }
