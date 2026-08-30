@@ -192,12 +192,13 @@
                                                     <div class="form-group mb-50">
                                                         <label>Status</label>
                                                         @php $selectedStatus = request()->has('status') ? (string) request()->status : 'success'; @endphp
-                                                        <select name="status" class="form-control">
+                                                        <select name="status" id="export-status" class="form-control">
                                                             <option value="" {{ $selectedStatus === '' ? 'selected' : '' }}>All</option>
                                                             <option value="failed" {{ $selectedStatus === 'failed' ? 'selected' : '' }}>Failed</option>
                                                             <option value="success" {{ $selectedStatus === 'success' ? 'selected' : '' }}>Success</option>
                                                             <option value="pending" {{ $selectedStatus === 'pending' ? 'selected' : '' }}>Pending</option>
                                                             <option value="reverse" {{ $selectedStatus === 'reverse' ? 'selected' : '' }}>Reverse</option>
+                                                            <option value="settled" {{ $selectedStatus === 'settled' ? 'selected' : '' }} {{ $selectedTransactionType !== 'payout' ? 'disabled' : '' }}>Settled</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -500,7 +501,27 @@
             form.addEventListener('submit', applyDateRange);
             applyDateRange();
 
-            form.querySelector('select[name="transaction_type"]')?.addEventListener('change', function () {
+            const typeSelect = form.querySelector('select[name="transaction_type"]');
+            const statusSelect = form.querySelector('#export-status');
+            const settledOption = statusSelect ? statusSelect.querySelector('option[value="settled"]') : null;
+
+            function syncSettledStatusOption() {
+                if (!typeSelect || !statusSelect || !settledOption) {
+                    return;
+                }
+
+                const isPayout = typeSelect.value === 'payout';
+                settledOption.disabled = !isPayout;
+
+                if (!isPayout && statusSelect.value === 'settled') {
+                    statusSelect.value = 'success';
+                }
+            }
+
+            syncSettledStatusOption();
+
+            typeSelect?.addEventListener('change', function () {
+                syncSettledStatusOption();
                 applyDateRange();
                 if (canSubmitDates()) {
                     form.submit();

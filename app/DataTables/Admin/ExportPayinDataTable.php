@@ -52,8 +52,13 @@ class ExportPayinDataTable extends DataTable
             ->editColumn('status', function ($query) {
                 $reason = $query->pp_message;
                 $type = $query->status;
+                $html = view('admin.transaction.badge', get_defined_vars())->render();
 
-                return view('admin.transaction.badge', get_defined_vars());
+                if (($query->is_settled ?? 'no') === 'yes') {
+                    $html .= ' <span class="badge bg-warning settled-badge">Settled</span>';
+                }
+
+                return $html;
             })
             ->editColumn('txn_type', function ($query) {
                 return static::formatNetwork($query->txn_type ?? null);
@@ -436,6 +441,7 @@ class ExportPayinDataTable extends DataTable
      *     amount_from: ?float,
      *     amount_to: ?float,
      *     status: ?string,
+     *     is_settled: bool,
      *     user_id: ?int,
      *     network: ?string
      * }
@@ -458,8 +464,17 @@ class ExportPayinDataTable extends DataTable
         $status = request()->has('status')
             ? static::trimFilter('status')
             : 'success';
-        $allowedStatuses = self::STATUSES;
-        if ($status !== null && !in_array($status, $allowedStatuses, true)) {
+        $isSettled = $status === 'settled';
+        $isPayout = static::isPayoutRequest();
+
+        // Settled is payout-only: is_settled = yes, not a status column value.
+        if ($isSettled) {
+            $status = null;
+            if (! $isPayout) {
+                $isSettled = false;
+                $status = 'success';
+            }
+        } elseif ($status !== null && !in_array($status, self::STATUSES, true)) {
             $status = null;
         }
 
@@ -480,6 +495,7 @@ class ExportPayinDataTable extends DataTable
             'amount_from' => $amountRange['amount_from'],
             'amount_to' => $amountRange['amount_to'],
             'status' => $status,
+            'is_settled' => $isSettled,
             'user_id' => $userId,
             'network' => $network,
         ];
@@ -784,6 +800,7 @@ class ExportPayinDataTable extends DataTable
             DB::raw('transaction_type as `txn_type`'),
             'amount',
             'status',
+            'is_settled',
             'created_at',
             DB::raw('message as `pp_message`'),
             DB::raw("'" . $table . "' as `table_type`"),
@@ -800,6 +817,9 @@ class ExportPayinDataTable extends DataTable
             })
             ->when($filters['status'], function ($q) use ($filters) {
                 $q->where('status', $filters['status']);
+            })
+            ->when(!empty($filters['is_settled']), function ($q) {
+                $q->where('is_settled', 'yes');
             })
             ->when($filters['network'], function ($q) use ($filters) {
                 $q->where('transaction_type', $filters['network']);
