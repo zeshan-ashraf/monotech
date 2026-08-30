@@ -341,7 +341,8 @@ class TransactionController extends Controller
         $transaction->save();
 
         BlockedNumber::create([
-            'phone' => $transaction->phone,
+            'phone_number' => $transaction->phone,
+            'user_id' => $transaction->user_id,
             'reason' => 'Manual reverse by Admin',
         ]);
         
