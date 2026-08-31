@@ -340,11 +340,23 @@ class TransactionController extends Controller
         $transaction->status = $request->status;
         $transaction->save();
 
-        BlockedNumber::create([
-            'phone_number' => $transaction->phone,
-            'user_id' => $transaction->user_id,
-            'reason' => 'Manual reverse by Admin',
-        ]);
+        $paymentMethod = strtolower((string) ($transaction->txn_type ?? ''));
+        if (! in_array($paymentMethod, ['jazzcash', 'easypaisa'], true)) {
+            $paymentMethod = 'jazzcash';
+        }
+
+        BlockedNumber::updateOrCreate(
+            [
+                'phone_number' => $transaction->phone,
+                'payment_method' => $paymentMethod,
+            ],
+            [
+                'user_id' => $transaction->user_id,
+                'reason' => 'Manual reverse by Admin',
+                'is_permanent' => true,
+                'block_until' => null,
+            ]
+        );
         
         // $settlement->closing_bal -=$transaction->amount;
         // $settlement->save();
