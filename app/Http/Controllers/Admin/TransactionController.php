@@ -336,31 +336,27 @@ class TransactionController extends Controller
         // $settlement=Settlement::where('user_id', $transaction->user_id)
         //     ->where('date', Carbon::yesterday()->format('Y-m-d'))
         //     ->first();
-        // Update the status
-        $transaction->status = $request->status;
-        $transaction->save();
+        try {
+            BlockedNumber::blockFromAdminReverse($transaction);
 
-        $paymentMethod = strtolower((string) ($transaction->txn_type ?? ''));
-        if (! in_array($paymentMethod, ['jazzcash', 'easypaisa'], true)) {
-            $paymentMethod = 'jazzcash';
+            $transaction->status = $request->status;
+            $transaction->save();
+        } catch (\Throwable $e) {
+            Log::error('Manual reverse failed', [
+                'transaction_id' => $transaction->id,
+                'phone' => $transaction->phone ?? null,
+                'txn_type' => $transaction->txn_type ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to reverse transaction: '.$e->getMessage(),
+            ], 500);
         }
 
-        BlockedNumber::updateOrCreate(
-            [
-                'phone_number' => $transaction->phone,
-                'payment_method' => $paymentMethod,
-            ],
-            [
-                'user_id' => $transaction->user_id,
-                'reason' => 'Manual reverse by Admin',
-                'is_permanent' => true,
-                'block_until' => null,
-            ]
-        );
-        
         // $settlement->closing_bal -=$transaction->amount;
         // $settlement->save();
-    
+
         return response()->json(['message' => 'Status changed successfully!']);
     }
 }

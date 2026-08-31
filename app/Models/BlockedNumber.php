@@ -189,6 +189,64 @@ class BlockedNumber extends Model
     }
 
     /**
+     * Permanently block a phone after an admin reverse.
+     * Inserts every NOT NULL blocked_numbers column so MySQL never hits a missing-default error.
+     */
+    public static function blockFromAdminReverse(object $transaction): void
+    {
+        $phone = trim((string) ($transaction->phone ?? ''));
+        if ($phone === '') {
+            return;
+        }
+
+        foreach (self::paymentMethodsForReverse($transaction->txn_type ?? null) as $paymentMethod) {
+            $blocked = self::where('phone_number', $phone)
+                ->where('payment_method', $paymentMethod)
+                ->first();
+
+            $payload = [
+                'user_id' => $transaction->user_id ?? null,
+                'reason' => 'Manual reverse by Admin',
+                'is_permanent' => true,
+                'block_until' => null,
+            ];
+
+            if ($blocked) {
+                $blocked->update($payload);
+                continue;
+            }
+
+            self::create([
+                'user_id' => $transaction->user_id ?? null,
+                'phone_number' => $phone,
+                'payment_method' => $paymentMethod,
+                'reason' => 'Manual reverse by Admin',
+                'response_code' => null,
+                'response_desc' => 'Manual reverse by Admin',
+                'attempt_count' => 1,
+                'blocked_attempt_count' => 0,
+                'block_until' => null,
+                'is_permanent' => true,
+                'cancellation_count' => 0,
+            ]);
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function paymentMethodsForReverse(?string $txnType): array
+    {
+        $normalized = strtolower(trim((string) $txnType));
+
+        return match ($normalized) {
+            'jazzcash', 'jc', 'jazz' => ['jazzcash'],
+            'easypaisa', 'ep', 'easy' => ['easypaisa'],
+            default => ['jazzcash', 'easypaisa'],
+        };
+    }
+
+    /**
      * Update or create a blocked number with progressive blocking
      */
     public static function updateOrCreateBlocked(string $phoneNumber, string $paymentMethod, string $responseCode, string $responseDesc, ?int $userId = null): self
