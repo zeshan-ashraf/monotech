@@ -1,4 +1,7 @@
 <aside class="api-docs-code-panel">
+    @if(($page['tool'] ?? null) === 'hmac-generator')
+        @include('api-docs::partials.hmac-results')
+    @else
     @php
         $requestExample = $page['request_example'] ?? null;
         $responses = $page['responses'] ?? [];
@@ -66,5 +69,6 @@
                 </div>
             @endforeach
         @endforeach
+    @endif
     @endif
 </aside>

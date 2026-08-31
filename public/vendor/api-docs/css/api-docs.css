@@ -173,6 +173,259 @@
     box-shadow: 0 2px 8px rgba(212, 160, 23, 0.22);
 }
 
+.api-docs-notice--info {
+    border: 1px solid #c9c6f5;
+    background: #f4f3ff;
+    box-shadow: none;
+}
+
+.api-docs-notice--info .api-docs-notice-title {
+    color: #3d39b0;
+}
+
+.api-docs-notice--info .api-docs-notice-title svg {
+    stroke: #5850ec;
+}
+
+.api-docs-notice--info .api-docs-notice-list {
+    color: #4a4a68;
+}
+
+.api-docs-notice--info .api-docs-notice-list code {
+    background: #eeeefe;
+    border-color: #c9c6f5;
+    color: #3d39b0;
+}
+
+/* ── HMAC generator ── */
+.hmac-tool {
+    max-width: 720px;
+}
+
+.hmac-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+.hmac-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.hmac-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.hmac-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+}
+
+.hmac-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #5850ec;
+}
+
+.hmac-hint {
+    font-size: 0.75rem;
+    color: #8888a8;
+}
+
+.hmac-hint.is-ok {
+    color: #2e7d32;
+}
+
+.hmac-hint.is-bad {
+    color: #c62828;
+}
+
+.hmac-input,
+.hmac-textarea {
+    width: 100%;
+    border: 1px solid #e0e0ea;
+    border-radius: 8px;
+    background: #fafafd;
+    color: #1a1a2e;
+    font-size: 0.9rem;
+    padding: 0.7rem 0.85rem;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.hmac-input:focus,
+.hmac-textarea:focus {
+    outline: none;
+    border-color: #5850ec;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(88, 80, 236, 0.12);
+}
+
+.hmac-textarea {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    resize: vertical;
+    min-height: 260px;
+}
+
+.hmac-secret-wrap {
+    position: relative;
+}
+
+.hmac-secret-wrap .hmac-input {
+    padding-right: 2.6rem;
+}
+
+.hmac-secret-toggle {
+    position: absolute;
+    right: 0.45rem;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: #8888a8;
+    padding: 0.25rem;
+    display: flex;
+    cursor: pointer;
+}
+
+.hmac-secret-toggle:hover {
+    color: #5850ec;
+}
+
+.hmac-secret-toggle svg {
+    width: 16px;
+    height: 16px;
+}
+
+.hmac-segmented {
+    display: inline-flex;
+    background: #f4f4fb;
+    border-radius: 8px;
+    padding: 0.2rem;
+    gap: 0.2rem;
+}
+
+.hmac-segment {
+    border: none;
+    background: transparent;
+    color: #4a4a68;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.5rem 1.1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.hmac-segment.is-active {
+    background: #5850ec;
+    color: #fff;
+}
+
+.hmac-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+}
+
+.hmac-generate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    background: #5850ec;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(88, 80, 236, 0.22);
+}
+
+.hmac-generate-btn:hover {
+    background: #4a43d4;
+}
+
+.hmac-generate-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.hmac-formula {
+    margin: 0;
+    color: #8888a8;
+    font-size: 0.78rem;
+}
+
+.hmac-formula code {
+    background: #f0f0f8;
+    color: #5850ec;
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.hmac-empty {
+    color: #94a3b8;
+    text-align: center;
+    padding: 3.5rem 1.25rem;
+}
+
+.hmac-empty svg {
+    width: 36px;
+    height: 36px;
+    stroke: #5850ec;
+    margin-bottom: 0.85rem;
+}
+
+.hmac-empty h3 {
+    color: #e2e8f0;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.45rem;
+}
+
+.hmac-empty p {
+    margin: 0 auto;
+    max-width: 280px;
+    font-size: 0.85rem;
+    line-height: 1.55;
+}
+
+.hmac-output.is-hidden,
+.hmac-error.is-hidden,
+.is-hidden {
+    display: none !important;
+}
+
+.hmac-signature-block pre {
+    overflow-x: auto;
+}
+
+.hmac-signature-block code {
+    word-break: break-all;
+    white-space: pre-wrap;
+    color: #a5b4fc;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .hmac-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .api-docs-notice-title {
     display: flex;
     align-items: center;

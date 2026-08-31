@@ -28,6 +28,10 @@
                         <p class="api-docs-description">{!! $page['description'] !!}</p>
                     @endif
 
+                    @if(($page['tool'] ?? null) === 'hmac-generator')
+                        @include('api-docs::partials.hmac-generator')
+                    @endif
+
                     @if(!empty($page['notices']))
                         @foreach($page['notices'] as $notice)
                             <div class="api-docs-notice api-docs-notice--{{ $notice['type'] ?? 'info' }}">

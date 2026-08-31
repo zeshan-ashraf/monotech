@@ -104,6 +104,7 @@ Environment variables (optional):
 | Status Check | `/admin/api-docs/status-check` |
 | Dashboard Data | `/admin/api-docs/dashboard-data` |
 | Callbacks | `/admin/api-docs/callbacks` |
+| HMAC Generator | `/admin/api-docs/hmac-generator` |
 
 ## Editing content
 

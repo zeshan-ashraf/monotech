@@ -53,6 +53,11 @@ return [
             'label' => 'Callbacks',
             'icon' => 'git-branch',
         ],
+        [
+            'id' => 'hmac-generator',
+            'label' => 'HMAC Generator',
+            'icon' => 'key',
+        ],
     ],
 
     /*
@@ -642,6 +647,13 @@ X-HMAC-Signature: 64-character lowercase hex from hash_hmac</code></pre>',
                 'Documented Word payloads and current runtime payloads are both shown above — prefer matching your integration to the fields you actually receive.',
                 'Failed payout callbacks include a <code>message</code> field describing the failure reason.',
             ],
+        ],
+
+        'hmac-generator' => [
+            'title' => 'HMAC Generator',
+            'tool' => 'hmac-generator',
+            'show_endpoint' => false,
+            'description' => 'Generate a valid v1 <code>X-HMAC-Signature</code> and a copy-paste curl. The server signs the <strong>exact compact JSON body</strong> with HMAC-SHA256, using your API secret as the key — not concatenated into the body.',
         ],
 
     ],
