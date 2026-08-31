@@ -1,0 +1,323 @@
+/* HMAC generator — scoped under .api-docs-app so Vuexy/Bootstrap cannot flatten the form */
+
+.api-docs-app .hmac-tool {
+    width: 100%;
+    max-width: 100%;
+}
+
+.api-docs-app .hmac-banner {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    padding: 1rem 1.15rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid #c9c6f5;
+    background: linear-gradient(180deg, #f7f6ff 0%, #eef2ff 100%);
+    border-radius: 12px;
+}
+
+.api-docs-app .hmac-banner-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #5850ec;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.api-docs-app .hmac-banner-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: #fff;
+}
+
+.api-docs-app .hmac-banner h3 {
+    margin: 0 0 0.25rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.api-docs-app .hmac-banner p {
+    margin: 0;
+    color: #4a4a68;
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+.api-docs-app .hmac-card {
+    background: #fff;
+    border: 1px solid #e8e8ef;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(26, 26, 46, 0.06);
+    overflow: hidden;
+}
+
+.api-docs-app .hmac-card-head {
+    padding: 1.1rem 1.35rem;
+    border-bottom: 1px solid #f0f0f5;
+    background: #fafafd;
+}
+
+.api-docs-app .hmac-card-head strong {
+    display: block;
+    color: #1a1a2e;
+    font-size: 0.95rem;
+}
+
+.api-docs-app .hmac-card-head span {
+    color: #8888a8;
+    font-size: 0.8rem;
+}
+
+.api-docs-app .hmac-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.35rem;
+}
+
+.api-docs-app .hmac-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.api-docs-app .hmac-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.api-docs-app .hmac-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.api-docs-app .hmac-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #5850ec;
+    margin: 0;
+}
+
+.api-docs-app .hmac-hint {
+    font-size: 0.75rem;
+    color: #8888a8;
+}
+
+.api-docs-app .hmac-hint.is-ok { color: #2e7d32; }
+.api-docs-app .hmac-hint.is-bad { color: #c62828; }
+
+.api-docs-app .hmac-segmented {
+    display: flex;
+    width: 100%;
+    padding: 0.25rem;
+    background: #f4f4fb;
+    border-radius: 10px;
+    gap: 0.25rem;
+}
+
+.api-docs-app .hmac-segment {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    flex: 1;
+    border: 0 !important;
+    background: transparent !important;
+    color: #4a4a68 !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2;
+    padding: 0.7rem 0.9rem !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    min-height: 42px;
+}
+
+.api-docs-app .hmac-segment.is-active {
+    background: #5850ec !important;
+    color: #fff !important;
+    box-shadow: 0 6px 16px rgba(88, 80, 236, 0.22) !important;
+}
+
+.api-docs-app .hmac-input,
+.api-docs-app .hmac-textarea {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    border: 1px solid #d9d7ea !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    color: #1a1a2e !important;
+    font-size: 0.92rem !important;
+    line-height: 1.45;
+    padding: 0.8rem 0.95rem !important;
+    box-shadow: none !important;
+    height: auto !important;
+    min-height: 46px;
+}
+
+.api-docs-app .hmac-input:focus,
+.api-docs-app .hmac-textarea:focus {
+    border-color: #5850ec !important;
+    box-shadow: 0 0 0 4px rgba(88, 80, 236, 0.12) !important;
+    outline: none !important;
+}
+
+.api-docs-app .hmac-textarea {
+    min-height: 280px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+    font-size: 0.82rem !important;
+    line-height: 1.6 !important;
+    white-space: pre;
+    overflow: auto;
+    resize: vertical;
+}
+
+.api-docs-app .hmac-secret-wrap {
+    position: relative;
+}
+
+.api-docs-app .hmac-secret-wrap .hmac-input {
+    padding-right: 3rem !important;
+}
+
+.api-docs-app .hmac-secret-toggle {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    position: absolute;
+    right: 0.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border: 0 !important;
+    background: #f4f4fb !important;
+    color: #5850ec !important;
+    border-radius: 8px !important;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none !important;
+}
+
+.api-docs-app .hmac-secret-toggle svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+}
+
+.api-docs-app .hmac-editor {
+    border: 1px solid #d9d7ea;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0f172a;
+}
+
+.api-docs-app .hmac-editor-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.65rem 0.95rem;
+    background: #0f172a;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.api-docs-app .hmac-editor .hmac-textarea {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    min-height: 300px;
+    margin: 0;
+}
+
+.api-docs-app .hmac-editor .hmac-textarea:focus {
+    box-shadow: none !important;
+}
+
+.api-docs-app .hmac-editor .hmac-hint {
+    color: #94a3b8;
+}
+
+.api-docs-app .hmac-editor .hmac-hint.is-ok { color: #86efac; }
+.api-docs-app .hmac-editor .hmac-hint.is-bad { color: #fca5a5; }
+
+.api-docs-app .hmac-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.85rem;
+    padding-top: 0.25rem;
+}
+
+.api-docs-app .hmac-generate-btn {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 0 !important;
+    background: #5850ec !important;
+    color: #fff !important;
+    font-size: 0.92rem !important;
+    font-weight: 700 !important;
+    padding: 0.85rem 1.35rem !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 18px rgba(88, 80, 236, 0.24) !important;
+    min-height: 46px;
+    min-width: 210px;
+}
+
+.api-docs-app .hmac-generate-btn:hover {
+    background: #4a43d4 !important;
+    color: #fff !important;
+}
+
+.api-docs-app .hmac-generate-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: #fff;
+}
+
+.api-docs-app .hmac-formula {
+    margin: 0;
+    color: #8888a8;
+    font-size: 0.78rem;
+}
+
+.api-docs-app .hmac-formula code {
+    display: inline-block;
+    background: #f4f4fb;
+    color: #3d39b0;
+    padding: 0.35rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .api-docs-app .hmac-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .api-docs-app .hmac-generate-btn {
+        width: 100%;
+    }
+}

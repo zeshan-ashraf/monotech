@@ -1,7 +1,10 @@
 @extends('admin.layout.app')
 @section('title', ($page['title'] ?? 'API Docs') . ' — ' . ($brand['name'] ?? 'API'))
 @push('css')
-<link rel="stylesheet" href="{{ asset('vendor/api-docs/css/api-docs.css') }}">
+<link rel="stylesheet" href="{{ asset('vendor/api-docs/css/api-docs.css') }}?v={{ @filemtime(public_path('vendor/api-docs/css/api-docs.css')) ?: time() }}">
+@if(($page['tool'] ?? null) === 'hmac-generator')
+<link rel="stylesheet" href="{{ asset('vendor/api-docs/css/hmac-generator.css') }}?v={{ @filemtime(public_path('vendor/api-docs/css/hmac-generator.css')) ?: time() }}">
+@endif
 @endpush
 @section('content')
 <div class="app-content content api-docs-app">
@@ -141,5 +144,5 @@
 </div>
 @endsection
 @push('js')
-<script src="{{ asset('vendor/api-docs/js/api-docs.js') }}"></script>
+<script src="{{ asset('vendor/api-docs/js/api-docs.js') }}?v={{ @filemtime(public_path('vendor/api-docs/js/api-docs.js')) ?: time() }}"></script>
 @endpush
