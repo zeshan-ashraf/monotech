@@ -81,7 +81,7 @@ return [
             'sections' => [
                 [
                     'heading' => 'Authentication',
-                    'body' => 'Each request must include a valid <code>client_email</code> provided by the :brand administrator. Your account must have API access enabled for the selected payment or payout method.<br><br><strong>v1 APIs (HMAC):</strong> Contact us to get your API Key ID and secret. Send <code>X-API-Key-ID</code> and <code>X-HMAC-Signature</code> headers with every v1 request. Signature string format: <code>request body + api_secret</code>, then HMAC-SHA256.',
+                    'body' => 'Each request must include a valid <code>client_email</code> provided by the :brand administrator. Your account must have API access enabled for the selected payment or payout method.<br><br><strong>v1 APIs (HMAC):</strong> Contact us to get your API Key ID and secret. Send <code>X-API-Key-ID</code> and <code>X-HMAC-Signature</code> with every v1 request. Sign the <strong>exact raw JSON body</strong> with HMAC-SHA256, using your API secret as the key. Do not concatenate the secret into the body.',
                 ],
                 [
                     'heading' => 'Base URL',
@@ -93,25 +93,47 @@ return [
                 ],
                 [
                     'heading' => 'HMAC signature generation (client-side)',
-                    'body' => 'Contact us for <code>api_key</code> and <code>secret</code>. Signature string format: <code>(request body + api_secret)</code>, then apply HMAC-SHA256.<br><br><strong>Example PHP:</strong><pre style="background:#0f172a;color:#e2e8f0;padding:1rem;border-radius:8px;overflow:auto;font-size:0.82rem;"><code>$body = json_encode([/* your request body */]);
-$dataToSign = $body;
-$signature = hash_hmac(\'sha256\', $dataToSign, $apiSecret);
-// Send headers: X-API-Key-ID, X-HMAC-Signature, Content-Type: application/json</code></pre>
-<strong>Example request:</strong><pre style="background:#0f172a;color:#e2e8f0;padding:1rem;border-radius:8px;overflow:auto;font-size:0.82rem;"><code>POST /api/v1/payment-checkout HTTP/1.1
+                    'body' => 'Contact us for your public <code>api_key</code> and private <code>api_secret</code>. The server verifies with <code>hash_hmac(\'sha256\', $rawRequestBody, $apiSecret)</code>.<br><br>
+<strong>Rules</strong>
+<ul>
+<li>Sign the exact bytes of the HTTP request body, then POST that same string. Do not re-encode after signing.</li>
+<li>The API secret is the HMAC <em>key</em>. Do not concatenate <code>body + secret</code>.</li>
+<li>Signature is lowercase hex (64 characters).</li>
+<li>Pretty-printed JSON is fine only if you sign that exact pretty-printed string.</li>
+</ul>
+<br><strong>PHP example:</strong><pre style="background:#0f172a;color:#e2e8f0;padding:1rem;border-radius:8px;overflow:auto;font-size:0.82rem;"><code>$apiKey = \'YOUR_API_KEY_ID\';
+$apiSecret = \'YOUR_API_SECRET\';
+
+$payload = [
+    \'orderId\' => \'Monotech-20\',
+    \'amount\' => \'10\',
+    \'phone\' => \'03244361494\',
+    \'email\' => \'13txwvye@protonmail.com\',
+    \'client_email\' => \'13txwvye@protonmail.com\',
+    \'payment_method\' => \'easypaisa\',
+    \'callback_url\' => \'https://yourcallback.com/api/callback/order\',
+];
+
+$body = json_encode($payload); // POST this exact string
+$signature = hash_hmac(\'sha256\', $body, $apiSecret);
+
+$ch = curl_init(\'https://monotech.pk/api/v1/payment-checkout\');
+curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => $body,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        \'Content-Type: application/json\',
+        \'X-API-Key-ID: \' . $apiKey,
+        \'X-HMAC-Signature: \' . $signature,
+    ],
+]);
+echo curl_exec($ch);</code></pre>
+<strong>Headers:</strong><pre style="background:#0f172a;color:#e2e8f0;padding:1rem;border-radius:8px;overflow:auto;font-size:0.82rem;"><code>POST /api/v1/payment-checkout HTTP/1.1
 Host: monotech.pk
 Content-Type: application/json
-X-API-Key-ID: test_123
-X-HMAC-Signature: aefb98a... [64 hex chars]
-
-{
-  "orderId": "update-test-01",
-  "amount": "5",
-  "phone": "03244361494",
-  "email": "270785@gmail.com",
-  "client_email": "abc@gmail.com",
-  "payment_method": "easypaisa",
-  "callback_url": "https://xyz.com/api/notify/order"
-}</code></pre>',
+X-API-Key-ID: YOUR_API_KEY_ID
+X-HMAC-Signature: 64-character lowercase hex from hash_hmac</code></pre>',
                 ],
                 [
                     'heading' => 'Callbacks',
