@@ -1,6 +1,5 @@
 <aside class="api-docs-sidebar">
     <div class="api-docs-sidebar-brand">
-        <img src="{{ asset($brand['logo'] ?? 'images/logo-2.png') }}" alt="{{ $brand['name'] ?? 'API' }}" class="api-docs-sidebar-logo">
         <span class="api-docs-sidebar-name">{{ $brand['name'] ?? 'API' }}</span>
     </div>
 
