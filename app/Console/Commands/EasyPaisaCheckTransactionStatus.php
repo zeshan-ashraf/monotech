@@ -576,7 +576,7 @@ class EasyPaisaCheckTransactionStatus extends Command
     }
 
     /**
-     * @param  int  $workerCount  Must already be 2, 4, or 6.
+     * @param  int  $workerCount  Must already be 2, 4, 6, or 10.
      * @return list<Process>
      */
     private function spawnWorkers(int $workerCount, int $coordinatorPid): array

@@ -32,18 +32,21 @@ return [
     | EasyPaisa status-check WORKER allocation (not chunk size)
     |--------------------------------------------------------------------------
     |
-    | Pending < 300      → 2 workers
-    | Pending 300–399    → 4 workers
-    | Pending 400–499    → 6 workers
+    | Pending > 100      → 2 workers
+    | Pending > 200      → 4 workers
+    | Pending > 300      → 6 workers
+    | Pending > 400      → 10 workers
     | Pending >= 500     → 0 workers (stop new EasyPaisa API requests)
     |
-    | Hard cap is always 6. Never spawn from transaction count.
+    | Hard cap is 10. Never spawn from transaction count.
     */
     'status_workers' => [
-        'pending_for_4' => 300,
-        'pending_for_6' => 400,
+        'pending_for_2' => 100,
+        'pending_for_4' => 200,
+        'pending_for_6' => 300,
+        'pending_for_10' => 400,
         'stop_at_pending' => 500,
-        'max_workers' => 6,
+        'max_workers' => 10,
     ],
 
 ];
