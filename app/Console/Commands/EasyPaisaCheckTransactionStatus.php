@@ -102,13 +102,21 @@ class EasyPaisaCheckTransactionStatus extends Command
                 return Command::SUCCESS;
             }
 
-            $processes = $this->spawnWorkers($workersToSpawn, $coordinatorPid, $liveWorkers);
-            $spawnedPids = [];
-            foreach ($processes as $index => $process) {
-                $spawnedPids[$index] = $process->getPid();
-            }
-
+            $spawnedPids = $this->spawnWorkers($workersToSpawn, $coordinatorPid, $liveWorkers);
             $this->rememberWorkerPids($spawnedPids);
+
+            if ($spawnedPids === []) {
+                Log::channel('schedule_debug')->error('EasyPaisa status workers spawn produced no live workers', [
+                    'coordinator_pid' => $coordinatorPid,
+                    'pending_count' => $pendingCount,
+                    'live_worker_count' => $liveWorkers,
+                    'desired_worker_count' => $desiredWorkers,
+                    'workers_to_spawn' => $workersToSpawn,
+                ]);
+                $this->error('EasyPaisa status workers failed to stay alive after spawn.');
+
+                return Command::FAILURE;
+            }
 
             Log::channel('schedule_debug')->info('EasyPaisa status workers spawned', [
                 'coordinator_pid' => $coordinatorPid,
@@ -515,40 +523,131 @@ class EasyPaisaCheckTransactionStatus extends Command
     }
 
     /**
-     * @param  int  $workerCount  Additional workers to start (not the full desired pool).
-     * @return list<Process>
+     * Start additional detached workers and return only verified Laravel worker PIDs.
+     *
+     * @return list<int>
      */
     private function spawnWorkers(int $workerCount, int $coordinatorPid, int $liveWorkers = 0): array
     {
         $workerCount = min($this->allocator->maxWorkers(), max(0, $workerCount));
-        $processes = [];
+        $spawnedPids = [];
 
         for ($slot = 1; $slot <= $workerCount; $slot++) {
             $token = bin2hex(random_bytes(16));
             $workerId = $liveWorkers + $slot;
-            $process = new Process([
-                PHP_BINARY,
-                base_path('artisan'),
-                'transactions:easypaisa-check-status',
-                '--worker',
-                '--token=' . $token,
-                '--worker-id=' . $workerId,
-            ]);
-            $process->setWorkingDirectory(base_path());
-            $process->setTimeout(null);
-            $process->disableOutput();
-            $process->start();
-            $processes[] = $process;
+            $pid = $this->spawnDetachedWorker($token, $workerId);
+
+            if ($pid === null) {
+                continue;
+            }
+
+            $spawnedPids[] = $pid;
 
             Log::channel('schedule_debug')->info('EasyPaisa status worker process started', [
                 'coordinator_pid' => $coordinatorPid,
                 'worker_id' => $workerId,
-                'worker_pid' => $process->getPid(),
+                'worker_pid' => $pid,
                 'worker_token' => $token,
             ]);
         }
 
-        return $processes;
+        return $spawnedPids;
+    }
+
+    /**
+     * Detach a worker from the coordinator process tree.
+     * Symfony Process v6.4.20 __destruct() calls stop(0) → SIGTERM/SIGKILL, so it cannot be used here.
+     */
+    private function spawnDetachedWorker(string $token, int $workerId): ?int
+    {
+        $command = sprintf(
+            'setsid exec %s %s transactions:easypaisa-check-status --worker --token=%s --worker-id=%d < /dev/null > /dev/null 2>&1 & echo $!',
+            escapeshellarg(PHP_BINARY),
+            escapeshellarg(base_path('artisan')),
+            escapeshellarg($token),
+            $workerId
+        );
+
+        $pipes = [];
+        $proc = @proc_open($command, [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ], $pipes, base_path());
+
+        if (!is_resource($proc)) {
+            Log::channel('schedule_debug')->error('EasyPaisa status worker spawn failed — proc_open returned false', [
+                'worker_id' => $workerId,
+            ]);
+
+            return null;
+        }
+
+        fclose($pipes[0]);
+        $stdout = trim((string) stream_get_contents($pipes[1]));
+        $stderr = trim((string) stream_get_contents($pipes[2]));
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($proc);
+
+        $pid = (int) $stdout;
+
+        if ($pid <= 1) {
+            Log::channel('schedule_debug')->error('EasyPaisa status worker spawn failed — no worker PID', [
+                'worker_id' => $workerId,
+                'stdout' => $stdout,
+                'stderr' => $stderr,
+            ]);
+
+            return null;
+        }
+
+        if (!$this->waitForWorkerPid($pid)) {
+            Log::channel('schedule_debug')->error('EasyPaisa status worker spawn failed — PID is not a live --worker process', [
+                'worker_id' => $workerId,
+                'reported_pid' => $pid,
+                'stderr' => $stderr,
+            ]);
+
+            return null;
+        }
+
+        return $pid;
+    }
+
+    private function waitForWorkerPid(int $pid): bool
+    {
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            if ($this->isEasyPaisaWorkerPid($pid)) {
+                return true;
+            }
+
+            usleep(50000);
+        }
+
+        return $this->isEasyPaisaWorkerPid($pid);
+    }
+
+    private function isEasyPaisaWorkerPid(int $pid): bool
+    {
+        if ($pid <= 1) {
+            return false;
+        }
+
+        $cmdlinePath = '/proc/' . $pid . '/cmdline';
+        if (!is_readable($cmdlinePath)) {
+            return false;
+        }
+
+        $cmdline = @file_get_contents($cmdlinePath);
+        if ($cmdline === false || $cmdline === '') {
+            return false;
+        }
+
+        $cmdline = str_replace("\0", ' ', $cmdline);
+
+        return str_contains($cmdline, 'transactions:easypaisa-check-status')
+            && str_contains($cmdline, '--worker');
     }
 
     /**
@@ -581,8 +680,10 @@ class EasyPaisaCheckTransactionStatus extends Command
 
     /**
      * Acquire the short-lived coordinator lock.
-     * A stale lock is released only when no other coordinator process is running
-     * and the lock file is older than the current TTL (covers the leftover 12-hour lock).
+     *
+     * schedule:run wraps this command in `sh -c`, so pgrep often sees 1 extra
+     * non-PHP line. That must not block recovery. A lock older than the 120s TTL
+     * cannot belong to a live scaling critical section (including the leftover 12h lock).
      *
      * @return \Illuminate\Contracts\Cache\Lock|null
      */
@@ -599,7 +700,19 @@ class EasyPaisaCheckTransactionStatus extends Command
         $lockLooksFresh = $lockAgeSeconds !== null
             && $lockAgeSeconds < self::COORDINATOR_LOCK_TTL_SECONDS;
 
-        if ($otherCoordinators !== 0 || $lockLooksFresh) {
+        if ($lockLooksFresh) {
+            Log::channel('schedule_debug')->warning('EasyPaisa status coordinator skipped — another coordinator holds the lock', [
+                'coordinator_pid' => $coordinatorPid,
+                'other_coordinator_count' => $otherCoordinators,
+                'lock_age_seconds' => $lockAgeSeconds,
+                'lock_ttl_seconds' => self::COORDINATOR_LOCK_TTL_SECONDS,
+            ]);
+            $this->warn('Another EasyPaisa status coordinator is already running.');
+
+            return null;
+        }
+
+        if ($lockAgeSeconds === null && $otherCoordinators !== 0) {
             Log::channel('schedule_debug')->warning('EasyPaisa status coordinator skipped — another coordinator holds the lock', [
                 'coordinator_pid' => $coordinatorPid,
                 'other_coordinator_count' => $otherCoordinators,
@@ -652,12 +765,7 @@ class EasyPaisaCheckTransactionStatus extends Command
             $lines = preg_split('/\r\n|\r|\n/', trim($process->getOutput())) ?: [];
 
             foreach ($lines as $line) {
-                if ($line === '' || str_contains($line, 'pgrep') || str_contains($line, '--worker')) {
-                    continue;
-                }
-
-                $pid = (int) explode(' ', ltrim($line), 2)[0];
-                if ($pid <= 0 || $pid === $selfPid) {
+                if (!$this->isPhpArtisanCoordinatorLine($line, $selfPid)) {
                     continue;
                 }
 
@@ -668,6 +776,24 @@ class EasyPaisaCheckTransactionStatus extends Command
         } catch (Throwable $exception) {
             return null;
         }
+    }
+
+    private function isPhpArtisanCoordinatorLine(string $line, int $selfPid): bool
+    {
+        if ($line === '' || str_contains($line, 'pgrep') || str_contains($line, '--worker')) {
+            return false;
+        }
+
+        $pid = (int) explode(' ', ltrim($line), 2)[0];
+        if ($pid <= 0 || $pid === $selfPid) {
+            return false;
+        }
+
+        if (preg_match('/\b(?:sh|bash|dash|zsh)\b.*\s-c\b/', $line)) {
+            return false;
+        }
+
+        return (bool) preg_match('/\bphp(?:\d+(?:\.\d+)?)?\b/i', $line);
     }
 
     private function coordinatorLockAgeSeconds(): ?int
