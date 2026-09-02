@@ -21,6 +21,8 @@ class ArcheiveTransaction extends Model
         'pp_message',
         'status',
         'cron_status',
+        'cron_claim_token',
+        'cron_claimed_at',
         'src',
         'url',
         'callback_sent',

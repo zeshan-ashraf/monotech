@@ -2,187 +2,165 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\ProcessHelper;
 use App\Models\{Setting, SurplusAmount, Transaction, User};
 use App\Service\StatusService;
-use App\Services\EasypaisaCronChunkService;
+use App\Services\EasypaisaStatusWorkerAllocator;
 use App\Support\PayinCallbackTracker;
 use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\Process\Process;
 use Throwable;
 
 class EasyPaisaCheckTransactionStatus extends Command
 {
-    protected $signature = 'transactions:easypaisa-check-status';
+    protected $signature = 'transactions:easypaisa-check-status {--worker : Run as a status-check worker (do not spawn more workers)} {--token= : Worker claim token} {--worker-id=0 : Worker slot id for logs}';
 
     protected $description = 'Check status of pending transactions and update them.';
 
+    private const COORDINATOR_LOCK_KEY = 'easypaisa-check-status:coordinator';
+
+    private const WORKER_PIDS_CACHE_KEY = 'easypaisa-check-status:worker-pids';
+
     /**
-     * Previous global Cache::lock TTL. Used to reclaim crashed IN_PROGRESS rows.
+     * Coordinator lock TTL and abandoned-claim lease. Extended while the coordinator is alive.
+     * Active workers are never stolen; stale reclaim runs only when no live workers remain
+     * AND the claim is older than this lease (longer than EasyPaisa HTTP timeout+retries).
      */
-    private const STALE_IN_PROGRESS_SECONDS = 300;
+    private const COORDINATOR_LOCK_SECONDS = 300;
 
     protected $statusService;
 
-    protected $chunkService;
+    protected $allocator;
 
-    public function __construct(StatusService $statusService, EasypaisaCronChunkService $chunkService)
+    public function __construct(StatusService $statusService, EasypaisaStatusWorkerAllocator $allocator)
     {
         parent::__construct();
         $this->statusService = $statusService;
-        $this->chunkService = $chunkService;
+        $this->allocator = $allocator;
     }
 
     public function handle(): int
     {
-        $startedAt = microtime(true);
-        $chunk = $this->chunkService->getChunk('check');
-        $workerPid = getmypid();
-        $claimed = collect();
-        $claimedAtById = [];
+        set_time_limit(0);
 
-        Log::channel('schedule_debug')->info('transactions:easypaisa-check-status started', [
-            'worker_pid' => $workerPid,
-            'chunk_limit' => $chunk,
-            'schedule_type' => $this->chunkService->getActiveScheduleType(),
-        ]);
+        if ($this->option('worker')) {
+            return $this->runWorker();
+        }
+
+        return $this->runCoordinator();
+    }
+
+    private function runCoordinator(): int
+    {
+        $startedAt = microtime(true);
+        $coordinatorPid = getmypid();
+        $minAgeMinutes = $this->minAgeMinutes();
+
+        $lock = Cache::lock(self::COORDINATOR_LOCK_KEY, self::COORDINATOR_LOCK_SECONDS);
+
+        if (!$lock->get()) {
+            Log::channel('schedule_debug')->warning('EasyPaisa status coordinator skipped — another coordinator holds the lock', [
+                'coordinator_pid' => $coordinatorPid,
+            ]);
+            $this->warn('Another EasyPaisa status coordinator is already running.');
+
+            return Command::SUCCESS;
+        }
 
         try {
-            set_time_limit(0);
+            $liveWorkers = $this->countLiveWorkers();
 
-            $minAgeMinutes = (int) config('payin_status_cron.min_age_minutes', 2);
-            $claimed = $this->claimPendingTransactions($chunk, $minAgeMinutes);
-            $claimedAtById = $claimed->mapWithKeys(function (Transaction $item) {
-                return [$item->id => $item->updated_at];
-            })->all();
+            if ($liveWorkers > 0) {
+                Log::channel('schedule_debug')->warning('EasyPaisa status coordinator skipped — live workers still running', [
+                    'coordinator_pid' => $coordinatorPid,
+                    'live_workers' => $liveWorkers,
+                ]);
+                $this->warn('Live EasyPaisa status workers are still running.');
 
-            Log::channel('schedule_debug')->info('transactions:easypaisa-check-status claimed', [
-                'worker_pid' => $workerPid,
-                'claimed_count' => $claimed->count(),
-                'claimed_ids' => $claimed->pluck('id')->all(),
-            ]);
-
-            $processed = 0;
-            $updatedSuccess = 0;
-            $updatedFailed = 0;
-
-            foreach ($claimed as $item) {
-                $claimedAt = $claimedAtById[$item->id] ?? $item->updated_at;
-
-                try {
-                    $processed++;
-                    $url = $item->url;
-
-                    $result = $this->statusService->process($item);
-
-                    if (($result['responseCode'] ?? '') === '0003') {
-                        $this->releaseToAvailable($item->id, $claimedAt);
-                        continue;
-                    }
-
-                    $item->refresh();
-                    if ($item->status !== 'pending') {
-                        $this->markDoneIfNotPending($item->id);
-                        continue;
-                    }
-
-                    if (($result['responseCode'] ?? '') === '0000') {
-                        if (($result['transactionStatus'] ?? '') === 'PAID') {
-                            $updated = Transaction::query()
-                                ->where('id', $item->id)
-                                ->where('status', 'pending')
-                                ->update([
-                                    'status' => 'success',
-                                    'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
-                                    'cron_status' => Transaction::CRON_STATUS_DONE,
-                                ]);
-
-                            if (!$updated) {
-                                $this->markDoneIfNotPending($item->id);
-                                continue;
-                            }
-
-                            $updatedSuccess++;
-                            $item->refresh();
-
-                            $data = [
-                                'orderId' => $item->orderId,
-                                'tid' => $item->transactionId,
-                                'amount' => $item->amount,
-                                'status' => 'success',
-                            ];
-
-                            $user = User::find($item->user_id);
-
-                            if ($user && $user->per_payin_fee) {
-                                $rate = $user->per_payin_fee;
-                                $amount = $item->amount * $rate;
-
-                                $surplus = SurplusAmount::find(1);
-                                $setting = Setting::where('user_id', $item->user_id)->first();
-                                if ($setting && $surplus && $setting->auto == 1) {
-                                    $setting->payout_balance += $amount;
-                                    $setting->save();
-                                }
-                            }
-
-                            $this->sendCronCallback('check-status', $item, $url, $data);
-                        } elseif (($result['transactionStatus'] ?? '') === 'FAILED') {
-                            $updated = Transaction::query()
-                                ->where('id', $item->id)
-                                ->where('status', 'pending')
-                                ->update([
-                                    'status' => 'failed',
-                                    'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
-                                    'pp_code' => $result['errorCode'] ?? null,
-                                    'pp_message' => $result['errorReason'] ?? null,
-                                    'cron_status' => Transaction::CRON_STATUS_DONE,
-                                ]);
-
-                            if (!$updated) {
-                                $this->markDoneIfNotPending($item->id);
-                                continue;
-                            }
-
-                            $updatedFailed++;
-                            $item->refresh();
-
-                            $data = [
-                                'orderId' => $item->orderId,
-                                'tid' => $item->transactionId,
-                                'amount' => $item->amount,
-                                'status' => 'failed',
-                            ];
-
-                            $this->sendCronCallback('check-status', $item, $url, $data);
-                        } else {
-                            $this->releaseToAvailable($item->id, $claimedAt);
-                        }
-                    } else {
-                        $this->releaseToAvailable($item->id, $claimedAt);
-                    }
-                } catch (Throwable $exception) {
-                    Log::channel('schedule_debug')->error('transactions:easypaisa-check-status item failed', [
-                        'worker_pid' => $workerPid,
-                        'transaction_id' => $item->id,
-                        'error' => $exception->getMessage(),
-                    ]);
-
-                    $this->recoverAfterException($item, $claimedAt);
-                }
+                return Command::SUCCESS;
             }
 
-            $this->chunkService->logRunContext('check-status', $chunk, $processed);
+            $pendingCount = $this->countEligiblePending($minAgeMinutes);
+            $workerCount = $this->allocator->workerCount($pendingCount);
+            $stopApi = $this->allocator->shouldStopNewApiRequests($pendingCount);
 
-            Log::channel('schedule_debug')->info('transactions:easypaisa-check-status completed', [
-                'worker_pid' => $workerPid,
-                'chunk_limit' => $chunk,
-                'claimed_count' => $claimed->count(),
-                'processed' => $processed,
-                'updated_success' => $updatedSuccess,
-                'updated_failed' => $updatedFailed,
+            Log::channel('schedule_debug')->info('EasyPaisa status coordinator started', [
+                'coordinator_pid' => $coordinatorPid,
+                'pending_count' => $pendingCount,
+                'worker_count' => $workerCount,
+                'threshold_decision' => $stopApi ? 'stop_new_api_requests' : 'spawn_workers',
+                'min_age_minutes' => $minAgeMinutes,
+            ]);
+
+            if ($stopApi) {
+                Log::channel('schedule_debug')->warning('EasyPaisa pending threshold reached. New API requests stopped.', [
+                    'pending_count' => $pendingCount,
+                    'worker_count' => 0,
+                    'coordinator_pid' => $coordinatorPid,
+                ]);
+                $this->warn("EasyPaisa pending threshold reached. New API requests stopped. pending_count={$pendingCount} worker_count=0");
+
+                return Command::SUCCESS;
+            }
+
+            if ($workerCount === 0) {
+                Log::channel('schedule_debug')->info('EasyPaisa status coordinator idle — no eligible pending', [
+                    'coordinator_pid' => $coordinatorPid,
+                    'pending_count' => $pendingCount,
+                    'worker_count' => 0,
+                ]);
+                $this->info('No eligible pending EasyPaisa transactions.');
+
+                return Command::SUCCESS;
+            }
+
+            $recovered = $this->recoverAbandonedClaims();
+            if ($recovered > 0) {
+                Log::channel('schedule_debug')->info('EasyPaisa abandoned IN_PROGRESS claims recovered', [
+                    'coordinator_pid' => $coordinatorPid,
+                    'recovered' => $recovered,
+                    'lease_seconds' => self::COORDINATOR_LOCK_SECONDS,
+                ]);
+            }
+
+            $processes = $this->spawnWorkers($workerCount, $coordinatorPid);
+            $workerPids = [];
+            foreach ($processes as $index => $process) {
+                $workerPids[$index] = $process->getPid();
+            }
+
+            Cache::put(
+                self::WORKER_PIDS_CACHE_KEY,
+                array_values(array_filter($workerPids, static fn ($pid) => (int) $pid > 0)),
+                self::COORDINATOR_LOCK_SECONDS
+            );
+
+            Log::channel('schedule_debug')->info('EasyPaisa status workers spawned', [
+                'coordinator_pid' => $coordinatorPid,
+                'pending_count' => $pendingCount,
+                'worker_count' => count($processes),
+                'worker_pids' => $workerPids,
+            ]);
+
+            $this->waitForWorkers($processes, $lock, $workerPids);
+
+            $exitCodes = [];
+            foreach ($processes as $index => $process) {
+                $exitCodes[$workerPids[$index] ?? $index] = $process->getExitCode();
+            }
+
+            Log::channel('schedule_debug')->info('EasyPaisa status coordinator completed', [
+                'coordinator_pid' => $coordinatorPid,
+                'pending_count_start' => $pendingCount,
+                'pending_count_end' => $this->countEligiblePending($minAgeMinutes),
+                'worker_count' => count($processes),
+                'worker_pids' => $workerPids,
+                'worker_exit_codes' => $exitCodes,
+                'recovered_abandoned' => $recovered,
                 'duration_seconds' => round(microtime(true) - $startedAt, 2),
             ]);
 
@@ -190,129 +168,520 @@ class EasyPaisaCheckTransactionStatus extends Command
 
             return Command::SUCCESS;
         } catch (Throwable $exception) {
-            Log::channel('schedule_debug')->error('transactions:easypaisa-check-status failed', [
-                'worker_pid' => $workerPid,
-                'chunk_limit' => $chunk,
-                'claimed_count' => $claimed->count(),
+            Log::channel('schedule_debug')->error('EasyPaisa status coordinator failed', [
+                'coordinator_pid' => $coordinatorPid,
                 'error' => $exception->getMessage(),
                 'trace' => $exception->getTraceAsString(),
                 'duration_seconds' => round(microtime(true) - $startedAt, 2),
             ]);
-
             $this->error($exception->getMessage());
 
             return Command::FAILURE;
         } finally {
-            $this->releaseRemainingClaims($claimedAtById);
+            Cache::forget(self::WORKER_PIDS_CACHE_KEY);
+            try {
+                $lock->release();
+            } catch (Throwable $exception) {
+                Log::channel('schedule_debug')->warning('EasyPaisa status coordinator lock release failed', [
+                    'error' => $exception->getMessage(),
+                ]);
+            }
         }
     }
 
-    /**
-     * Atomically claim a unique batch. Row locks are released on commit, before EasyPaisa HTTP calls.
-     *
-     * @return Collection<int, Transaction>
-     */
-    private function claimPendingTransactions(int $chunk, int $minAgeMinutes): Collection
+    private function runWorker(): int
     {
-        $claimed = collect();
+        $startedAt = microtime(true);
+        $workerPid = getmypid();
+        $workerId = (int) $this->option('worker-id');
+        $token = trim((string) $this->option('token'));
 
-        DB::transaction(function () use ($chunk, $minAgeMinutes, &$claimed) {
-            $eligible = Transaction::query()
-                ->where('status', 'pending')
-                ->where('txn_type', 'easypaisa')
-                ->where('created_at', '<=', now()->subMinutes($minAgeMinutes));
+        if ($token === '') {
+            $token = bin2hex(random_bytes(16));
+        }
 
-            $rows = (clone $eligible)
-                ->where('cron_status', Transaction::CRON_STATUS_AVAILABLE)
-                ->lock('FOR UPDATE SKIP LOCKED')
-                ->limit($chunk)
-                ->get();
+        $liveWorkers = $this->countLiveWorkers();
+        if ($liveWorkers > $this->allocator->maxWorkers()) {
+            Log::channel('schedule_debug')->warning('EasyPaisa status worker refused — cap exceeded', [
+                'worker_pid' => $workerPid,
+                'worker_id' => $workerId,
+                'live_workers' => $liveWorkers,
+                'max_workers' => $this->allocator->maxWorkers(),
+            ]);
 
-            $remaining = $chunk - $rows->count();
+            return Command::SUCCESS;
+        }
 
-            if ($remaining > 0) {
-                $stale = (clone $eligible)
-                    ->where('cron_status', Transaction::CRON_STATUS_IN_PROGRESS)
-                    ->where('updated_at', '<=', now()->subSeconds(self::STALE_IN_PROGRESS_SECONDS))
-                    ->lock('FOR UPDATE SKIP LOCKED')
-                    ->limit($remaining)
-                    ->get();
+        Log::channel('schedule_debug')->info('EasyPaisa status worker started', [
+            'worker_pid' => $workerPid,
+            'worker_id' => $workerId,
+            'worker_token' => $token,
+        ]);
 
-                $rows = $rows->concat($stale)->unique('id')->values();
+        $minAgeMinutes = $this->minAgeMinutes();
+        $processed = 0;
+        $updatedSuccess = 0;
+        $updatedFailed = 0;
+        $released = 0;
+        $errors = 0;
+        $claimedId = null;
+
+        try {
+            while (true) {
+                $pendingCount = $this->countEligiblePending($minAgeMinutes);
+
+                if ($this->allocator->shouldStopNewApiRequests($pendingCount)) {
+                    Log::channel('schedule_debug')->warning('EasyPaisa pending threshold reached. New API requests stopped.', [
+                        'worker_pid' => $workerPid,
+                        'worker_id' => $workerId,
+                        'pending_count' => $pendingCount,
+                        'worker_count' => 0,
+                    ]);
+                    break;
+                }
+
+                $item = $this->claimOneTransaction($token, $minAgeMinutes);
+
+                if ($item === null) {
+                    break;
+                }
+
+                $claimedId = $item->id;
+                $processed++;
+
+                $result = $this->processClaimedTransaction($item, $token, $workerPid, $workerId);
+
+                $updatedSuccess += $result['success'] ? 1 : 0;
+                $updatedFailed += $result['failed'] ? 1 : 0;
+                $released += $result['released'] ? 1 : 0;
+                $errors += $result['error'] ? 1 : 0;
+                $claimedId = null;
+            }
+        } catch (Throwable $exception) {
+            $errors++;
+            Log::channel('schedule_debug')->error('EasyPaisa status worker failed', [
+                'worker_pid' => $workerPid,
+                'worker_id' => $workerId,
+                'worker_token' => $token,
+                'transaction_id' => $claimedId,
+                'error' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString(),
+            ]);
+
+            if ($claimedId !== null) {
+                $this->recoverAfterException($claimedId, $token);
             }
 
-            if ($rows->isEmpty()) {
-                $claimed = $rows;
+            return Command::FAILURE;
+        } finally {
+            if ($claimedId !== null) {
+                $this->releaseToAvailable($claimedId, $token);
+            }
 
+            Log::channel('schedule_debug')->info('EasyPaisa status worker completed', [
+                'worker_pid' => $workerPid,
+                'worker_id' => $workerId,
+                'worker_token' => $token,
+                'processed' => $processed,
+                'updated_success' => $updatedSuccess,
+                'updated_failed' => $updatedFailed,
+                'released_retried' => $released,
+                'errors' => $errors,
+                'duration_seconds' => round(microtime(true) - $startedAt, 2),
+            ]);
+        }
+
+        return Command::SUCCESS;
+    }
+
+    /**
+     * @return array{success: bool, failed: bool, released: bool, error: bool}
+     */
+    private function processClaimedTransaction(Transaction $item, string $token, int $workerPid, int $workerId): array
+    {
+        $outcome = ['success' => false, 'failed' => false, 'released' => false, 'error' => false];
+
+        try {
+            $url = $item->url;
+            $apiStarted = microtime(true);
+
+            Log::channel('schedule_debug')->info('EasyPaisa status API request start', [
+                'worker_pid' => $workerPid,
+                'worker_id' => $workerId,
+                'worker_token' => $token,
+                'transaction_id' => $item->id,
+                'claim_time' => optional($item->cron_claimed_at)->toDateTimeString(),
+            ]);
+
+            $result = $this->statusService->process($item);
+            $apiSeconds = round(microtime(true) - $apiStarted, 2);
+
+            Log::channel('schedule_debug')->info('EasyPaisa status API request end', [
+                'worker_pid' => $workerPid,
+                'worker_id' => $workerId,
+                'transaction_id' => $item->id,
+                'response_code' => $result['responseCode'] ?? null,
+                'transaction_status' => $result['transactionStatus'] ?? null,
+                'duration_seconds' => $apiSeconds,
+            ]);
+
+            if (($result['responseCode'] ?? '') === '0003') {
+                $this->releaseToAvailable($item->id, $token);
+                $outcome['released'] = true;
+
+                return $outcome;
+            }
+
+            $item->refresh();
+            if ($item->status !== 'pending') {
+                $this->markDoneIfNotPending($item->id, $token);
+
+                return $outcome;
+            }
+
+            if (($result['responseCode'] ?? '') === '0000') {
+                if (($result['transactionStatus'] ?? '') === 'PAID') {
+                    $updated = Transaction::query()
+                        ->where('id', $item->id)
+                        ->where('status', 'pending')
+                        ->where('cron_claim_token', $token)
+                        ->update([
+                            'status' => 'success',
+                            'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
+                            'cron_status' => Transaction::CRON_STATUS_DONE,
+                            'cron_claim_token' => null,
+                            'cron_claimed_at' => null,
+                        ]);
+
+                    if (!$updated) {
+                        $this->markDoneIfNotPending($item->id, $token);
+
+                        return $outcome;
+                    }
+
+                    $outcome['success'] = true;
+                    $item->refresh();
+
+                    $data = [
+                        'orderId' => $item->orderId,
+                        'tid' => $item->transactionId,
+                        'amount' => $item->amount,
+                        'status' => 'success',
+                    ];
+
+                    $user = User::find($item->user_id);
+
+                    if ($user && $user->per_payin_fee) {
+                        $rate = $user->per_payin_fee;
+                        $amount = $item->amount * $rate;
+
+                        $surplus = SurplusAmount::find(1);
+                        $setting = Setting::where('user_id', $item->user_id)->first();
+                        if ($setting && $surplus && $setting->auto == 1) {
+                            $setting->payout_balance += $amount;
+                            $setting->save();
+                        }
+                    }
+
+                    $this->sendCronCallback('check-status', $item, $url, $data);
+                } elseif (($result['transactionStatus'] ?? '') === 'FAILED') {
+                    $updated = Transaction::query()
+                        ->where('id', $item->id)
+                        ->where('status', 'pending')
+                        ->where('cron_claim_token', $token)
+                        ->update([
+                            'status' => 'failed',
+                            'transactionId' => $result['transactionId'] ?? $result['msisdn'] ?? null,
+                            'pp_code' => $result['errorCode'] ?? null,
+                            'pp_message' => $result['errorReason'] ?? null,
+                            'cron_status' => Transaction::CRON_STATUS_DONE,
+                            'cron_claim_token' => null,
+                            'cron_claimed_at' => null,
+                        ]);
+
+                    if (!$updated) {
+                        $this->markDoneIfNotPending($item->id, $token);
+
+                        return $outcome;
+                    }
+
+                    $outcome['failed'] = true;
+                    $item->refresh();
+
+                    $data = [
+                        'orderId' => $item->orderId,
+                        'tid' => $item->transactionId,
+                        'amount' => $item->amount,
+                        'status' => 'failed',
+                    ];
+
+                    $this->sendCronCallback('check-status', $item, $url, $data);
+                } else {
+                    $this->releaseToAvailable($item->id, $token);
+                    $outcome['released'] = true;
+                }
+            } else {
+                $this->releaseToAvailable($item->id, $token);
+                $outcome['released'] = true;
+            }
+        } catch (Throwable $exception) {
+            $outcome['error'] = true;
+            Log::channel('schedule_debug')->error('EasyPaisa status worker item failed', [
+                'worker_pid' => $workerPid,
+                'worker_id' => $workerId,
+                'worker_token' => $token,
+                'transaction_id' => $item->id,
+                'error' => $exception->getMessage(),
+            ]);
+            $this->recoverAfterException($item->id, $token);
+        }
+
+        return $outcome;
+    }
+
+    private function claimOneTransaction(string $token, int $minAgeMinutes): ?Transaction
+    {
+        $claimed = null;
+
+        DB::transaction(function () use ($token, $minAgeMinutes, &$claimed) {
+            $row = Transaction::query()
+                ->where('status', 'pending')
+                ->where('txn_type', 'easypaisa')
+                ->where('created_at', '<=', now()->subMinutes($minAgeMinutes))
+                ->where('cron_status', Transaction::CRON_STATUS_AVAILABLE)
+                ->lock('FOR UPDATE SKIP LOCKED')
+                ->limit(1)
+                ->first();
+
+            if ($row === null) {
                 return;
             }
 
             $claimedAt = now();
-
-            Transaction::query()
-                ->whereIn('id', $rows->pluck('id'))
+            $updated = Transaction::query()
+                ->where('id', $row->id)
+                ->where('cron_status', Transaction::CRON_STATUS_AVAILABLE)
                 ->update([
                     'cron_status' => Transaction::CRON_STATUS_IN_PROGRESS,
-                    'updated_at' => $claimedAt,
+                    'cron_claim_token' => $token,
+                    'cron_claimed_at' => $claimedAt,
                 ]);
 
-            $rows->each(function (Transaction $row) use ($claimedAt) {
-                $row->cron_status = Transaction::CRON_STATUS_IN_PROGRESS;
-                $row->updated_at = $claimedAt;
-            });
+            if (!$updated) {
+                return;
+            }
 
-            $claimed = $rows;
+            $row->cron_status = Transaction::CRON_STATUS_IN_PROGRESS;
+            $row->cron_claim_token = $token;
+            $row->cron_claimed_at = $claimedAt;
+            $claimed = $row;
         });
+
+        if ($claimed !== null) {
+            Log::channel('schedule_debug')->info('EasyPaisa status worker claimed transaction', [
+                'worker_pid' => getmypid(),
+                'worker_token' => $token,
+                'transaction_id' => $claimed->id,
+                'claim_time' => optional($claimed->cron_claimed_at)->toDateTimeString(),
+            ]);
+        }
 
         return $claimed;
     }
 
-    private function releaseToAvailable(int $transactionId, mixed $claimedAt): void
+    private function releaseToAvailable(int $transactionId, string $token): void
     {
-        Transaction::query()
+        $updated = Transaction::query()
             ->where('id', $transactionId)
             ->where('cron_status', Transaction::CRON_STATUS_IN_PROGRESS)
-            ->where('updated_at', $claimedAt)
-            ->update(['cron_status' => Transaction::CRON_STATUS_AVAILABLE]);
+            ->where('cron_claim_token', $token)
+            ->update([
+                'cron_status' => Transaction::CRON_STATUS_AVAILABLE,
+                'cron_claim_token' => null,
+                'cron_claimed_at' => null,
+            ]);
+
+        if ($updated) {
+            Log::channel('schedule_debug')->info('EasyPaisa status claim released to available', [
+                'worker_pid' => getmypid(),
+                'worker_token' => $token,
+                'transaction_id' => $transactionId,
+            ]);
+        }
     }
 
-    private function markDoneIfNotPending(int $transactionId): void
+    private function markDoneIfNotPending(int $transactionId, string $token): void
     {
         Transaction::query()
             ->where('id', $transactionId)
             ->where('cron_status', Transaction::CRON_STATUS_IN_PROGRESS)
+            ->where('cron_claim_token', $token)
             ->where('status', '!=', 'pending')
-            ->update(['cron_status' => Transaction::CRON_STATUS_DONE]);
+            ->update([
+                'cron_status' => Transaction::CRON_STATUS_DONE,
+                'cron_claim_token' => null,
+                'cron_claimed_at' => null,
+            ]);
     }
 
-    private function recoverAfterException(Transaction $item, mixed $claimedAt): void
+    private function recoverAfterException(int $transactionId, string $token): void
     {
-        $fresh = Transaction::query()->find($item->id);
+        $fresh = Transaction::query()->find($transactionId);
 
         if (!$fresh) {
             return;
         }
 
         if ($fresh->status !== 'pending') {
-            $this->markDoneIfNotPending($item->id);
+            $this->markDoneIfNotPending($transactionId, $token);
 
             return;
         }
 
-        $this->releaseToAvailable($item->id, $claimedAt);
+        $this->releaseToAvailable($transactionId, $token);
+    }
+
+    private function recoverAbandonedClaims(): int
+    {
+        return Transaction::query()
+            ->where('status', 'pending')
+            ->where('txn_type', 'easypaisa')
+            ->where('cron_status', Transaction::CRON_STATUS_IN_PROGRESS)
+            ->where(function ($query) {
+                $query->whereNull('cron_claimed_at')
+                    ->orWhere('cron_claimed_at', '<=', now()->subSeconds(self::COORDINATOR_LOCK_SECONDS));
+            })
+            ->update([
+                'cron_status' => Transaction::CRON_STATUS_AVAILABLE,
+                'cron_claim_token' => null,
+                'cron_claimed_at' => null,
+            ]);
+    }
+
+    private function countEligiblePending(int $minAgeMinutes): int
+    {
+        return Transaction::query()
+            ->where('status', 'pending')
+            ->where('txn_type', 'easypaisa')
+            ->where('created_at', '<=', now()->subMinutes($minAgeMinutes))
+            ->count();
+    }
+
+    private function minAgeMinutes(): int
+    {
+        return (int) config('payin_status_cron.min_age_minutes', 2);
     }
 
     /**
-     * Release leftover IN_PROGRESS rows from this worker using the original claim timestamp
-     * so a later worker's claim (different updated_at) cannot be overwritten.
-     *
-     * @param  array<int, mixed>  $claimedAtById
+     * @param  int  $workerCount  Must already be 2, 4, or 6.
+     * @return list<Process>
      */
-    private function releaseRemainingClaims(array $claimedAtById): void
+    private function spawnWorkers(int $workerCount, int $coordinatorPid): array
     {
-        foreach ($claimedAtById as $transactionId => $claimedAt) {
-            $this->releaseToAvailable((int) $transactionId, $claimedAt);
+        $workerCount = min($this->allocator->maxWorkers(), max(0, $workerCount));
+        $processes = [];
+
+        for ($slot = 1; $slot <= $workerCount; $slot++) {
+            $token = bin2hex(random_bytes(16));
+            $process = new Process([
+                PHP_BINARY,
+                base_path('artisan'),
+                'transactions:easypaisa-check-status',
+                '--worker',
+                '--token=' . $token,
+                '--worker-id=' . $slot,
+            ]);
+            $process->setWorkingDirectory(base_path());
+            $process->setTimeout(null);
+            $process->disableOutput();
+            $process->start();
+            $processes[] = $process;
+
+            Log::channel('schedule_debug')->info('EasyPaisa status worker process started', [
+                'coordinator_pid' => $coordinatorPid,
+                'worker_id' => $slot,
+                'worker_pid' => $process->getPid(),
+                'worker_token' => $token,
+            ]);
         }
+
+        return $processes;
+    }
+
+    /**
+     * @param  list<Process>  $processes
+     * @param  list<int|null>  $workerPids
+     */
+    private function waitForWorkers(array $processes, $lock, array $workerPids): void
+    {
+        while ($this->anyWorkerRunning($processes)) {
+            try {
+                $lock->extend(self::COORDINATOR_LOCK_SECONDS);
+            } catch (Throwable $exception) {
+                Log::channel('schedule_debug')->warning('EasyPaisa status coordinator lock extend failed', [
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+
+            Cache::put(self::WORKER_PIDS_CACHE_KEY, $workerPids, self::COORDINATOR_LOCK_SECONDS);
+            usleep(250000);
+        }
+    }
+
+    /**
+     * @param  list<Process>  $processes
+     */
+    private function anyWorkerRunning(array $processes): bool
+    {
+        foreach ($processes as $process) {
+            if ($process->isRunning()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function countLiveWorkers(): int
+    {
+        $pgrepCount = $this->pgrepWorkerCount();
+        if ($pgrepCount !== null) {
+            return $pgrepCount;
+        }
+
+        $cachedPids = Cache::get(self::WORKER_PIDS_CACHE_KEY, []);
+        $live = 0;
+
+        foreach ((array) $cachedPids as $pid) {
+            $alive = ProcessHelper::isProcessAlive((int) $pid);
+            if ($alive !== false) {
+                $live++;
+            }
+        }
+
+        return $live;
+    }
+
+    private function pgrepWorkerCount(): ?int
+    {
+        try {
+            $process = new Process(['pgrep', '-fc', 'transactions:easypaisa-check-status --worker']);
+            $process->setTimeout(3);
+            $process->run();
+            $output = trim($process->getOutput());
+
+            if ($output !== '' && is_numeric($output)) {
+                return max(0, (int) $output);
+            }
+
+            if ($process->getExitCode() === 1) {
+                return 0;
+            }
+        } catch (Throwable $exception) {
+            // pgrep is unavailable (Windows); fall back to cached PIDs.
+        }
+
+        return null;
     }
 
     private function sendCronCallback(string $cron, Transaction $item, ?string $url, array $data): void
