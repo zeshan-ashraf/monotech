@@ -20,6 +20,7 @@ class BackupTransaction extends Model
         'pp_code',
         'pp_message',
         'status',
+        'cron_status',
         'src',
         'url',
         'callback_sent',
