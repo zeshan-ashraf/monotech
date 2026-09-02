@@ -31,10 +31,10 @@ class EasyPaisaCheckTransactionStatus extends Command
     private const COORDINATOR_LOCK_SECONDS = 300;
 
     /**
-     * Coordinator FileLock TTL for the short scale-up critical section.
+     * Coordinator FileLock TTL for the short scale-up critical section only.
      * FileLock cannot extend(); the lock is released after spawn, not held while workers run.
      */
-    private const COORDINATOR_LOCK_TTL_SECONDS = 43200;
+    private const COORDINATOR_LOCK_TTL_SECONDS = 120;
 
     protected $statusService;
 
@@ -64,14 +64,9 @@ class EasyPaisaCheckTransactionStatus extends Command
         $coordinatorPid = getmypid();
         $minAgeMinutes = $this->minAgeMinutes();
 
-        $lock = Cache::lock(self::COORDINATOR_LOCK_KEY, self::COORDINATOR_LOCK_TTL_SECONDS);
+        $lock = $this->acquireCoordinatorLock($coordinatorPid);
 
-        if (!$lock->get()) {
-            Log::channel('schedule_debug')->warning('EasyPaisa status coordinator skipped — another coordinator holds the lock', [
-                'coordinator_pid' => $coordinatorPid,
-            ]);
-            $this->warn('Another EasyPaisa status coordinator is already running.');
-
+        if ($lock === null) {
             return Command::SUCCESS;
         }
 
@@ -580,8 +575,123 @@ class EasyPaisaCheckTransactionStatus extends Command
         Cache::put(
             self::WORKER_PIDS_CACHE_KEY,
             array_values(array_unique(array_merge($existing, $new))),
-            self::COORDINATOR_LOCK_TTL_SECONDS
+            self::COORDINATOR_LOCK_SECONDS
         );
+    }
+
+    /**
+     * Acquire the short-lived coordinator lock.
+     * A stale lock is released only when no other coordinator process is running
+     * and the lock file is older than the current TTL (covers the leftover 12-hour lock).
+     *
+     * @return \Illuminate\Contracts\Cache\Lock|null
+     */
+    private function acquireCoordinatorLock(int $coordinatorPid)
+    {
+        $lock = Cache::lock(self::COORDINATOR_LOCK_KEY, self::COORDINATOR_LOCK_TTL_SECONDS);
+
+        if ($lock->get()) {
+            return $lock;
+        }
+
+        $otherCoordinators = $this->countOtherCoordinatorProcesses($coordinatorPid);
+        $lockAgeSeconds = $this->coordinatorLockAgeSeconds();
+        $lockLooksFresh = $lockAgeSeconds !== null
+            && $lockAgeSeconds < self::COORDINATOR_LOCK_TTL_SECONDS;
+
+        if ($otherCoordinators !== 0 || $lockLooksFresh) {
+            Log::channel('schedule_debug')->warning('EasyPaisa status coordinator skipped — another coordinator holds the lock', [
+                'coordinator_pid' => $coordinatorPid,
+                'other_coordinator_count' => $otherCoordinators,
+                'lock_age_seconds' => $lockAgeSeconds,
+                'lock_ttl_seconds' => self::COORDINATOR_LOCK_TTL_SECONDS,
+            ]);
+            $this->warn('Another EasyPaisa status coordinator is already running.');
+
+            return null;
+        }
+
+        Log::channel('schedule_debug')->warning('EasyPaisa status stale coordinator lock recovered', [
+            'coordinator_pid' => $coordinatorPid,
+            'other_coordinator_count' => $otherCoordinators,
+            'lock_age_seconds' => $lockAgeSeconds,
+            'lock_ttl_seconds' => self::COORDINATOR_LOCK_TTL_SECONDS,
+        ]);
+
+        $lock->forceRelease();
+
+        if (!$lock->get()) {
+            Log::channel('schedule_debug')->warning('EasyPaisa status coordinator skipped — lock reacquired by another process after stale release', [
+                'coordinator_pid' => $coordinatorPid,
+            ]);
+            $this->warn('Another EasyPaisa status coordinator is already running.');
+
+            return null;
+        }
+
+        return $lock;
+    }
+
+    private function countOtherCoordinatorProcesses(int $selfPid): ?int
+    {
+        try {
+            $process = new Process(['pgrep', '-af', 'transactions:easypaisa-check-status']);
+            $process->setTimeout(3);
+            $process->run();
+            $exitCode = $process->getExitCode();
+
+            if ($exitCode === 1) {
+                return 0;
+            }
+
+            if ($exitCode !== 0) {
+                return null;
+            }
+
+            $count = 0;
+            $lines = preg_split('/\r\n|\r|\n/', trim($process->getOutput())) ?: [];
+
+            foreach ($lines as $line) {
+                if ($line === '' || str_contains($line, 'pgrep') || str_contains($line, '--worker')) {
+                    continue;
+                }
+
+                $pid = (int) explode(' ', ltrim($line), 2)[0];
+                if ($pid <= 0 || $pid === $selfPid) {
+                    continue;
+                }
+
+                $count++;
+            }
+
+            return $count;
+        } catch (Throwable $exception) {
+            return null;
+        }
+    }
+
+    private function coordinatorLockAgeSeconds(): ?int
+    {
+        try {
+            $store = Cache::getStore();
+            if (!method_exists($store, 'path')) {
+                return null;
+            }
+
+            $path = $store->path(Cache::getPrefix() . self::COORDINATOR_LOCK_KEY);
+            if (!is_string($path) || $path === '' || !is_file($path)) {
+                return null;
+            }
+
+            $mtime = filemtime($path);
+            if ($mtime === false) {
+                return null;
+            }
+
+            return max(0, time() - $mtime);
+        } catch (Throwable $exception) {
+            return null;
+        }
     }
 
     private function countLiveWorkers(): int
