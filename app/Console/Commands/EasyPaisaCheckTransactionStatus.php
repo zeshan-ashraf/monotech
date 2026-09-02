@@ -26,11 +26,14 @@ class EasyPaisaCheckTransactionStatus extends Command
     private const WORKER_PIDS_CACHE_KEY = 'easypaisa-check-status:worker-pids';
 
     /**
-     * Coordinator lock TTL and abandoned-claim lease. Extended while the coordinator is alive.
-     * Active workers are never stolen; stale reclaim runs only when no live workers remain
-     * AND the claim is older than this lease (longer than EasyPaisa HTTP timeout+retries).
+     * Abandoned-claim lease (and worker-PID cache TTL).
      */
     private const COORDINATOR_LOCK_SECONDS = 300;
+
+    /**
+     * Coordinator FileLock TTL. FileLock cannot extend(); this must outlast a normal run.
+     */
+    private const COORDINATOR_LOCK_TTL_SECONDS = 43200;
 
     protected $statusService;
 
@@ -60,7 +63,7 @@ class EasyPaisaCheckTransactionStatus extends Command
         $coordinatorPid = getmypid();
         $minAgeMinutes = $this->minAgeMinutes();
 
-        $lock = Cache::lock(self::COORDINATOR_LOCK_KEY, self::COORDINATOR_LOCK_SECONDS);
+        $lock = Cache::lock(self::COORDINATOR_LOCK_KEY, self::COORDINATOR_LOCK_TTL_SECONDS);
 
         if (!$lock->get()) {
             Log::channel('schedule_debug')->warning('EasyPaisa status coordinator skipped — another coordinator holds the lock', [
@@ -615,14 +618,6 @@ class EasyPaisaCheckTransactionStatus extends Command
     private function waitForWorkers(array $processes, $lock, array $workerPids): void
     {
         while ($this->anyWorkerRunning($processes)) {
-            try {
-                $lock->extend(self::COORDINATOR_LOCK_SECONDS);
-            } catch (Throwable $exception) {
-                Log::channel('schedule_debug')->warning('EasyPaisa status coordinator lock extend failed', [
-                    'error' => $exception->getMessage(),
-                ]);
-            }
-
             Cache::put(self::WORKER_PIDS_CACHE_KEY, $workerPids, self::COORDINATOR_LOCK_SECONDS);
             usleep(250000);
         }
