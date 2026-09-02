@@ -556,12 +556,18 @@ class EasyPaisaCheckTransactionStatus extends Command
 
     /**
      * Detach a worker from the coordinator process tree.
-     * Symfony Process v6.4.20 __destruct() calls stop(0) → SIGTERM/SIGKILL, so it cannot be used here.
+     *
+     * Do not use `setsid exec ... & echo $!`:
+     * - `exec` is a shell builtin, so setsid tries to execvp("exec") and fails.
+     * - `&` makes the job a process-group leader, so setsid forks; `$!` is that
+     *   short-lived setsid parent, not PHP.
+     *
+     * `nohup php artisan ... & echo $!` execs PHP in-place, so `$!` is the worker.
      */
     private function spawnDetachedWorker(string $token, int $workerId): ?int
     {
         $command = sprintf(
-            'setsid exec %s %s transactions:easypaisa-check-status --worker --token=%s --worker-id=%d < /dev/null > /dev/null 2>&1 & echo $!',
+            'nohup %s %s transactions:easypaisa-check-status --worker --token=%s --worker-id=%d < /dev/null > /dev/null 2>&1 & echo $!',
             escapeshellarg(PHP_BINARY),
             escapeshellarg(base_path('artisan')),
             escapeshellarg($token),
@@ -619,18 +625,25 @@ class EasyPaisaCheckTransactionStatus extends Command
     {
         for ($attempt = 0; $attempt < 10; $attempt++) {
             if ($this->isEasyPaisaWorkerPid($pid)) {
-                return true;
+                usleep(50000);
+
+                return $this->isEasyPaisaWorkerPid($pid);
             }
 
             usleep(50000);
         }
 
-        return $this->isEasyPaisaWorkerPid($pid);
+        return false;
     }
 
     private function isEasyPaisaWorkerPid(int $pid): bool
     {
         if ($pid <= 1) {
+            return false;
+        }
+
+        $exe = @readlink('/proc/' . $pid . '/exe');
+        if (!is_string($exe) || !str_contains(strtolower($exe), 'php')) {
             return false;
         }
 
