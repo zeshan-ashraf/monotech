@@ -92,11 +92,20 @@ return [
         // Queue job longer than 5 min
         'queue_job_seconds' => 300,
 
+        // Drop ghost queue tracker entries after this age (worker crash / restart)
+        'queue_stale_seconds' => (int) env('RUNTIME_QUEUE_STALE_SECONDS', 3600),
+
         // Scheduler command longer than 10 min
         'scheduler_command_seconds' => 600,
 
+        // Drop ghost scheduler tracker entries after this age
+        'scheduler_stale_seconds' => (int) env('RUNTIME_SCHEDULER_STALE_SECONDS', 3600),
+
         // Gateway timeout threshold
         'gateway_request_seconds' => 60,
+
+        // Drop ghost gateway tracker entries after this age
+        'gateway_stale_seconds' => (int) env('RUNTIME_GATEWAY_STALE_SECONDS', 600),
 
         // Linux ps command timeout
         'ps_timeout_seconds' => 3,

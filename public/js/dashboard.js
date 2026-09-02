@@ -937,13 +937,60 @@
         }
     }
 
+    function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function csrfToken() {
+        return window.opsDashboardCsrfToken
+            || (document.querySelector('meta[name="csrf-token"]') || {}).content
+            || '';
+    }
+
+    function notifyOps(message, type) {
+        if (window.toastr && typeof window.toastr[type || 'success'] === 'function') {
+            window.toastr[type || 'success'](message);
+            return;
+        }
+
+        if (type === 'error') {
+            console.warn(message);
+        }
+    }
+
+    function setStuckClearAllState(total) {
+        var button = document.getElementById('ops-stuck-clear-all');
+
+        if (button) {
+            button.disabled = !total;
+        }
+    }
+
+    function stuckClearButtonHtml(process) {
+        if (!process || !process.clearable || !process.type || !process.id) {
+            return '—';
+        }
+
+        return '<button type="button" class="btn btn-sm btn-outline-secondary ops-stuck-clear"'
+            + ' data-stuck-type="' + escapeHtml(process.type) + '"'
+            + ' data-stuck-id="' + encodeURIComponent(process.id) + '"'
+            + ' title="Remove this ghost alert from the dashboard">Clear</button>';
+    }
+
     function updateRuntimeStuckTable(stuck) {
         var tbody = document.getElementById('ops-runtime-stuck-table');
         var totalEl = document.querySelector('[data-field="stuck_total"]');
+        var total = stuck && stuck.total !== undefined ? stuck.total : 0;
 
         if (totalEl) {
-            totalEl.textContent = stuck && stuck.total !== undefined ? stuck.total : 0;
+            totalEl.textContent = total;
         }
+
+        setStuckClearAllState(total);
 
         if (!tbody) {
             return;
@@ -952,20 +999,21 @@
         var processes = (stuck && stuck.processes) ? stuck.processes : [];
 
         if (!processes.length) {
-            tbody.innerHTML = '<tr data-empty-row="1"><td colspan="7" class="text-center text-muted py-4">No stuck processes detected</td></tr>';
+            tbody.innerHTML = '<tr data-empty-row="1"><td colspan="8" class="text-center text-muted py-4">No stuck processes detected</td></tr>';
 
             return;
         }
 
         tbody.innerHTML = processes.map(function (process) {
             return '<tr>'
-                + '<td>' + (process.type_label || '') + '</td>'
-                + '<td>' + (process.name || '') + '</td>'
-                + '<td>' + (process.pid || '—') + '</td>'
-                + '<td>' + (process.started || '') + '</td>'
-                + '<td>' + (process.running_for || '') + '</td>'
-                + '<td><span class="ops-health-badge ops-health-badge--' + (process.status_color || 'secondary') + '"><span class="ops-health-badge__dot"></span>' + (process.status_label || '') + '</span></td>'
-                + '<td>' + (process.recommendation || '') + '</td>'
+                + '<td>' + escapeHtml(process.type_label || '') + '</td>'
+                + '<td>' + escapeHtml(process.name || '') + '</td>'
+                + '<td>' + escapeHtml(process.pid || '—') + '</td>'
+                + '<td>' + escapeHtml(process.started || '') + '</td>'
+                + '<td>' + escapeHtml(process.running_for || '') + '</td>'
+                + '<td><span class="ops-health-badge ops-health-badge--' + escapeHtml(process.status_color || 'secondary') + '"><span class="ops-health-badge__dot"></span>' + escapeHtml(process.status_label || '') + '</span></td>'
+                + '<td>' + escapeHtml(process.recommendation || '') + '</td>'
+                + '<td class="text-end">' + stuckClearButtonHtml(process) + '</td>'
                 + '</tr>';
         }).join('');
     }
@@ -1034,6 +1082,94 @@
         updateRuntimeRecommendations(payload.recommendations || []);
     }
 
+    function clearStuckAlerts(payload) {
+        var url = window.opsDashboardClearStuckUrl;
+
+        if (!url) {
+            return Promise.reject(new Error('Clear stuck URL is not configured'));
+        }
+
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken(),
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+        }).then(function (response) {
+            return response.json().then(function (body) {
+                if (!response.ok) {
+                    throw new Error((body && body.message) || 'Failed to clear stuck alerts');
+                }
+
+                return body;
+            });
+        });
+    }
+
+    function stuckIdFromButton(button) {
+        var raw = button.getAttribute('data-stuck-id') || '';
+
+        try {
+            return decodeURIComponent(raw);
+        } catch (error) {
+            return raw;
+        }
+    }
+
+    function bindStuckClearButtons() {
+        var panel = document.getElementById('ops-runtime-panel');
+
+        if (!panel || panel.dataset.stuckClearBound === '1') {
+            return;
+        }
+
+        panel.dataset.stuckClearBound = '1';
+
+        panel.addEventListener('click', function (event) {
+            var clearOne = event.target.closest('.ops-stuck-clear');
+            var clearAll = event.target.closest('#ops-stuck-clear-all');
+
+            if (clearOne) {
+                event.preventDefault();
+                clearOne.disabled = true;
+                clearStuckAlerts({
+                    scope: 'one',
+                    type: clearOne.getAttribute('data-stuck-type'),
+                    id: stuckIdFromButton(clearOne),
+                }).then(function (body) {
+                    notifyOps((body && body.message) || 'Stuck alert cleared.');
+                    refreshRuntimeMetrics();
+                }).catch(function (error) {
+                    clearOne.disabled = false;
+                    notifyOps(error.message || 'Failed to clear stuck alert', 'error');
+                });
+
+                return;
+            }
+
+            if (clearAll) {
+                event.preventDefault();
+
+                if (!window.confirm('Clear all stuck queue, scheduler, and gateway alerts from this dashboard? This does not stop running jobs.')) {
+                    return;
+                }
+
+                clearAll.disabled = true;
+                clearStuckAlerts({ scope: 'all' }).then(function (body) {
+                    notifyOps((body && body.message) || 'Stuck alerts cleared.');
+                    refreshRuntimeMetrics();
+                }).catch(function (error) {
+                    clearAll.disabled = false;
+                    notifyOps(error.message || 'Failed to clear stuck alerts', 'error');
+                });
+            }
+        });
+    }
+
     function refreshRuntimeMetrics() {
         var url = window.opsDashboardRuntimeMetricsUrl;
 
@@ -1087,6 +1223,7 @@
         }
 
         applyRuntimePayload(window.opsDashboardRuntime || null);
+        bindStuckClearButtons();
         scheduleRuntimeMetricsRefresh();
     }
 

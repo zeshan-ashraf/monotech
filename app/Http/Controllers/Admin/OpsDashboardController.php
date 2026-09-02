@@ -56,6 +56,38 @@ class OpsDashboardController extends Controller
         ]);
     }
 
+    public function clearStuckProcesses(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'scope' => ['required', 'in:all,one'],
+            'type' => ['required_if:scope,one', 'nullable', 'in:queue,scheduler,gateway'],
+            'id' => ['required_if:scope,one', 'nullable', 'string', 'max:255'],
+        ]);
+
+        if ($validated['scope'] === 'all') {
+            $cleared = $this->applicationRuntimeService->clearStuckProcesses();
+
+            return response()->json([
+                'ok' => true,
+                'cleared' => $cleared,
+                'message' => $cleared > 0
+                    ? 'Cleared ' . $cleared . ' stuck alert' . ($cleared === 1 ? '' : 's') . '.'
+                    : 'No stuck alerts to clear.',
+            ]);
+        }
+
+        $cleared = $this->applicationRuntimeService->clearStuckProcess(
+            (string) $validated['type'],
+            (string) $validated['id']
+        );
+
+        return response()->json([
+            'ok' => true,
+            'cleared' => $cleared ? 1 : 0,
+            'message' => $cleared ? 'Stuck alert cleared.' : 'Alert was already gone.',
+        ]);
+    }
+
     /**
      * Live system overview metrics (top cards + server health) for dashboard polling.
      */

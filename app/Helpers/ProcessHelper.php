@@ -110,4 +110,43 @@ class ProcessHelper
 
         return ['pid' => null, 'elapsed_seconds' => null];
     }
+
+    /**
+     * Whether a PID currently exists. Null means the check is unavailable.
+     */
+    public static function isProcessAlive(int $pid): ?bool
+    {
+        if ($pid <= 0) {
+            return false;
+        }
+
+        if (is_dir('/proc')) {
+            return is_dir('/proc/' . $pid);
+        }
+
+        if (function_exists('posix_kill')) {
+            return posix_kill($pid, 0);
+        }
+
+        return null;
+    }
+
+    /**
+     * Ghost runtime hash entries: worker PID is gone, or the entry is older than the stale window.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public static function isStaleMonitoredEntry(array $payload, int $staleAfterSeconds): bool
+    {
+        $startedAt = (int) ($payload['started_at'] ?? 0);
+        $duration = $startedAt > 0 ? now()->timestamp - $startedAt : PHP_INT_MAX;
+
+        if ($duration >= max(1, $staleAfterSeconds)) {
+            return true;
+        }
+
+        $pid = isset($payload['pid']) ? (int) $payload['pid'] : 0;
+
+        return $pid > 0 && self::isProcessAlive($pid) === false;
+    }
 }

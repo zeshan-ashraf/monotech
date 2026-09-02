@@ -151,11 +151,22 @@
     <div class="row g-3 mb-3">
         <div class="col-12">
             <section class="ops-card ops-panel" aria-label="Stuck processes">
-                <div class="ops-panel__header d-flex align-items-center justify-content-between">
+                <div class="ops-panel__header d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <h5 class="ops-panel__title mb-0">
                         <i class="fa fa-exclamation-triangle text-danger me-2"></i>Stuck Processes
                     </h5>
-                    <span class="ops-badge ops-badge--warning" data-field="stuck_total">{{ $runtime['stuck_processes']['total'] ?? 0 }}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="ops-badge ops-badge--warning" data-field="stuck_total">{{ $runtime['stuck_processes']['total'] ?? 0 }}</span>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger ops-stuck-clear-all"
+                            id="ops-stuck-clear-all"
+                            title="Remove ghost queue/scheduler/gateway alerts from this dashboard. Does not stop running jobs."
+                            @disabled(($runtime['stuck_processes']['total'] ?? 0) < 1)
+                        >
+                            Clear All
+                        </button>
+                    </div>
                 </div>
                 <div class="ops-panel__body p-0">
                     <div class="ops-table-wrap">
@@ -169,6 +180,7 @@
                                     <th>Running For</th>
                                     <th>Status</th>
                                     <th>Recommendation</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="ops-runtime-stuck-table">
@@ -186,10 +198,25 @@
                                             />
                                         </td>
                                         <td>{{ $process['recommendation'] }}</td>
+                                        <td class="text-end">
+                                            @if(!empty($process['clearable']))
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-secondary ops-stuck-clear"
+                                                    data-stuck-type="{{ $process['type'] }}"
+                                                    data-stuck-id="{{ $process['id'] ?? $process['job_id'] ?? '' }}"
+                                                    title="Remove this ghost alert from the dashboard"
+                                                >
+                                                    Clear
+                                                </button>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr data-empty-row="1">
-                                        <td colspan="7" class="text-center text-muted py-4">No stuck processes detected</td>
+                                        <td colspan="8" class="text-center text-muted py-4">No stuck processes detected</td>
                                     </tr>
                                 @endforelse
                             </tbody>

@@ -56,11 +56,64 @@ class QueueMonitorService
         });
     }
 
+    public function clearJob(string $jobId): bool
+    {
+        if ($jobId === '') {
+            return false;
+        }
+
+        try {
+            $deleted = (int) $this->connection()->hdel(ApplicationRuntimeHelper::KEY_QUEUE_PROCESSING, $jobId);
+            $this->forgetCache();
+
+            return $deleted > 0;
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Remove tracker entries that have been "processing" at least $thresholdSeconds.
+     */
+    public function clearStuckJobs(int $thresholdSeconds): int
+    {
+        return $this->removeProcessingJobs(function (array $decoded) use ($thresholdSeconds): bool {
+            $startedAt = (int) ($decoded['started_at'] ?? 0);
+            $duration = $startedAt > 0 ? now()->timestamp - $startedAt : PHP_INT_MAX;
+
+            return $duration >= max(1, $thresholdSeconds);
+        });
+    }
+
+    /**
+     * Drop ghost tracker rows left behind when a worker dies without JobProcessed/JobFailed.
+     */
+    public function pruneStaleJobs(?int $staleAfterSeconds = null): int
+    {
+        $staleAfterSeconds ??= (int) config('application_runtime.process.queue_stale_seconds', 3600);
+
+        return $this->removeProcessingJobs(
+            static fn (array $decoded): bool => ProcessHelper::isStaleMonitoredEntry($decoded, $staleAfterSeconds)
+        );
+    }
+
+    public function forgetCache(): void
+    {
+        $this->safeRedis(function (Connection $redis): void {
+            $redis->del(ApplicationRuntimeHelper::KEY_QUEUE_CACHE);
+            $redis->del(ApplicationRuntimeHelper::KEY_PROCESS_CACHE);
+        });
+    }
+
   /**
    * @return array<string, mixed>
    */
     public function collect(): array
     {
+        if ($this->pruneStaleJobs() > 0) {
+            $this->forgetCache();
+        }
+
         return $this->remember(ApplicationRuntimeHelper::KEY_QUEUE_CACHE, function (): array {
             try {
                 $connection = (string) config('application_runtime.queue.connection', config('queue.default'));
@@ -113,6 +166,8 @@ class QueueMonitorService
    */
     public function longRunningJobs(int $thresholdSeconds): array
     {
+        $this->pruneStaleJobs();
+
         try {
             $redis = $this->connection();
             $raw = $redis->hgetall(ApplicationRuntimeHelper::KEY_QUEUE_PROCESSING) ?: [];
@@ -141,6 +196,7 @@ class QueueMonitorService
                 $stuck[] = [
                     'type' => ApplicationRuntimeHelper::TYPE_QUEUE_JOB,
                     'type_label' => 'Queue',
+                    'id' => (string) $jobId,
                     'name' => (string) ($decoded['name'] ?? 'Unknown Job'),
                     'pid' => $decoded['pid'] ?? null,
                     'job_id' => (string) $jobId,
@@ -152,12 +208,42 @@ class QueueMonitorService
                     'status_label' => ApplicationRuntimeHelper::statusLabel($status),
                     'status_color' => ApplicationRuntimeHelper::statusColor($status),
                     'recommendation' => 'Restart Worker',
+                    'clearable' => true,
                 ];
             }
 
             return $stuck;
         } catch (Throwable) {
             return [];
+        }
+    }
+
+    /**
+     * @param  callable(array<string, mixed>): bool  $shouldRemove
+     */
+    private function removeProcessingJobs(callable $shouldRemove): int
+    {
+        try {
+            $redis = $this->connection();
+            $raw = $redis->hgetall(ApplicationRuntimeHelper::KEY_QUEUE_PROCESSING) ?: [];
+            $cleared = 0;
+
+            foreach ($raw as $jobId => $payload) {
+                $decoded = json_decode((string) $payload, true);
+
+                if (! is_array($decoded) || $shouldRemove($decoded)) {
+                    $redis->hdel(ApplicationRuntimeHelper::KEY_QUEUE_PROCESSING, (string) $jobId);
+                    $cleared++;
+                }
+            }
+
+            if ($cleared > 0) {
+                $this->forgetCache();
+            }
+
+            return $cleared;
+        } catch (Throwable) {
+            return 0;
         }
     }
 

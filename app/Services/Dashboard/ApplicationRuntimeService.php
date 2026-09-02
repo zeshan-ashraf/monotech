@@ -51,6 +51,16 @@ class ApplicationRuntimeService
         return $this->collect();
     }
 
+    public function clearStuckProcess(string $type, string $id): bool
+    {
+        return $this->processMonitorService->clearEntry($type, $id);
+    }
+
+    public function clearStuckProcesses(): int
+    {
+        return $this->processMonitorService->clearAllStuck();
+    }
+
   /**
    * @param  array<string, mixed>  $phpFpm
    * @param  array<string, mixed>  $scheduler

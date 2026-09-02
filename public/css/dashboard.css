@@ -586,6 +586,15 @@ body.dark-layout .ops-dashboard {
     background: var(--ops-surface-2);
 }
 
+.ops-stuck-clear,
+.ops-stuck-clear-all {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.2rem 0.55rem;
+}
+
 .ops-link {
     color: var(--bs-primary);
     text-decoration: none;

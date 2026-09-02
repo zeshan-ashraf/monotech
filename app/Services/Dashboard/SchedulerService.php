@@ -89,12 +89,45 @@ class SchedulerService
         });
     }
 
+    public function clearCommand(string $command): bool
+    {
+        if ($command === '') {
+            return false;
+        }
+
+        try {
+            return (int) $this->connection()->hdel(ApplicationRuntimeHelper::KEY_SCHEDULER_RUNNING, $command) > 0;
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    public function clearStuckCommands(int $thresholdSeconds): int
+    {
+        return $this->removeRunningCommands(function (array $decoded) use ($thresholdSeconds): bool {
+            $startedAt = (int) ($decoded['started_at'] ?? 0);
+            $duration = $startedAt > 0 ? now()->timestamp - $startedAt : PHP_INT_MAX;
+
+            return $duration >= max(1, $thresholdSeconds);
+        });
+    }
+
+    public function pruneStaleCommands(?int $staleAfterSeconds = null): int
+    {
+        $staleAfterSeconds ??= (int) config('application_runtime.process.scheduler_stale_seconds', 3600);
+
+        return $this->removeRunningCommands(
+            static fn (array $decoded): bool => ProcessHelper::isStaleMonitoredEntry($decoded, $staleAfterSeconds)
+        );
+    }
+
   /**
    * @return array<string, mixed>
    */
     public function collect(): array
     {
         try {
+            $this->pruneStaleCommands();
             $redis = $this->connection();
             $lastTick = (int) ($redis->get(ApplicationRuntimeHelper::KEY_SCHEDULER_LAST_TICK) ?: 0);
             $nextTick = (int) ($redis->get(ApplicationRuntimeHelper::KEY_SCHEDULER_NEXT_TICK) ?: 0);
@@ -149,6 +182,8 @@ class SchedulerService
    */
     public function longRunningCommands(int $thresholdSeconds): array
     {
+        $this->pruneStaleCommands();
+
         try {
             $running = $this->runningCommands($this->connection());
             $stuck = [];
@@ -167,10 +202,13 @@ class SchedulerService
                     (int) config('application_runtime.scheduler.command_warning_seconds', 600) * 2
                 );
 
+                $name = (string) ($command['command'] ?? 'Unknown');
+
                 $stuck[] = [
                     'type' => ApplicationRuntimeHelper::TYPE_SCHEDULER,
                     'type_label' => 'Scheduler',
-                    'name' => (string) ($command['command'] ?? 'Unknown'),
+                    'id' => $name,
+                    'name' => $name,
                     'pid' => $command['pid'] ?? null,
                     'started_at' => $startedAt,
                     'started' => ApplicationRuntimeHelper::formatTime($startedAt),
@@ -182,6 +220,7 @@ class SchedulerService
                     'recommendation' => $status === ApplicationRuntimeHelper::STATUS_CRITICAL
                         ? 'Investigate'
                         : 'Monitor Command',
+                    'clearable' => true,
                 ];
             }
 
@@ -240,6 +279,31 @@ class SchedulerService
         }
 
         return $commands;
+    }
+
+    /**
+     * @param  callable(array<string, mixed>): bool  $shouldRemove
+     */
+    private function removeRunningCommands(callable $shouldRemove): int
+    {
+        try {
+            $redis = $this->connection();
+            $raw = $redis->hgetall(ApplicationRuntimeHelper::KEY_SCHEDULER_RUNNING) ?: [];
+            $cleared = 0;
+
+            foreach ($raw as $command => $payload) {
+                $decoded = json_decode((string) $payload, true);
+
+                if (! is_array($decoded) || $shouldRemove($decoded)) {
+                    $redis->hdel(ApplicationRuntimeHelper::KEY_SCHEDULER_RUNNING, (string) $command);
+                    $cleared++;
+                }
+            }
+
+            return $cleared;
+        } catch (Throwable) {
+            return 0;
+        }
     }
 
   /**

@@ -31,6 +31,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/ops-dashboard/payment-metrics', [OpsDashboardController::class, 'paymentMetrics'])->name('ops.dashboard.payment_metrics');
         Route::get('/ops-dashboard/traffic-metrics', [OpsDashboardController::class, 'trafficMetrics'])->name('ops.dashboard.traffic_metrics');
         Route::get('/ops-dashboard/runtime-metrics', SystemMetricsController::class)->name('ops.dashboard.runtime_metrics');
+        Route::post('/ops-dashboard/stuck-processes/clear', [OpsDashboardController::class, 'clearStuckProcesses'])->name('ops.dashboard.stuck_processes.clear');
     });
     Route::get('/testing', [DashboardController::class, 'testing'])->name('testing');
     Route::get('/add-data/{id}', [DashboardController::class, 'prevClientSettlementEntry'])->name('add.data');

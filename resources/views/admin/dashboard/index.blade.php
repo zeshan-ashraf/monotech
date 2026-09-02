@@ -56,6 +56,8 @@
         window.opsDashboardTrafficMetricsUrl = @json(route('admin.ops.dashboard.traffic_metrics'));
         window.opsDashboardTraffic = @json($traffic);
         window.opsDashboardRuntimeMetricsUrl = @json(route('admin.ops.dashboard.runtime_metrics'));
+        window.opsDashboardClearStuckUrl = @json(route('admin.ops.dashboard.stuck_processes.clear'));
+        window.opsDashboardCsrfToken = @json(csrf_token());
         window.opsDashboardRuntime = @json($runtime);
     </script>
     <script src="{{ asset('js/dashboard.js') }}"></script>
