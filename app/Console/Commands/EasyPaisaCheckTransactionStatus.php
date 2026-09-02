@@ -31,7 +31,8 @@ class EasyPaisaCheckTransactionStatus extends Command
     private const COORDINATOR_LOCK_SECONDS = 300;
 
     /**
-     * Coordinator FileLock TTL. FileLock cannot extend(); this must outlast a normal run.
+     * Coordinator FileLock TTL for the short scale-up critical section.
+     * FileLock cannot extend(); the lock is released after spawn, not held while workers run.
      */
     private const COORDINATOR_LOCK_TTL_SECONDS = 43200;
 
@@ -76,98 +77,54 @@ class EasyPaisaCheckTransactionStatus extends Command
 
         try {
             $liveWorkers = $this->countLiveWorkers();
-
-            if ($liveWorkers > 0) {
-                Log::channel('schedule_debug')->warning('EasyPaisa status coordinator skipped — live workers still running', [
-                    'coordinator_pid' => $coordinatorPid,
-                    'live_workers' => $liveWorkers,
-                ]);
-                $this->warn('Live EasyPaisa status workers are still running.');
-
-                return Command::SUCCESS;
-            }
-
             $pendingCount = $this->countEligiblePending($minAgeMinutes);
-            $workerCount = $this->allocator->workerCount($pendingCount);
-            $stopApi = $this->allocator->shouldStopNewApiRequests($pendingCount);
+            $desiredWorkers = $this->allocator->workerCount($pendingCount);
+            $workersToSpawn = $this->allocator->workersToSpawn($desiredWorkers, $liveWorkers);
 
-            Log::channel('schedule_debug')->info('EasyPaisa status coordinator started', [
+            Log::channel('schedule_debug')->info('EasyPaisa status scaling decision', [
                 'coordinator_pid' => $coordinatorPid,
                 'pending_count' => $pendingCount,
-                'worker_count' => $workerCount,
-                'threshold_decision' => $stopApi ? 'stop_new_api_requests' : 'spawn_workers',
+                'live_worker_count' => $liveWorkers,
+                'desired_worker_count' => $desiredWorkers,
+                'workers_to_spawn' => $workersToSpawn,
                 'min_age_minutes' => $minAgeMinutes,
             ]);
 
-            if ($stopApi) {
-                Log::channel('schedule_debug')->warning('EasyPaisa pending threshold reached. New API requests stopped.', [
-                    'pending_count' => $pendingCount,
-                    'worker_count' => 0,
-                    'coordinator_pid' => $coordinatorPid,
-                ]);
-                $this->warn("EasyPaisa pending threshold reached. New API requests stopped. pending_count={$pendingCount} worker_count=0");
+            if ($this->allocator->shouldRecoverAbandonedClaims($liveWorkers)) {
+                $recovered = $this->recoverAbandonedClaims();
+                if ($recovered > 0) {
+                    Log::channel('schedule_debug')->info('EasyPaisa abandoned IN_PROGRESS claims recovered', [
+                        'coordinator_pid' => $coordinatorPid,
+                        'recovered' => $recovered,
+                        'lease_seconds' => self::COORDINATOR_LOCK_SECONDS,
+                    ]);
+                }
+            }
+
+            if ($workersToSpawn === 0) {
+                $this->info('EasyPaisa status workers already at desired count.');
 
                 return Command::SUCCESS;
             }
 
-            if ($workerCount === 0) {
-                Log::channel('schedule_debug')->info('EasyPaisa status coordinator idle — no eligible pending', [
-                    'coordinator_pid' => $coordinatorPid,
-                    'pending_count' => $pendingCount,
-                    'worker_count' => 0,
-                ]);
-                $this->info('No eligible pending EasyPaisa transactions.');
-
-                return Command::SUCCESS;
-            }
-
-            $recovered = $this->recoverAbandonedClaims();
-            if ($recovered > 0) {
-                Log::channel('schedule_debug')->info('EasyPaisa abandoned IN_PROGRESS claims recovered', [
-                    'coordinator_pid' => $coordinatorPid,
-                    'recovered' => $recovered,
-                    'lease_seconds' => self::COORDINATOR_LOCK_SECONDS,
-                ]);
-            }
-
-            $processes = $this->spawnWorkers($workerCount, $coordinatorPid);
-            $workerPids = [];
+            $processes = $this->spawnWorkers($workersToSpawn, $coordinatorPid, $liveWorkers);
+            $spawnedPids = [];
             foreach ($processes as $index => $process) {
-                $workerPids[$index] = $process->getPid();
+                $spawnedPids[$index] = $process->getPid();
             }
 
-            Cache::put(
-                self::WORKER_PIDS_CACHE_KEY,
-                array_values(array_filter($workerPids, static fn ($pid) => (int) $pid > 0)),
-                self::COORDINATOR_LOCK_SECONDS
-            );
+            $this->rememberWorkerPids($spawnedPids);
 
             Log::channel('schedule_debug')->info('EasyPaisa status workers spawned', [
                 'coordinator_pid' => $coordinatorPid,
                 'pending_count' => $pendingCount,
-                'worker_count' => count($processes),
-                'worker_pids' => $workerPids,
+                'live_worker_count' => $liveWorkers,
+                'desired_worker_count' => $desiredWorkers,
+                'workers_to_spawn' => $workersToSpawn,
+                'worker_pids' => $spawnedPids,
             ]);
 
-            $this->waitForWorkers($processes, $lock, $workerPids);
-
-            $exitCodes = [];
-            foreach ($processes as $index => $process) {
-                $exitCodes[$workerPids[$index] ?? $index] = $process->getExitCode();
-            }
-
-            Log::channel('schedule_debug')->info('EasyPaisa status coordinator completed', [
-                'coordinator_pid' => $coordinatorPid,
-                'pending_count_start' => $pendingCount,
-                'pending_count_end' => $this->countEligiblePending($minAgeMinutes),
-                'worker_count' => count($processes),
-                'worker_pids' => $workerPids,
-                'worker_exit_codes' => $exitCodes,
-                'recovered_abandoned' => $recovered,
-                'duration_seconds' => round(microtime(true) - $startedAt, 2),
-            ]);
-
-            $this->info('Pending transactions checked and updated.');
+            $this->info('EasyPaisa status workers scaled.');
 
             return Command::SUCCESS;
         } catch (Throwable $exception) {
@@ -181,7 +138,6 @@ class EasyPaisaCheckTransactionStatus extends Command
 
             return Command::FAILURE;
         } finally {
-            Cache::forget(self::WORKER_PIDS_CACHE_KEY);
             try {
                 $lock->release();
             } catch (Throwable $exception) {
@@ -231,18 +187,6 @@ class EasyPaisaCheckTransactionStatus extends Command
 
         try {
             while (true) {
-                $pendingCount = $this->countEligiblePending($minAgeMinutes);
-
-                if ($this->allocator->shouldStopNewApiRequests($pendingCount)) {
-                    Log::channel('schedule_debug')->warning('EasyPaisa pending threshold reached. New API requests stopped.', [
-                        'worker_pid' => $workerPid,
-                        'worker_id' => $workerId,
-                        'pending_count' => $pendingCount,
-                        'worker_count' => 0,
-                    ]);
-                    break;
-                }
-
                 $item = $this->claimOneTransaction($token, $minAgeMinutes);
 
                 if ($item === null) {
@@ -576,23 +520,24 @@ class EasyPaisaCheckTransactionStatus extends Command
     }
 
     /**
-     * @param  int  $workerCount  Must already be 2, 4, 6, or 10.
+     * @param  int  $workerCount  Additional workers to start (not the full desired pool).
      * @return list<Process>
      */
-    private function spawnWorkers(int $workerCount, int $coordinatorPid): array
+    private function spawnWorkers(int $workerCount, int $coordinatorPid, int $liveWorkers = 0): array
     {
         $workerCount = min($this->allocator->maxWorkers(), max(0, $workerCount));
         $processes = [];
 
         for ($slot = 1; $slot <= $workerCount; $slot++) {
             $token = bin2hex(random_bytes(16));
+            $workerId = $liveWorkers + $slot;
             $process = new Process([
                 PHP_BINARY,
                 base_path('artisan'),
                 'transactions:easypaisa-check-status',
                 '--worker',
                 '--token=' . $token,
-                '--worker-id=' . $slot,
+                '--worker-id=' . $workerId,
             ]);
             $process->setWorkingDirectory(base_path());
             $process->setTimeout(null);
@@ -602,7 +547,7 @@ class EasyPaisaCheckTransactionStatus extends Command
 
             Log::channel('schedule_debug')->info('EasyPaisa status worker process started', [
                 'coordinator_pid' => $coordinatorPid,
-                'worker_id' => $slot,
+                'worker_id' => $workerId,
                 'worker_pid' => $process->getPid(),
                 'worker_token' => $token,
             ]);
@@ -612,29 +557,31 @@ class EasyPaisaCheckTransactionStatus extends Command
     }
 
     /**
-     * @param  list<Process>  $processes
-     * @param  list<int|null>  $workerPids
+     * @param  list<int|null>  $spawnedPids
      */
-    private function waitForWorkers(array $processes, $lock, array $workerPids): void
+    private function rememberWorkerPids(array $spawnedPids): void
     {
-        while ($this->anyWorkerRunning($processes)) {
-            Cache::put(self::WORKER_PIDS_CACHE_KEY, $workerPids, self::COORDINATOR_LOCK_SECONDS);
-            usleep(250000);
-        }
-    }
-
-    /**
-     * @param  list<Process>  $processes
-     */
-    private function anyWorkerRunning(array $processes): bool
-    {
-        foreach ($processes as $process) {
-            if ($process->isRunning()) {
-                return true;
+        $existing = [];
+        foreach ((array) Cache::get(self::WORKER_PIDS_CACHE_KEY, []) as $pid) {
+            $pid = (int) $pid;
+            if ($pid > 0 && ProcessHelper::isProcessAlive($pid) !== false) {
+                $existing[] = $pid;
             }
         }
 
-        return false;
+        $new = [];
+        foreach ($spawnedPids as $pid) {
+            $pid = (int) $pid;
+            if ($pid > 0) {
+                $new[] = $pid;
+            }
+        }
+
+        Cache::put(
+            self::WORKER_PIDS_CACHE_KEY,
+            array_values(array_unique(array_merge($existing, $new))),
+            self::COORDINATOR_LOCK_TTL_SECONDS
+        );
     }
 
     private function countLiveWorkers(): int

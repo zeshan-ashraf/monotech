@@ -6,45 +6,46 @@ class EasypaisaStatusWorkerAllocator
 {
     public function workerCount(int $eligiblePending): int
     {
-        $stopAt = $this->stopAtPending();
         $max = $this->maxWorkers();
 
-        if ($eligiblePending <= 0 || $eligiblePending >= $stopAt) {
+        if ($eligiblePending <= 0) {
             return 0;
         }
 
-        if ($eligiblePending > $this->pendingForTen()) {
+        if ($eligiblePending >= $this->pendingForTen()) {
             return min(10, $max);
         }
 
-        if ($eligiblePending > $this->pendingForSix()) {
+        if ($eligiblePending >= $this->pendingForEight()) {
+            return min(8, $max);
+        }
+
+        if ($eligiblePending >= $this->pendingForFour()) {
             return min(6, $max);
         }
 
-        if ($eligiblePending > $this->pendingForFour()) {
+        if ($eligiblePending >= $this->pendingForTwo()) {
             return min(4, $max);
         }
 
-        if ($eligiblePending > $this->pendingForTwo()) {
-            return min(2, $max);
-        }
-
-        return 0;
+        return min(2, $max);
     }
 
-    public function shouldStopNewApiRequests(int $eligiblePending): bool
+    public function workersToSpawn(int $desiredWorkers, int $liveWorkers): int
     {
-        return $eligiblePending >= $this->stopAtPending();
+        $desired = min($this->maxWorkers(), max(0, $desiredWorkers));
+        $live = max(0, $liveWorkers);
+
+        if ($desired <= $live) {
+            return 0;
+        }
+
+        return $desired - $live;
     }
 
     public function shouldRecoverAbandonedClaims(int $liveWorkerCount): bool
     {
         return $liveWorkerCount === 0;
-    }
-
-    public function stopAtPending(): int
-    {
-        return (int) config('easypaisa_cron.status_workers.stop_at_pending', 500);
     }
 
     public function pendingForTwo(): int
@@ -60,6 +61,11 @@ class EasypaisaStatusWorkerAllocator
     public function pendingForSix(): int
     {
         return (int) config('easypaisa_cron.status_workers.pending_for_6', 300);
+    }
+
+    public function pendingForEight(): int
+    {
+        return (int) config('easypaisa_cron.status_workers.pending_for_8', $this->pendingForSix());
     }
 
     public function pendingForTen(): int
