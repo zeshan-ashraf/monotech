@@ -55,7 +55,7 @@
                                                 <option value="syhatyab">Syhatyab</option>
                                                 <option value="pixelpush">Pixel Push</option>
                                                 <option value="queen">Queen Jewellery</option>
-                                                <option value="gym">Gymify</option>
+                                                <option value="gym">Gymify</option> 
                                                 <option value="beauty">Beautifykit</option> 
                                                 <option value="wosparlex">WoSparlex</option>
                                                 <option value="digimart">Digimart</option>
