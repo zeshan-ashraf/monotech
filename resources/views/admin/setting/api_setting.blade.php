@@ -60,6 +60,8 @@
                                                 <option value="wosparlex">WoSparlex</option>
                                                 <option value="digimart">Digimart</option>
                                                 <option value="megakit">Megakit</option>
+                                                <option value="socio">SocioGrowth</option>
+                                                <option value="fintrust">FinTrust</option>
                                                 <option value="adlearn">Adlearn</option>
                                             </select>
                                         </div>
@@ -853,9 +855,11 @@ $(document).ready(function () {
             gym: 6,
             beauty: 7,
             wosparlex: 8,
-            digimart: 10,
-            megakit: 12,
-            adlearn: 14
+            digimart: 9,
+            megakit: 10,
+            socio: 11,
+            fintrust: 12,
+            adlearn: 13
         };
 
         $('#sub_store').on('change', function () {
