@@ -52,8 +52,11 @@
                                             <select name="sub_store" id="sub_store" class="form-control" required>
                                                 <option value="" disabled selected>Select One ..</option>
                                                 <option value="bsalonx">B Salonx</option>
+                                                <option value="syhatyab">Syhatyab</option>
                                                 <option value="pixelpush">Pixel Push</option>
-                                                <option value="gym">Gymify</option>
+                                                <option value="queen">Queen Jewellery</option>
+                                                <option value="gym">Gymify</option> 
+                                                <option value="beauty">Beautifykit</option> 
                                                 <option value="wosparlex">WoSparlex</option>
                                                 <option value="digimart">Digimart</option>
                                                 <option value="megakit">Megakit</option>
@@ -844,8 +847,11 @@ $(document).ready(function () {
     $(document).ready(function () {
         const storeAmounts = {
             bsalonx: 2,
+            syhatyab: 3,
             pixelpush: 4,
+            queen: 5,
             gym: 6,
+            beauty: 7,
             wosparlex: 8,
             digimart: 10,
             megakit: 12,
