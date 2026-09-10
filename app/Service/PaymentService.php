@@ -85,7 +85,7 @@ class PaymentService
             "pp_Password" => $this->password,
             "pp_ReturnURL" => $this->return_url,
             "pp_SubMerchantID" => "",
-            "pp_SubMerchantName" => $subStore,
+            "pp_SubMerchantName" => "Syhatyaab",
             "pp_SecureHash" => "",
             "pp_TxnCurrency" => $this->currency_code,
             "pp_TxnDateTime" => $pp_TxnDateTime,
@@ -116,6 +116,9 @@ class PaymentService
         ]);
 		$pp_SecureHash = $this->jazzcashSecureHash($post_data);
         $post_data['pp_SecureHash'] = $pp_SecureHash;
+        if($user->email == "test@monotech.com"){
+            dd($post_data);
+        }
         
         $this->orderInitialProcess($request, $pp_TxnRefNo);
 
