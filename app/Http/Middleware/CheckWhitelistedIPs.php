@@ -11,7 +11,7 @@ class CheckWhitelistedIPs
 {
     /**
      * List of allowed IPs
-     * 
+     *
      * @var array
      */
     protected $whitelistedIPs = [
@@ -49,8 +49,8 @@ class CheckWhitelistedIPs
         '47.236.253.59',
         '47.236.184.75',
         '182.239.115.38',
-        
-        
+
+
         '122.116.231.64',
         '4.247.181.1',
         '4.191.73.136',
@@ -82,7 +82,7 @@ class CheckWhitelistedIPs
         '47.86.47.142',
         '27.124.46.151',
         '143.92.58.147',
-       
+
         '3.115.201.98',
         '43.207.180.114',
         '43.207.38.222',
@@ -123,7 +123,7 @@ class CheckWhitelistedIPs
         '91.99.7.127',
         '178.128.241.68',
         //jackpay
-        
+
         '85.137.51.239',
         '85.137.51.241',
         '85.137.51.244',
@@ -132,12 +132,19 @@ class CheckWhitelistedIPs
         '85.137.51.247',
         '85.137.51.248',
         '176.97.117.199',
+        '85.137.51.126',
+        '85.137.51.72',
+        '85.137.51.74',
+        '85.137.51.29',
+        '85.137.51.73',
+
+
         //piqpay
         '154.205.145.213',
         '56.244.28.84',
         '51.17.160.132',
         '38.54.113.174',
-        
+
 
 
     ];
@@ -150,7 +157,7 @@ class CheckWhitelistedIPs
         // Check if request is from Postman
         $userAgent = $request->header('User-Agent');
         $isPostman = str_contains($userAgent, 'PostmanRuntime');
-        
+
         // Only check testing key if request is from Postman
         if ($isPostman) {
             // $testingKey = $request->input('testing_key') ?? $request->header('X-Testing-Key');
@@ -177,7 +184,7 @@ class CheckWhitelistedIPs
                 return response()->json(['error' => 'Invalid or missing testing key for Postman request'], 403);
             }
         }
-        
+
 
         // Log the incoming request
         Log::channel('payout')->info('Incoming request to whitelisted endpoint', [
