@@ -5,12 +5,14 @@ use App\Http\Controllers\Admin\Authorization\TeamController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DashboardMetricsController;
 use App\Http\Controllers\Admin\OpsDashboardController;
+use App\Http\Controllers\Admin\SystemMetricsController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\PayoutController;
 use App\Http\Controllers\Admin\SettlementController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\SearchingController;
+use App\Http\Controllers\Admin\ExportPayinController;
 use App\Http\Controllers\Admin\ArchiveController;
 use App\Http\Controllers\Admin\ArchivePayoutController;
 use App\Http\Controllers\Admin\BackupTransactionController;
@@ -19,10 +21,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/settlement-grid', [DashboardController::class, 'settlementGrid'])->name('dashboard.settlement_grid');
     Route::get('/dashboard/metrics', [DashboardMetricsController::class, 'index'])->name('dashboard.metrics');
     Route::get('/dashboard/metrics/{userId}', [DashboardMetricsController::class, 'show'])->name('dashboard.metrics.show');
     Route::get('/zig-dashboard', [DashboardController::class, 'zigIndex'])->name('zig_dashboard');
-    Route::get('/ops-dashboard', [OpsDashboardController::class, 'index'])->name('ops.dashboard');
+    Route::middleware('super.admin')->group(function () {
+        Route::get('/ops-dashboard', [OpsDashboardController::class, 'index'])->name('ops.dashboard');
+        Route::get('/ops-dashboard/system-metrics', [OpsDashboardController::class, 'systemMetrics'])->name('ops.dashboard.system_metrics');
+        Route::get('/ops-dashboard/payment-metrics', [OpsDashboardController::class, 'paymentMetrics'])->name('ops.dashboard.payment_metrics');
+        Route::get('/ops-dashboard/traffic-metrics', [OpsDashboardController::class, 'trafficMetrics'])->name('ops.dashboard.traffic_metrics');
+        Route::get('/ops-dashboard/runtime-metrics', SystemMetricsController::class)->name('ops.dashboard.runtime_metrics');
+        Route::post('/ops-dashboard/stuck-processes/clear', [OpsDashboardController::class, 'clearStuckProcesses'])->name('ops.dashboard.stuck_processes.clear');
+    });
     Route::get('/testing', [DashboardController::class, 'testing'])->name('testing');
     Route::get('/add-data/{id}', [DashboardController::class, 'prevClientSettlementEntry'])->name('add.data');
     Route::get('/profile/form', [DashboardController::class, 'profile'])->name('profile');
@@ -53,6 +63,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/user/list', [ClientController::class,'userList'])->name('user_list');
         Route::post('/user/store', [ClientController::class,'userStore'])->name('user.store');
         Route::get('/sec-modal/{id?}', [ClientController::class,'modalSec'])->name('modal.sec');
+        Route::get('/check-url/{id}', [ClientController::class, 'checkUrl'])->name('check_url');
     });
     
     Route::as('transaction.')->prefix('transaction')->group(function () {
@@ -78,6 +89,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('detail/{id?}', [PayoutController::class,'detail'])->name('detail');
         Route::get('easy-recipt/{id?}', [PayoutController::class,'easyReceipt'])->name('easy_receipt');
         Route::get('jazz-recipt/{id?}', [PayoutController::class,'jazzReceipt'])->name('jazz_receipt');
+        Route::post('/settle', [PayoutController::class, 'settle'])->name('settle');
+        Route::post('/unsettle', [PayoutController::class, 'unsettle'])->name('unsettle');
+        Route::post('change-status', [PayoutController::class,'changeStatus'])->name('change_status');
     });
     Route::as('searching.')->prefix('searching')->group(function () {
         Route::get('/list', [SearchingController::class,'list'])->name('list');
@@ -85,6 +99,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
         Route::get('/sr/calculator', [SearchingController::class,'srList'])->name('sr_list');
         Route::get('/callback/{id?}', [SearchingController::class,'callback'])->name('callback.send');
         Route::get('/payout_callback/{id?}', [SearchingController::class,'payoutCallback'])->name('payout_callback.send');
+    });
+    // Export Payin slice — drop-in routes for other projects
+    Route::as('export_payin.')->prefix('export-payin')->group(function () {
+        Route::get('/list', [ExportPayinController::class, 'list'])->name('list');
+        Route::get('/export', [ExportPayinController::class, 'export'])->name('export');
     });
     Route::as('setting.')->prefix('setting')->group(function () {
         Route::get('/reverse/list', [SettingController::class,'list'])->name('list');
@@ -142,5 +161,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(func
     Route::get('/archive/payout/list', [ArchivePayoutController::class, 'list'])->name('archive.payout_list');
     Route::get('/archive/payout/zig_list', [ArchivePayoutController::class, 'zigList'])->name('archive.payout_zig_list');
     Route::get('/backup/transaction/list', [BackupTransactionController::class, 'list'])->name('archive.backup_list');
+
+    require base_path('modules/ApiDocs/routes/web.php');
 });
 

@@ -3,6 +3,7 @@
 namespace App\DataTables\Admin;
 
 use App\Models\{ArcheiveTransaction, BackupTransaction, Transaction, User};
+use App\Support\PayinCallbackTracker;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -29,46 +30,66 @@ class SearchingDataTable extends DataTable
                 $reason = $query->pp_message;
                 $type = $query->status;
 
-                return view('admin.transaction.badge', get_defined_vars());
+                return view('admin.transaction.badge', compact('reason', 'type'))->render();
+            })
+            ->editColumn('callback_sent', function ($query) {
+                return view('admin.transaction.callback_badge', PayinCallbackTracker::badgeData($query));
             })
             ->editColumn('created_at', function ($query) {
                 return $query->created_at ? $query->created_at->format('d-m-y H:i:s') : 'N/A';
             })
+            ->editColumn('txn_type', function ($query) {
+                return $this->formatNetwork($query->txn_type ?? null);
+            })
             ->editColumn('amount', function ($query) {
-                return $query->amount . ' PKR';
+                return $query->amount;
             })
             ->editColumn('detail', function ($query) {
                 $user = auth()->user();
-                $buttons = '';
-                $buttons .= '<a href="' . route('admin.searching.callback.send', $query->id) . '" class="btn btn-success btn-sm">Send Callback</a> ';
-                $buttons .= '<a href="' . route('admin.jazzcash.status-inquiry', ['id' => $query->txn_ref_no, 'type' => $query->txn_type]) . '" class="btn btn-primary btn-sm mt-1">Inquiry</a>';
 
-                if ($user && method_exists($user, 'can') && $user->can('Reverse Transactions') && $query->status == 'success') {
-                    $reverseRequested = $query->reverse_requested_at ?? null;
+                $buttons = '<div class="d-flex flex-wrap justify-content-center align-items-center gap-1 searching-action-btns">';
 
-                    if (!$reverseRequested) {
-                        $tableType = $query->table_type ?? 'transactions';
-                        $buttons .= ' <button class="btn btn-warning btn-sm mt-1 mark-for-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Mark for Reversal</button>';
-                    }
-                }
+                // Send Callback
+                $buttons .= '<a href="' . route('admin.searching.callback.send', $query->id) . '" 
+                                class="btn btn-success btn-sm">
+                                Send Callback
+                            </a>';
 
-                return $buttons;
-            })
-            ->editColumn('reverse', function ($query) {
-                $user = auth()->user();
+                // Inquiry
+                $buttons .= '<a href="' . route('admin.jazzcash.status-inquiry', [
+                                    'id' => $query->txn_ref_no,
+                                    'type' => $query->txn_type
+                                ]) . '" 
+                                class="btn btn-primary btn-sm">
+                                Inquiry
+                            </a>';
 
+                // Reverse - Only Super Admin + successful transaction
                 if ($user->user_role == 'Super Admin' && $query->status == 'success') {
-                    return '
-                        <select class="form-control status-dropdown-reverse mt-1" data-id="' . $query->id . '">
-                            <option value="" selected disabled>Select Option..</option>
-                            <option value="reverse">Reverse</option>
-                        </select>
+
+                    $buttons .= '
+                        <button type="button"
+                                class="btn btn-warning btn-sm reverse-btn"
+                                data-id="' . $query->id . '">
+                            Reverse
+                        </button>
                     ';
                 }
 
-                return '';
+                // if ($user && method_exists($user, 'can') && $user->can('Reverse Transactions') && $query->status == 'success') {
+                //     $reverseRequested = $query->reverse_requested_at ?? null;
+
+                //     if (!$reverseRequested) {
+                //         $tableType = $query->table_type ?? 'transactions';
+                //         $buttons .= '<button class="btn btn-warning btn-sm mark-for-reversal-btn" data-id="' . $query->id . '" data-table-type="' . $tableType . '">Mark for Reversal</button>';
+                //     }
+                // }
+
+                $buttons .= '</div>';
+
+                return $buttons;
             })
-            ->rawColumns(['detail', 'reverse']);
+            ->rawColumns(['status', 'callback_sent', 'detail']);
     }
 
     public function query(): Collection
@@ -227,7 +248,9 @@ class SearchingDataTable extends DataTable
                 'processing' => true,
                 'autoWidth' => false,
                 'lengthChange' => false,
-                'searching' => false,
+                'searching' => true,
+                'ordering' => false,
+                'order' => [],
                 'drawCallback' => 'function () {
                         }',
             ]);
@@ -236,18 +259,30 @@ class SearchingDataTable extends DataTable
     protected function getColumns()
     {
         return [
-            ['data' => 'orderId', 'name' => 'orderId', 'title' => 'Order Id', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'client_name', 'name' => 'user.name', 'title' => 'Client Name', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'transactionId', 'name' => 'transactionId', 'title' => 'Trans Id', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'phone', 'name' => 'phone', 'title' => 'Phone', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'txn_ref_no', 'name' => 'txn_ref_no', 'title' => 'Trans Ref No', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'txn_type', 'name' => 'txn_type', 'title' => 'Trans type', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'amount', 'name' => 'amount', 'title' => 'Amount', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => true, 'searchable' => true, 'width' => 30],
-            ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created at', 'orderable' => true, 'searchable' => true, 'width' => 30],
+            ['data' => 'orderId', 'name' => 'orderId', 'title' => 'Order Id', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'client_name', 'name' => 'user.name', 'title' => 'Client Name', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'transactionId', 'name' => 'transactionId', 'title' => 'Trans Id', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'phone', 'name' => 'phone', 'title' => 'Phone', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'txn_ref_no', 'name' => 'txn_ref_no', 'title' => 'Trans Ref No', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'txn_type', 'name' => 'txn_type', 'title' => 'Network', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'amount', 'name' => 'amount', 'title' => 'Amount', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'status', 'name' => 'status', 'title' => 'Status', 'orderable' => false, 'searchable' => true, 'width' => 30],
+            ['data' => 'callback_sent', 'name' => 'callback_sent', 'title' => 'Callback', 'orderable' => false, 'searchable' => false, 'width' => 30],
+            ['data' => 'created_at', 'name' => 'created_at', 'title' => 'Created at', 'orderable' => false, 'searchable' => true, 'width' => 30],
             ['data' => 'detail', 'name' => 'detail', 'title' => 'Action', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
-            ['data' => 'reverse', 'name' => 'reverse', 'title' => 'Change Status', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
+            // ['data' => 'reverse', 'name' => 'reverse', 'title' => 'Change Status', 'orderable' => false, 'searchable' => false, 'width' => '15%'],
         ];
+    }
+
+    private function formatNetwork(?string $value): string
+    {
+        $normalized = strtolower(trim((string) $value));
+
+        return match ($normalized) {
+            'jazzcash' => 'JC',
+            'easypaisa' => 'EP',
+            default => $value !== null && $value !== '' ? (string) $value : '-',
+        };
     }
 
     protected function filename(): string

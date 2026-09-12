@@ -98,15 +98,19 @@ final class EnsurePhoneIsVerified
         }
 
         try {
-            if ($this->phoneVerificationService->isVerified($normalizedPhone )) {
-                return $next($request); 
-            }
-            else if ($request->amount <= 100){
+            if ($this->phoneVerificationService->isVerified($normalizedPhone)) {
                 return $next($request);
             }
-            else if ($request->amount > 100){
-                return new JsonResponse(['status' => 'new_user'], Response::HTTP_OK);
+
+            $maxAmount = $userModel instanceof User
+                ? (int) $userModel->new_user_max_amount
+                : 0;
+            $amount = (int) $request->input('amount', 0);
+
+            if ($amount <= $maxAmount) {
+                return $next($request);
             }
+
             return new JsonResponse(['status' => 'new_user'], Response::HTTP_OK);
         } finally {
             optional($lock)->release();

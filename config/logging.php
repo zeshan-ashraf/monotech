@@ -182,6 +182,12 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => 14,
         ],
+        'zee' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/zee.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+        ],
     ],
 
 ];

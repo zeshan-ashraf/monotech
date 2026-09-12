@@ -8,6 +8,7 @@ use App\Models\ScheduleSetting;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use App\Services\Dashboard\SchedulerService;
 
 class Kernel extends ConsoleKernel
 {
@@ -113,7 +114,7 @@ class Kernel extends ConsoleKernel
             });
         $wrapSchedule($event, 'report:generate');
         $schedule->command('suplus:addition')->everyTenMinutes();
-        $event = $schedule->command('transactions:archive')->dailyAt('02:00');
+        $event = $schedule->command('transactions:archive')->dailyAt('16:45');
         $wrapSchedule($event, 'transactions:archive');
         $event = $schedule->command('transactions:backup')->dailyAt('02:30');
         $wrapSchedule($event, 'transactions:backup');
@@ -122,13 +123,16 @@ class Kernel extends ConsoleKernel
         // $schedule->command('transactions:old')->dailyAt('04:25');
         $event = $schedule->command('app:recount-report-generate')->dailyAt('01:00');
         $wrapSchedule($event, 'app:recount-report-generate');
-        $event = $schedule->command('transactions:auto-fail')->everyTenMinutes();
+        $event = $schedule->command('transactions:auto-fail')->everyTenMinutes()->withoutOverlapping();
         $wrapSchedule($event, 'transactions:auto-fail');
         
         // Auto-reverse transactions after 6 hours
         $event = $schedule->command('transactions:auto-reverse')->everyTenMinutes();
         $wrapSchedule($event, 'transactions:auto-reverse');
 
+        $schedule->command('logs:repair-permissions')->everyMinute();
+
+        app(SchedulerService::class)->storeScheduledCommandCount(count($schedule->events()));
     }
 
     /**

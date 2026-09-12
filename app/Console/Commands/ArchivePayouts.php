@@ -36,6 +36,8 @@ class ArchivePayouts extends Command
                     'transaction_id' => $item->transaction_id ?? null,
                     'url' => $item->url ?? null,
                     'status' => $item->status ?? null,
+                    'is_settled' => $item->is_settled ?? 'no',
+                    'settled_date' => $item->settled_date ?? null,
                     'created_at' => $item->created_at,
                     'updated_at' => $item->updated_at,
                     'ibft' => $item->ibft,

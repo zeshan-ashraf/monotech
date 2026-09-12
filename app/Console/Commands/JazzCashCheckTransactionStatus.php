@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\{Transaction,SurplusAmount,Setting,User};
 use App\Service\StatusService;
-use Illuminate\Support\Facades\Http;
+use App\Support\PayinCallbackTracker;
 use Carbon\Carbon;
 
 class JazzCashCheckTransactionStatus extends Command
@@ -28,9 +28,14 @@ class JazzCashCheckTransactionStatus extends Command
     // Execute the console command.
     public function handle()
     {
-        $now=Carbon::now();
-        
-        $list = Transaction::where('status', 'pending')->where('txn_type', 'jazzcash')->get();
+        $now = Carbon::now();
+        $minAgeMinutes = (int) config('payin_status_cron.min_age_minutes', 2);
+
+        $list = Transaction::query()
+            ->where('status', 'pending')
+            ->where('txn_type', 'jazzcash')
+            ->where('created_at', '<=', $now->copy()->subMinutes($minAgeMinutes))
+            ->get();
         // \Log::info('Response from notifyurl:', ['response' => $now]);
         
         set_time_limit(0);
@@ -48,6 +53,7 @@ class JazzCashCheckTransactionStatus extends Command
                         'pp_code' => $result['pp_ResponseCode'],
                         'pp_message' => $result['pp_ResponseMessage']
                     ]);
+                    $item->refresh();
                     $data = [
                         'orderId' => $item->orderId,
                         'tid' => $item->transactionId,
@@ -72,7 +78,7 @@ class JazzCashCheckTransactionStatus extends Command
                             // $surplus->save();
                         }
                     }
-                    $response = Http::timeout(60)->post($url, $data);
+                    PayinCallbackTracker::sendAndRecord($item, $url, $data);
                 } elseif ($result['pp_PaymentResponseCode'] == '157'){
                     $item->update([
                         'status' => 'pending',
@@ -88,14 +94,14 @@ class JazzCashCheckTransactionStatus extends Command
                         'pp_code' => $result['pp_PaymentResponseCode'],
                         'pp_message' => $result['pp_PaymentResponseMessage']
                     ]);
-            
+                    $item->refresh();
                     $data = [
                         'orderId' => $item->orderId,
                         'tid' => $item->transactionId,
                         'amount' => $item->amount,
                         'status' => 'failed',
                     ];
-                    $response = Http::timeout(60)->post($url, $data);
+                    PayinCallbackTracker::sendAndRecord($item, $url, $data);
                 }
 
             }

@@ -11,3 +11,16 @@
 <script src="{{ asset('admin/vendors/js/datatables/buttons.server-side.js')}}"></script>
 @endif
 {{ $dataTable->scripts() }}
+<script>
+    $(document).on('draw.dt', function () {
+        document.querySelectorAll('#dataTable [data-bs-toggle="tooltip"]').forEach(function (el) {
+            if (window.bootstrap && bootstrap.Tooltip) {
+                var existing = bootstrap.Tooltip.getInstance(el);
+                if (existing) {
+                    existing.dispose();
+                }
+                new bootstrap.Tooltip(el);
+            }
+        });
+    });
+</script>

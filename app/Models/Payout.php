@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Payout extends Model
 {
     use HasFactory;
+    public const STATUS_SUCCESS = 'success';    
 
     protected $table = 'payouts';
 
@@ -22,6 +23,8 @@ class Payout extends Model
         'phone',
         'transaction_type',
         'status',
+        'is_settled',
+        'settled_date',
         'url',
         'request_detail',
         'transaction_id',

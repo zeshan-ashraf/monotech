@@ -39,6 +39,9 @@ class User extends Authenticatable
         'payout_ep_fee',
         'enable_db_metrics',
         'db_metrics_order',
+        'new_user_verification',
+        'new_user_max_amount',
+        'payout_daily_limit',
     ];
 
     /**
@@ -60,6 +63,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'new_user_verification' => 'boolean',
+        'new_user_max_amount' => 'integer',
         'enable_db_metrics' => 'boolean',
     ];
 

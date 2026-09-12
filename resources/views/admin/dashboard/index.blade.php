@@ -22,19 +22,24 @@
                         {{-- Live: overview metric cards --}}
                         @include('admin.dashboard.cards', ['overviewCards' => $overviewCards])
 
+                        {{-- Live: API traffic --}}
+                        @include('admin.dashboard.traffic', ['traffic' => $traffic])
+
                         {{-- Payments & Alerts --}}
                         <div class="row g-3 mb-3">
                             <div class="col-xl-8">
                                 @include('admin.dashboard.payments', [
-                                    'payments' => $payments,
+                                    'gatewayPayments' => $gatewayPayments,
                                     'transactions' => $transactions,
-                                    'paymentStats' => $paymentStats,
                                 ])
                             </div>
                             <div class="col-xl-4">
                                 @include('admin.dashboard.alerts', ['alerts' => $alerts])
                             </div>
                         </div>
+
+                        {{-- Live: Application runtime --}}
+                        @include('admin.dashboard.application-runtime', ['runtime' => $runtime])
 
                     </div>
                 </div>
@@ -46,6 +51,14 @@
 @push('js')
     <script>
         window.opsDashboardData = @json($chartData);
+        window.opsDashboardSystemMetricsUrl = @json(route('admin.ops.dashboard.system_metrics'));
+        window.opsDashboardPaymentMetricsUrl = @json(route('admin.ops.dashboard.payment_metrics'));
+        window.opsDashboardTrafficMetricsUrl = @json(route('admin.ops.dashboard.traffic_metrics'));
+        window.opsDashboardTraffic = @json($traffic);
+        window.opsDashboardRuntimeMetricsUrl = @json(route('admin.ops.dashboard.runtime_metrics'));
+        window.opsDashboardClearStuckUrl = @json(route('admin.ops.dashboard.stuck_processes.clear'));
+        window.opsDashboardCsrfToken = @json(csrf_token());
+        window.opsDashboardRuntime = @json($runtime);
     </script>
     <script src="{{ asset('js/dashboard.js') }}"></script>
 @endpush

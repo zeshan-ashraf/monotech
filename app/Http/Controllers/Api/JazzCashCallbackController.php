@@ -12,8 +12,12 @@ class JazzCashCallbackController extends Controller
     {
         // Log the complete response to a dedicated channel
         Log::channel('jazzcash_payin_callback')->info('JazzCash Callback Received', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
             'headers' => $request->headers->all(),
+            'query' => $request->query(),
             'body' => $request->all(),
+            'raw_body' => $request->getContent(),
             'ip' => $request->ip(),
             'timestamp' => now()->toDateTimeString()
         ]);

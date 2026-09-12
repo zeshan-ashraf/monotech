@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\JazzCashCallbackController;
 use App\Http\Controllers\Api\PaymentCheckoutController;
 use App\Http\Controllers\Api\PayoutCheckoutController;
 use App\Http\Controllers\Api\IbftController;
+use App\Http\Controllers\Api\WebhookController;
 
 
 /*
@@ -33,16 +34,16 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::as('payin.')->prefix('payin')->group(function () {
     Route::post('/checkout',[PayinController::class, 'checkout'])
-        ->middleware(['log.rejected', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'throttle.phone']);
+        ->middleware(['gateway.metrics', 'block.listed.phone.carrier:payin', 'phone.verified','log.rejected', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'throttle.phone']);
     Route::get('/test-trait',[PayinController::class, 'testTrait']); // Test route for trait
 });
 
 
-
-
+/*
+dont know why this is here
 Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProceed'])
-    ->middleware(['payment.validate', 'check.blocked.numbers', 'payin.pending.limit']);
-
+    ->middleware(['gateway.metrics','block.listed.phone.carrier:payin', 'log.rejected', 'payment.validate', 'check.blocked.numbers', 'payin.pending.limit']);
+*/
 
  /*Route::as('payout.')->prefix('payout')->group(function () {
 	     //Route without whitelist.ip middleware
@@ -63,7 +64,7 @@ Route::post('v1/payin-checkout',[PaymentCheckoutController::class, 'checkoutProc
 */
 
 Route::as('payout.')->prefix('payout')->group(function () {
-    Route::middleware(['throttle:api', 'whitelist.ip'])->group(function () {
+    Route::middleware(['throttle:api', 'block.listed.phone.carrier:payout','whitelist.ip','payout.amount','payout.daily.limit'])->group(function () {
         Route::post('/checkout', [PayoutController::class, 'checkout']);
     });
 });
@@ -93,14 +94,23 @@ Route::prefix('v1')->middleware(['hmac.authenticate'])->group(function () {
     //Route::post('payment-checkout', [TestPayinController::class, 'checkout']);// testing purpose only
     // payin route
     Route::post('payment-checkout', [PayinController::class, 'checkout'])
-        ->middleware(['throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'phone.verified', 'log.rejected']);
+        ->middleware(['gateway.metrics','block.listed.phone.carrier:payin', 'throttle.payin.global', 'payin.pending.limit', 'payment.validate', 'phone.verified', 'log.rejected']);
 
     // Payout Route
-    Route::post('payout/checkout', [PayoutController::class, 'checkout'])
-        ->middleware(['throttle:api', 'payout.daily.limit', 'whitelist.ip']);
+    Route::post('payout/checkout', [PayoutController::class, 'checkout'])->middleware(['throttle:api','block.listed.phone.carrier:payout', 'whitelist.ip','payout.amount','payout.daily.limit']);
 });
 
-Route::post('/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);
+Route::match(['get', 'post'], '/jazzcash/callback', [JazzCashCallbackController::class, 'handleCallback']);
+
+/*
+|--------------------------------------------------------------------------
+| API v2 Routes
+|--------------------------------------------------------------------------
+|
+*/
+Route::prefix('v2')->as('webhook.')->group(function () {
+    //Route::any('webhook', [WebhookController::class, 'handle'])->name('receive');
+});
 /*
 |--------------------------------------------------------------------------
 | API teting Routes

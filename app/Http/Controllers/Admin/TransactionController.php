@@ -9,7 +9,8 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
-use App\Models\{User,Transaction,ArcheiveTransaction,BackupTransaction,Settlement};
+use App\Models\{User,Transaction,ArcheiveTransaction,BackupTransaction,Settlement,BlockedNumber};
+use App\Support\PayinCallbackTracker;
 use Carbon\Carbon;
 
 class TransactionController extends Controller
@@ -313,10 +314,9 @@ class TransactionController extends Controller
             'amount' => $transaction->amount,
             'status' => $transaction->status,
         ];
-    
-        // Make an HTTP request
-        $response = Http::timeout(60)->post($transaction->url, $data);
-    
+
+        PayinCallbackTracker::sendAndRecord($transaction, $transaction->url, $data);
+
         return response()->json(['message' => 'Status changed successfully!']);
     }
     public function changeStatusReverse(Request $request)
@@ -336,12 +336,27 @@ class TransactionController extends Controller
         // $settlement=Settlement::where('user_id', $transaction->user_id)
         //     ->where('date', Carbon::yesterday()->format('Y-m-d'))
         //     ->first();
-        // Update the status
-        $transaction->status = $request->status;
-        $transaction->save();
+        try {
+            BlockedNumber::blockFromAdminReverse($transaction);
+
+            $transaction->status = $request->status;
+            $transaction->save();
+        } catch (\Throwable $e) {
+            Log::error('Manual reverse failed', [
+                'transaction_id' => $transaction->id,
+                'phone' => $transaction->phone ?? null,
+                'txn_type' => $transaction->txn_type ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to reverse transaction: '.$e->getMessage(),
+            ], 500);
+        }
+
         // $settlement->closing_bal -=$transaction->amount;
         // $settlement->save();
-    
+
         return response()->json(['message' => 'Status changed successfully!']);
     }
 }

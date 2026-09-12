@@ -240,10 +240,9 @@ class PaymentServiceV1
      */
     private function generateTransactionData(int $amount, bool $isJazzCash = true): array
     {
-        $DateTime = new \DateTime();
-        $pp_TxnDateTime = $DateTime->format('YmdHis');
-        $pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
-        
+        $pp_TxnRefNo = generateTxnRefNo();
+        $pp_TxnDateTime = substr($pp_TxnRefNo, 1, 14);
+
         return [
             'amount' => $isJazzCash ? $amount * 100 : $amount,
             'dateTime' => $pp_TxnDateTime,
@@ -835,9 +834,7 @@ class PaymentServiceV1
      */
     public function createBlockedTransaction(Request $request, string $paymentMethod): Transaction
     {
-        $DateTime = new \DateTime();
-        $pp_TxnDateTime = $DateTime->format('YmdHis');
-        $pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
+        $pp_TxnRefNo = generateTxnRefNo();
 
         try {
             return Transaction::create([

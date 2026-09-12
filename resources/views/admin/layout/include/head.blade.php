@@ -213,4 +213,34 @@ cursor: auto !important;
 .main-menu .navbar-header {
   height: 6.45rem !important;
 }
+.status-badge-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  gap: 4px;
+  vertical-align: middle;
+}
+.status-badge-wrap .copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  line-height: 1;
+  color: #ea5455;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.status-badge-wrap .copy-btn:hover,
+.status-badge-wrap .copy-btn.copied {
+  color: #28c76f;
+}
+.status-badge-wrap .copy-btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
 </style>

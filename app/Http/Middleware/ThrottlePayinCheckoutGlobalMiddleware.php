@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Helpers\GatewayMetricHelper;
+use App\Services\Dashboard\PayinCheckoutMetricsRecorder;
 use App\Support\PayinRestrictionExclusion;
 use Closure;
 use Illuminate\Http\Request;
@@ -15,6 +17,11 @@ class ThrottlePayinCheckoutGlobalMiddleware
 {
     private const LIMITER_KEY = 'payin:checkout:global';
 
+    public function __construct(
+        private readonly PayinCheckoutMetricsRecorder $checkoutMetrics
+    ) {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
         if (PayinRestrictionExclusion::isExcludedPhone($request->input('phone'))) {
@@ -26,6 +33,8 @@ class ThrottlePayinCheckoutGlobalMiddleware
 
         if (RateLimiter::tooManyAttempts(self::LIMITER_KEY, $maxAttempts)) {
             $retryAfter = RateLimiter::availableIn(self::LIMITER_KEY);
+
+            $this->recordRateLimitRejection($request);
 
             return response()->json([
                 'status' => 'error',
@@ -40,5 +49,27 @@ class ThrottlePayinCheckoutGlobalMiddleware
         RateLimiter::hit(self::LIMITER_KEY, $decaySeconds);
 
         return $next($request);
+    }
+
+    private function recordRateLimitRejection(Request $request): void
+    {
+        if (! GatewayMetricHelper::isPayinCheckoutRequest($request)) {
+            return;
+        }
+
+        $gateway = GatewayMetricHelper::resolveCheckoutGateway($request);
+
+        if ($gateway === null) {
+            return;
+        }
+
+        $startTime = (float) ($request->attributes->get(GatewayMetricHelper::REQUEST_ATTR_START_TIME) ?? microtime(true));
+
+        $this->checkoutMetrics->recordPreGatewayRejection(
+            $request,
+            $gateway,
+            $startTime,
+            GatewayMetricHelper::APPLICATION_ERROR_RATE_LIMITED
+        );
     }
 }

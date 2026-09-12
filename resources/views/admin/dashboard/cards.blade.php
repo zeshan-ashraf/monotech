@@ -9,6 +9,7 @@
                     :subtitle="$card['subtitle']"
                     :icon="$card['icon']"
                     :color="$card['color']"
+                    :card-key="$card['key']"
                     :chart-id="'ops-spark-' . $card['key']"
                 />
             </div>

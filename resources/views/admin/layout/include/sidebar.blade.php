@@ -19,12 +19,12 @@
                         class="d-flex align-items-center" href="{{ route('admin.dashboard') }}">
                         <i data-feather="home"></i>Dashboard</a>
                 </li>
-                {{-- OPS Dashboard — hidden until feature is complete
-                <li class="@if(Route::is('admin.ops.dashboard')) active @endif nav-item"><a
+                @if(auth()->user()->user_role == "Super Admin")
+                <li class="@if(Route::is('admin.ops.dashboard*')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.ops.dashboard') }}">
                         <i data-feather="activity"></i>OPS Dashboard</a>
                 </li>
-                --}}
+                @endif
                 {{--<li class="@if(url()->current() == route('admin.profile')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.profile') }}">
                         <i data-feather="user-check"></i>Profile</a>
@@ -70,7 +70,7 @@
                 @can('Reverse Transactions')
                 <li class="@if (url()->current() == route('admin.transaction.reversal.list')) active @endif nav-item"><a
                         class="d-flex align-items-center" href="{{ route('admin.transaction.reversal.list') }}">
-                        <i data-feather="rotate-ccw"></i>Pending Reversals</a>
+                        <i data-feather="rotate-ccw"></i>Reversals</a>
                 </li>
                 @endcan
                 @can('Payouts')
@@ -159,12 +159,24 @@
                             href="{{ route('admin.searching.payout_list') }}"><i data-feather='search'></i>Payout Search</a>
                     </li>
                 @endcan
+                {{-- Export Payin slice — drop-in sidebar snippet --}}
+                @can('Export Payin')
+                    <li class="nav-item">
+                        <a class="d-flex align-items-center @if (url()->current() == route('admin.export_payin.list')) active @endif"
+                            href="{{ route('admin.export_payin.list') }}"><i data-feather='download'></i>Export Transactions</a>
+                    </li>
+                @endcan
                 @if(auth()->user()->user_role == "Super Admin")
                     <li class="@if (url()->current() == route('admin.setting.get.suspend')) active @endif  nav-item">
                         <a class="d-flex align-items-center" href="{{ route('admin.setting.get.suspend') }}"><i
                                 data-feather="settings"></i>Setting</a>
                     </li>
                 @endif
+                @can('API DOC')
+                    <li class="@if (Route::is('admin.api-docs.*')) active @endif nav-item">
+                        <a class="d-flex align-items-center" href="{{ route('admin.api-docs.show', 'get-started') }}"><i data-feather="book-open"></i>API Docs</a>
+                    </li>
+                @endcan
                 {{--<li class="nav-item">
                     <a class="d-flex align-items-center" href="#" onclick="logout();">
                         <i data-feather="log-out"></i>Logout</a>

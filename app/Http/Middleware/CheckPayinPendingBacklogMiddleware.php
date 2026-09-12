@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Helpers\GatewayMetricHelper;
 use App\Models\Transaction;
+use App\Services\Dashboard\PayinCheckoutMetricsRecorder;
 use App\Support\PayinRestrictionExclusion;
 use Closure;
 use Illuminate\Http\Request;
@@ -21,6 +23,11 @@ class CheckPayinPendingBacklogMiddleware
     private string $outageMessage = 'system outage';
 
     private const OUTAGE_CACHE_PREFIX = 'payin:pending_backlog_outage:';
+
+    public function __construct(
+        private readonly PayinCheckoutMetricsRecorder $checkoutMetrics
+    ) {
+    }
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -77,6 +84,17 @@ class CheckPayinPendingBacklogMiddleware
             'client_email' => $request->input('client_email'),
             'order_id' => $request->input('orderId'),
         ]);
+
+        if (GatewayMetricHelper::isPayinCheckoutRequest($request)) {
+            $startTime = (float) ($request->attributes->get(GatewayMetricHelper::REQUEST_ATTR_START_TIME) ?? microtime(true));
+
+            $this->checkoutMetrics->recordPreGatewayRejection(
+                $request,
+                $paymentMethod,
+                $startTime,
+                GatewayMetricHelper::APPLICATION_ERROR_PENDING_BACKLOG
+            );
+        }
 
         return response()->json([
             'status' => 'error',

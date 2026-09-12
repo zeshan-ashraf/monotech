@@ -33,6 +33,7 @@
                                     <input type="hidden" name="email" value="test@monotech.com">
                                     <input type="hidden" name="client_email" value="test@monotech.com">
                                     <input type="hidden" name="callback_url" value="www.example-testing.com">
+                                    <input name="amount" id="amount" type="hidden">
                                     <div class="row mt-1 mb-1">
                                         <div class="form-group col-md-3">
                                             <label>Payment Method</label>
@@ -47,8 +48,22 @@
                                             <input class="form-control" name="phone" placeholder="03XXXXXXXXX" type="input" required>
                                         </div>
                                         <div class="form-group col-md-3">
-                                            <label>Amount</label>
-                                            <input class="form-control" name="amount" type="number" min="1" required>
+                                            <label>Sub Store</label>
+                                            <select name="sub_store" id="sub_store" class="form-control" required>
+                                                <option value="" disabled selected>Select One ..</option>
+                                                <option value="bsalonx">B Salonx</option>
+                                                <option value="syhatyab">Syhatyab</option>
+                                                <option value="pixelpush">Pixel Push</option>
+                                                <option value="queen">Queen Jewellery</option>
+                                                <option value="gym">Gymify</option> 
+                                                <option value="beauty">Beautifykit</option> 
+                                                <option value="wosparlex">WoSparlex</option>
+                                                <option value="digimart">Digimart</option>
+                                                <option value="megakit">Megakit</option>
+                                                <option value="socio">SocioGrowth</option>
+                                                <option value="fintrust">FinTrust</option>
+                                                <option value="adlearn">Adlearn</option>
+                                            </select>
                                         </div>
                                         <div class="form-group col-md-3 d-flex align-items-end">
                                             <button class="btn btn-primary" type="submit">Submit</button>
@@ -267,11 +282,13 @@
                                                 <th>#</th>
                                                 <th>Client Name</th>
                                                 <th>New User Verification</th>
+                                                <th>Max Amount</th>
+                                                <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach($verificationUsers as $item)
-                                            <tr>
+                                            <tr data-user-id="{{ $item->id }}">
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>{{ $item->name ?? $item->email }}</td>
                                                 <td>
@@ -279,15 +296,32 @@
                                                         <input
                                                             class="form-check-input toggle-new-user-verification"
                                                             type="checkbox"
-                                                            data-id="{{ $item->id }}"
+                                                            id="new-user-verification-{{ $item->id }}"
                                                             @if($item->new_user_verification == 1) checked @endif
                                                         >
-                                                        <label class="form-check-label">
+                                                        <label class="form-check-label" for="new-user-verification-{{ $item->id }}">
                                                             <span class="status-label">
                                                                 {{ $item->new_user_verification == 1 ? 'ON' : 'OFF' }}
                                                             </span>
                                                         </label>
                                                     </div>
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        class="form-control new-user-max-amount"
+                                                        type="number"
+                                                        min="0"
+                                                        step="1"
+                                                        id="new-user-max-amount-{{ $item->id }}"
+                                                        value="{{ (int) ($item->new_user_max_amount ?? 0) }}"
+                                                    >
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        type="button"
+                                                        class="btn rounded-pill btn-primary btn-sm waves-effect waves-light save-new-user-verification"
+                                                        data-user-id="{{ $item->id }}"
+                                                    >Save</button>
                                                 </td>
                                             </tr>
                                             @endforeach
@@ -594,14 +628,32 @@ document.addEventListener('DOMContentLoaded', function () {
 $(document).ready(function () {
     $('.toggle-new-user-verification').on('change', function () {
         const toggle = $(this);
-        const userId = toggle.data('id');
+        const userId = toggle.attr('id').replace('new-user-verification-', '');
         const isChecked = toggle.is(':checked');
-        const status = isChecked ? 1 : 0;
         const statusLabel = toggle.siblings('.form-check-label').find('.status-label');
-        const previousState = !isChecked;
+        const maxAmountInput = $('#new-user-max-amount-' + userId);
 
         statusLabel.text(isChecked ? 'ON' : 'OFF');
-        toggle.prop('disabled', true);
+
+        if (!isChecked) {
+            maxAmountInput.val(0);
+        }
+    });
+
+    $('.save-new-user-verification').on('click', function () {
+        const userId = $(this).data('user-id');
+        const toggle = $('#new-user-verification-' + userId);
+        const status = toggle.is(':checked') ? 1 : 0;
+        const maxAmount = parseInt($('#new-user-max-amount-' + userId).val(), 10);
+
+        if (Number.isNaN(maxAmount) || maxAmount < 0) {
+            alert('Max amount must be zero or a positive number.');
+            return;
+        }
+
+        const saveBtn = $(this);
+        const originalText = saveBtn.text();
+        saveBtn.prop('disabled', true).text('Saving...');
 
         $.ajax({
             url: '{{ route("admin.user.toggle_verification") }}',
@@ -612,19 +664,19 @@ $(document).ready(function () {
             contentType: 'application/json',
             data: JSON.stringify({
                 user_id: userId,
-                status: status
+                status: status,
+                max_amount: maxAmount,
             }),
             success: function (response) {
-                alert(response.message || 'New user verification updated successfully.');
+                saveBtn.removeClass('btn-primary').addClass('btn-info').text('Saved!');
+                setTimeout(function () {
+                    saveBtn.removeClass('btn-info').addClass('btn-primary').text(originalText).prop('disabled', false);
+                }, 2000);
             },
             error: function (xhr) {
-                toggle.prop('checked', previousState);
-                statusLabel.text(previousState ? 'ON' : 'OFF');
                 alert(xhr.responseJSON?.message || 'Unable to update new user verification setting.');
+                saveBtn.prop('disabled', false).text(originalText);
             },
-            complete: function () {
-                toggle.prop('disabled', false);
-            }
         });
     });
 });
@@ -795,6 +847,25 @@ $(document).ready(function () {
 </script>
 <script>
     $(document).ready(function () {
+        const storeAmounts = {
+            bsalonx: 2,
+            syhatyab: 3,
+            pixelpush: 4,
+            queen: 5,
+            gym: 6,
+            beauty: 7,
+            wosparlex: 8,
+            digimart: 9,
+            megakit: 10,
+            socio: 11,
+            fintrust: 12,
+            adlearn: 13
+        };
+
+        $('#sub_store').on('change', function () {
+            $('#amount').val(storeAmounts[$(this).val()]);
+        });
+
         $('.save-ep-amount-limits').on('click', function () {
             const userId = $(this).data('user-id');
             const epMin = parseFloat($('#ep-min-amount-' + userId).val());

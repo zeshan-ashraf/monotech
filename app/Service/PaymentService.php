@@ -32,8 +32,8 @@ class PaymentService
         $this->language = config('jazzcash.constants.LANGUAGE');
         $this->password = config('jazzcash.constants.PASSWORD');
         $this->currency_code = config('jazzcash.constants.CURRENCY_CODE');
-        //$this->return_url = config('jazzcash.constants.RETURN_URL');
-        $this->return_url = url('/api/jazzcash/callback');
+        $this->return_url = config('jazzcash.constants.RETURN_URL');
+        //$this->return_url = url('/api/jazzcash/callback');
         $this->transactionPostUrl = config('jazzcash.constants.TRANSACTION_POST_URL');
         $this->integritySalt = config('jazzcash.constants.INTEGERITY_SALT');
         $this->logger = Log::channel('payin');
@@ -65,9 +65,8 @@ class PaymentService
         ]);
 
 		$pp_Amount = $request->amount*100;
-		$DateTime = new \DateTime();
-		$pp_TxnDateTime = $DateTime->format('YmdHis');
-		$pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
+		$pp_TxnRefNo = generateTxnRefNo();
+		$pp_TxnDateTime = substr($pp_TxnRefNo, 1, 14);
 
         $user = User::where('email', $request->client_email)->first();
         $subStore="";
@@ -162,9 +161,7 @@ class PaymentService
         ]);
 
 		$pp_Amount = (int)$request->amount;
-		$DateTime = new \DateTime();
-		$pp_TxnDateTime = $DateTime->format('YmdHis');
-        $pp_TxnRefNo = 'T'.$pp_TxnDateTime . substr(uniqid(), -5);
+        $pp_TxnRefNo = generateTxnRefNo();
         $date = Carbon::now();
         $expiryDate = $date->addHours(10)->format('Ymd His');
 

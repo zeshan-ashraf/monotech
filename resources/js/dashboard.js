@@ -153,20 +153,35 @@
         renderChart('ops-phpfpm-slow', sparklineOptions(data.slow, colors.danger));
     }
 
-    function paymentSparklines(data) {
+    function paymentSparklines(data, gatewayKey) {
         var colors = themeColors();
         var colorMap = {
             success: colors.success,
             pending: colors.warning,
             failed: colors.danger,
-            refunds: colors.info,
+            rejected: colors.info,
         };
 
         Object.keys(colorMap).forEach(function (key) {
-            if (!data[key]) {
+            if (!data || !data[key]) {
                 return;
             }
-            renderChart('ops-payment-' + key, sparklineOptions(data[key], colorMap[key]));
+
+            var chartId = gatewayKey
+                ? 'ops-payment-' + gatewayKey + '-' + key
+                : 'ops-payment-' + key;
+
+            renderChart(chartId, sparklineOptions(data[key], colorMap[key]));
+        });
+    }
+
+    function initPaymentSparklines(paymentsData) {
+        if (!paymentsData) {
+            return;
+        }
+
+        Object.keys(paymentsData).forEach(function (gatewayKey) {
+            paymentSparklines(paymentsData[gatewayKey], gatewayKey);
         });
     }
 
@@ -262,8 +277,134 @@
     }
 
   /**
-   * Refresh interval dropdown UI (no live polling in Phase 1).
+   * Refresh interval dropdown UI and live payment metrics polling.
    */
+    function parseIntervalMs(intervalLabel) {
+        if (!intervalLabel || typeof intervalLabel !== 'string') {
+            return 10000;
+        }
+
+        var value = parseInt(intervalLabel, 10);
+        if (Number.isNaN(value)) {
+            return 10000;
+        }
+
+        if (intervalLabel.indexOf('m') !== -1) {
+            return value * 60000;
+        }
+
+        return value * 1000;
+    }
+
+    function getSelectedRefreshInterval() {
+        var active = document.querySelector('.ops-refresh-option.active');
+
+        return active ? active.getAttribute('data-interval') : '10s';
+    }
+
+    function updatePaymentStatValue(gatewayKey, metricKey, value) {
+        var chartId = 'ops-payment-' + gatewayKey + '-' + metricKey;
+        var chartEl = document.getElementById(chartId);
+
+        if (!chartEl) {
+            return;
+        }
+
+        var stat = chartEl.closest('.ops-payment-stat');
+
+        if (!stat) {
+            return;
+        }
+
+        var valueEl = stat.querySelector('.ops-payment-stat__value');
+
+        if (valueEl) {
+            valueEl.textContent = Number(value || 0).toLocaleString();
+        }
+    }
+
+    function updateGatewayResponseStats(gatewayKey, stats) {
+        if (!stats) {
+            return;
+        }
+
+        var avgEl = document.querySelector('.ops-gateway-avg[data-gateway="' + gatewayKey + '"]');
+        var maxEl = document.querySelector('.ops-gateway-max[data-gateway="' + gatewayKey + '"]');
+
+        if (avgEl) {
+            avgEl.textContent = stats.avg || '0.00 sec';
+        }
+
+        if (maxEl) {
+            maxEl.textContent = stats.max || '0.00 sec';
+        }
+    }
+
+    function refreshPaymentMetrics() {
+        var url = window.opsDashboardPaymentMetricsUrl;
+
+        if (!url) {
+            return;
+        }
+
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Payment metrics request failed');
+                }
+
+                return response.json();
+            })
+            .then(function (payload) {
+                if (!payload || !payload.gateways) {
+                    return;
+                }
+
+                payload.gateways.forEach(function (gateway) {
+                    if (!gateway.cards) {
+                        return;
+                    }
+
+                    gateway.cards.forEach(function (card) {
+                        updatePaymentStatValue(gateway.key, card.key, card.value);
+                    });
+
+                    if (gateway.sparklines) {
+                        paymentSparklines(gateway.sparklines, gateway.key);
+                    }
+
+                    updateGatewayResponseStats(gateway.key, gateway.payment_stats);
+                });
+            })
+            .catch(function (error) {
+                console.warn('OPS dashboard payment metrics refresh failed:', error);
+            });
+    }
+
+    var paymentMetricsTimer = null;
+
+    function schedulePaymentMetricsRefresh() {
+        if (paymentMetricsTimer) {
+            clearInterval(paymentMetricsTimer);
+            paymentMetricsTimer = null;
+        }
+
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (autoRefresh && !autoRefresh.checked) {
+            return;
+        }
+
+        var intervalMs = parseIntervalMs(getSelectedRefreshInterval());
+        paymentMetricsTimer = setInterval(refreshPaymentMetrics, intervalMs);
+    }
+
     function bindNavbarControls() {
         document.querySelectorAll('.ops-refresh-option').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -275,15 +416,680 @@
                 if (label) {
                     label.textContent = btn.getAttribute('data-interval');
                 }
+                schedulePaymentMetricsRefresh();
+                updateTrafficLiveIndicator();
+            });
+        });
+
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (autoRefresh) {
+            autoRefresh.addEventListener('change', function () {
+                schedulePaymentMetricsRefresh();
+                scheduleTrafficMetricsRefresh();
+                scheduleRuntimeMetricsRefresh();
+                updateTrafficLiveIndicator();
+            });
+        }
+    }
+
+  /**
+   * API Traffic panel — live Redis metrics.
+   */
+    var trafficMetricsTimer = null;
+    var trafficWindowMinutes = 5;
+    var TRAFFIC_REFRESH_MS = 5000;
+
+    function getTrafficMetricsUrl() {
+        var baseUrl = window.opsDashboardTrafficMetricsUrl;
+
+        if (!baseUrl) {
+            return null;
+        }
+
+        var separator = baseUrl.indexOf('?') === -1 ? '?' : '&';
+
+        return baseUrl + separator + 'minutes=' + encodeURIComponent(trafficWindowMinutes);
+    }
+
+    function updateTrafficLiveIndicator() {
+        var liveEl = document.getElementById('ops-traffic-live');
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (!liveEl) {
+            return;
+        }
+
+        if (autoRefresh && !autoRefresh.checked) {
+            liveEl.classList.add('is-paused');
+        } else {
+            liveEl.classList.remove('is-paused');
+        }
+    }
+
+    function updateTrafficStatValue(metricKey, value) {
+        var stat = document.querySelector('.ops-traffic-stat[data-metric="' + metricKey + '"]');
+
+        if (!stat) {
+            return;
+        }
+
+        var valueEl = stat.querySelector('[data-field="value"]');
+
+        if (!valueEl) {
+            return;
+        }
+
+        if (metricKey === 'incoming' || metricKey === 'rejected') {
+            valueEl.textContent = Number(value || 0).toLocaleString();
+        } else {
+            valueEl.textContent = value;
+        }
+    }
+
+    function updateTrafficApiRows(rows) {
+        var listEl = document.getElementById('ops-traffic-api-list');
+
+        if (!listEl || !rows || !rows.length) {
+            return;
+        }
+
+        var maxIncoming = 1;
+
+        rows.forEach(function (row) {
+            maxIncoming = Math.max(maxIncoming, Number(row.incoming || 0));
+        });
+
+        rows.forEach(function (row) {
+            var rowEl = listEl.querySelector('.ops-traffic-api-row[data-api="' + row.key + '"]');
+
+            if (!rowEl) {
+                return;
+            }
+
+            var incomingEl = rowEl.querySelector('[data-field="incoming"]');
+            var barEl = rowEl.querySelector('[data-field="bar"]');
+            var incoming = Number(row.incoming || 0);
+            var percent = Math.round((incoming / maxIncoming) * 1000) / 10;
+
+            if (incomingEl) {
+                incomingEl.textContent = incoming.toLocaleString();
+            }
+
+            if (barEl) {
+                barEl.style.width = percent + '%';
+            }
+        });
+    }
+
+    function updateTrafficErrorBadges(errors) {
+        if (!errors || !errors.length) {
+            return;
+        }
+
+        errors.forEach(function (error) {
+            var badge = document.querySelector('.ops-traffic-error[data-error="' + error.key + '"]');
+
+            if (!badge) {
+                return;
+            }
+
+            var valueEl = badge.querySelector('[data-field="value"]');
+
+            if (valueEl) {
+                valueEl.textContent = Number(error.value || 0).toLocaleString();
+            }
+        });
+    }
+
+    function trafficIncomingChartOptions(labels, series) {
+        var colors = themeColors();
+
+        return {
+            series: [{ name: 'Incoming', data: series || [] }],
+            chart: {
+                type: 'area',
+                height: 220,
+                toolbar: { show: false },
+                zoom: { enabled: false },
+                fontFamily: 'Montserrat, sans-serif',
+            },
+            colors: [colors.primary],
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 2 },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 0.4,
+                    opacityFrom: 0.5,
+                    opacityTo: 0.05,
+                },
+            },
+            grid: {
+                borderColor: colors.grid,
+                strokeDashArray: 4,
+                padding: { left: 8, right: 8 },
+            },
+            xaxis: {
+                categories: labels || [],
+                labels: {
+                    style: { colors: colors.text, fontSize: '10px' },
+                },
+                axisBorder: { show: false },
+                axisTicks: { show: false },
+            },
+            yaxis: {
+                min: 0,
+                labels: {
+                    style: { colors: colors.text, fontSize: '11px' },
+                },
+            },
+            tooltip: {
+                theme: isDarkLayout() ? 'dark' : 'light',
+            },
+        };
+    }
+
+    function renderTrafficCharts(payload) {
+        if (!payload) {
+            return;
+        }
+
+        if (payload.chart) {
+            renderChart(
+                'ops-traffic-incoming-chart',
+                trafficIncomingChartOptions(payload.chart.labels, payload.chart.series)
+            );
+        }
+
+        var incomingCard = (payload.cards || []).find(function (card) {
+            return card.key === 'incoming';
+        });
+
+        if (incomingCard && payload.chart && payload.chart.series) {
+            renderChart(
+                'ops-traffic-spark-incoming',
+                sparklineOptions(payload.chart.series, themeColors().primary)
+            );
+        }
+
+        var windowEl = document.getElementById('ops-traffic-chart-window');
+
+        if (windowEl && payload.window_minutes) {
+            windowEl.textContent = payload.window_minutes;
+        }
+    }
+
+    function applyTrafficPayload(payload) {
+        if (!payload) {
+            return;
+        }
+
+        (payload.cards || []).forEach(function (card) {
+            updateTrafficStatValue(card.key, card.value);
+        });
+
+        updateTrafficApiRows(payload.api_rows || []);
+        updateTrafficErrorBadges(payload.errors || []);
+        renderTrafficCharts(payload);
+    }
+
+    function refreshTrafficMetrics() {
+        var url = getTrafficMetricsUrl();
+
+        if (!url || !document.getElementById('ops-traffic-panel')) {
+            return;
+        }
+
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Traffic metrics request failed');
+                }
+
+                return response.json();
+            })
+            .then(function (payload) {
+                applyTrafficPayload(payload);
+            })
+            .catch(function (error) {
+                console.warn('OPS dashboard traffic metrics refresh failed:', error);
+            });
+    }
+
+    function scheduleTrafficMetricsRefresh() {
+        if (trafficMetricsTimer) {
+            clearInterval(trafficMetricsTimer);
+            trafficMetricsTimer = null;
+        }
+
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (autoRefresh && !autoRefresh.checked) {
+            updateTrafficLiveIndicator();
+
+            return;
+        }
+
+        trafficMetricsTimer = setInterval(refreshTrafficMetrics, TRAFFIC_REFRESH_MS);
+        updateTrafficLiveIndicator();
+    }
+
+    function bindTrafficWindowControls() {
+        document.querySelectorAll('.ops-traffic-window').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var minutes = parseInt(btn.getAttribute('data-minutes'), 10);
+
+                if (Number.isNaN(minutes)) {
+                    return;
+                }
+
+                trafficWindowMinutes = minutes;
+
+                document.querySelectorAll('.ops-traffic-window').forEach(function (b) {
+                    b.classList.remove('active');
+                });
+                btn.classList.add('active');
+
+                refreshTrafficMetrics();
             });
         });
     }
 
-    function init() {
-        var data = window.opsDashboardData;
-        if (!data) {
+    function initTrafficPanel() {
+        if (!document.getElementById('ops-traffic-panel')) {
             return;
         }
+
+        var initial = window.opsDashboardTraffic;
+
+        if (initial && initial.window_minutes) {
+            trafficWindowMinutes = initial.window_minutes;
+        }
+
+        applyTrafficPayload(initial);
+        bindTrafficWindowControls();
+        scheduleTrafficMetricsRefresh();
+    }
+
+  /**
+   * Application Runtime panel — live metrics polling.
+   */
+    var runtimeMetricsTimer = null;
+    var RUNTIME_REFRESH_MS = 5000;
+
+    function updateRuntimeLiveIndicator() {
+        var liveEl = document.getElementById('ops-runtime-live');
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (!liveEl) {
+            return;
+        }
+
+        if (autoRefresh && !autoRefresh.checked) {
+            liveEl.classList.add('is-paused');
+        } else {
+            liveEl.classList.remove('is-paused');
+        }
+    }
+
+    function updateRuntimeSummaryCards(summary) {
+        if (!summary || !summary.length) {
+            return;
+        }
+
+        summary.forEach(function (card) {
+            var el = document.querySelector('[data-runtime-summary="' + card.key + '"]');
+
+            if (!el) {
+                return;
+            }
+
+            var valueEl = el.querySelector('[data-field="value"]');
+            var subtitleEl = el.querySelector('[data-field="subtitle"]');
+            var statusEl = el.querySelector('[data-field="status"]');
+
+            if (valueEl) {
+                valueEl.textContent = card.value;
+            }
+
+            if (subtitleEl) {
+                subtitleEl.textContent = card.subtitle;
+            }
+
+            if (statusEl) {
+                statusEl.textContent = card.status_label;
+                statusEl.className = 'ops-health-badge ops-health-badge--' + card.status_color;
+            }
+
+            el.className = 'ops-card ops-metric-card ops-metric-card--' + card.color;
+        });
+    }
+
+    function updateRuntimeSection(sectionKey, data, fields) {
+        var section = document.querySelector('[data-runtime-section="' + sectionKey + '"]');
+
+        if (!section || !data) {
+            return;
+        }
+
+        fields.forEach(function (field) {
+            var el = section.querySelector('[data-field="' + field + '"]');
+
+            if (el) {
+                el.textContent = data[field] !== undefined && data[field] !== null ? data[field] : '—';
+            }
+        });
+
+        if (sectionKey === 'php_fpm') {
+            var bar = section.querySelector('[data-field="utilization_bar"]');
+            var utilization = Number(data.worker_utilization || 0);
+
+            if (bar) {
+                bar.style.width = Math.min(100, utilization) + '%';
+                bar.className = 'progress-bar bg-' + (data.status_color || 'primary');
+            }
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function csrfToken() {
+        return window.opsDashboardCsrfToken
+            || (document.querySelector('meta[name="csrf-token"]') || {}).content
+            || '';
+    }
+
+    function notifyOps(message, type) {
+        if (window.toastr && typeof window.toastr[type || 'success'] === 'function') {
+            window.toastr[type || 'success'](message);
+            return;
+        }
+
+        if (type === 'error') {
+            console.warn(message);
+        }
+    }
+
+    function setStuckClearAllState(total) {
+        var button = document.getElementById('ops-stuck-clear-all');
+
+        if (button) {
+            button.disabled = !total;
+        }
+    }
+
+    function stuckClearButtonHtml(process) {
+        if (!process || !process.clearable || !process.type || !process.id) {
+            return '—';
+        }
+
+        return '<button type="button" class="btn btn-sm btn-outline-secondary ops-stuck-clear"'
+            + ' data-stuck-type="' + escapeHtml(process.type) + '"'
+            + ' data-stuck-id="' + encodeURIComponent(process.id) + '"'
+            + ' title="Remove this ghost alert from the dashboard">Clear</button>';
+    }
+
+    function updateRuntimeStuckTable(stuck) {
+        var tbody = document.getElementById('ops-runtime-stuck-table');
+        var totalEl = document.querySelector('[data-field="stuck_total"]');
+        var total = stuck && stuck.total !== undefined ? stuck.total : 0;
+
+        if (totalEl) {
+            totalEl.textContent = total;
+        }
+
+        setStuckClearAllState(total);
+
+        if (!tbody) {
+            return;
+        }
+
+        var processes = (stuck && stuck.processes) ? stuck.processes : [];
+
+        if (!processes.length) {
+            tbody.innerHTML = '<tr data-empty-row="1"><td colspan="8" class="text-center text-muted py-4">No stuck processes detected</td></tr>';
+
+            return;
+        }
+
+        tbody.innerHTML = processes.map(function (process) {
+            return '<tr>'
+                + '<td>' + escapeHtml(process.type_label || '') + '</td>'
+                + '<td>' + escapeHtml(process.name || '') + '</td>'
+                + '<td>' + escapeHtml(process.pid || '—') + '</td>'
+                + '<td>' + escapeHtml(process.started || '') + '</td>'
+                + '<td>' + escapeHtml(process.running_for || '') + '</td>'
+                + '<td><span class="ops-health-badge ops-health-badge--' + escapeHtml(process.status_color || 'secondary') + '"><span class="ops-health-badge__dot"></span>' + escapeHtml(process.status_label || '') + '</span></td>'
+                + '<td>' + escapeHtml(process.recommendation || '') + '</td>'
+                + '<td class="text-end">' + stuckClearButtonHtml(process) + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    function updateRuntimeRecommendations(recommendations) {
+        var container = document.getElementById('ops-runtime-recommendations');
+
+        if (!container || !recommendations || !recommendations.length) {
+            return;
+        }
+
+        container.innerHTML = recommendations.map(function (item) {
+            var severityLabel = item.severity ? item.severity.charAt(0).toUpperCase() + item.severity.slice(1) : 'Info';
+
+            return '<div class="col-xl-4 col-md-6">'
+                + '<div class="ops-card h-100 p-3 border">'
+                + '<div class="d-flex align-items-center gap-2 mb-2">'
+                + '<span class="ops-health-badge ops-health-badge--' + (item.severity_color || 'secondary') + '"><span class="ops-health-badge__dot"></span>' + severityLabel + '</span>'
+                + '<strong>' + (item.title || '') + '</strong>'
+                + '</div>'
+                + '<p class="text-muted small mb-2">' + (item.description || '') + '</p>'
+                + '<p class="mb-0 small"><strong>Action:</strong> ' + (item.action || '') + '</p>'
+                + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
+    function applyRuntimePayload(payload) {
+        if (!payload) {
+            return;
+        }
+
+        updateRuntimeSummaryCards(payload.summary || []);
+        updateRuntimeSection('php_fpm', payload.php_fpm, [
+            'total_workers',
+            'busy_workers',
+            'idle_workers',
+            'listen_queue',
+            'max_children_reached',
+            'slow_requests',
+            'avg_response_ms',
+            'requests_per_second',
+            'worker_utilization',
+        ]);
+        updateRuntimeSection('scheduler', payload.scheduler, [
+            'status_label',
+            'last_tick',
+            'next_tick',
+            'scheduled_commands',
+            'running_commands',
+            'failed_today',
+            'avg_runtime',
+            'longest_runtime',
+        ]);
+        updateRuntimeSection('queue', payload.queue, [
+            'pending_jobs',
+            'processing_jobs',
+            'failed_jobs',
+            'retrying_jobs',
+            'avg_runtime',
+            'longest_running_for',
+            'worker_count',
+            'status_label',
+        ]);
+        updateRuntimeStuckTable(payload.stuck_processes || {});
+        updateRuntimeRecommendations(payload.recommendations || []);
+    }
+
+    function clearStuckAlerts(payload) {
+        var url = window.opsDashboardClearStuckUrl;
+
+        if (!url) {
+            return Promise.reject(new Error('Clear stuck URL is not configured'));
+        }
+
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken(),
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+        }).then(function (response) {
+            return response.json().then(function (body) {
+                if (!response.ok) {
+                    throw new Error((body && body.message) || 'Failed to clear stuck alerts');
+                }
+
+                return body;
+            });
+        });
+    }
+
+    function stuckIdFromButton(button) {
+        var raw = button.getAttribute('data-stuck-id') || '';
+
+        try {
+            return decodeURIComponent(raw);
+        } catch (error) {
+            return raw;
+        }
+    }
+
+    function bindStuckClearButtons() {
+        var panel = document.getElementById('ops-runtime-panel');
+
+        if (!panel || panel.dataset.stuckClearBound === '1') {
+            return;
+        }
+
+        panel.dataset.stuckClearBound = '1';
+
+        panel.addEventListener('click', function (event) {
+            var clearOne = event.target.closest('.ops-stuck-clear');
+            var clearAll = event.target.closest('#ops-stuck-clear-all');
+
+            if (clearOne) {
+                event.preventDefault();
+                clearOne.disabled = true;
+                clearStuckAlerts({
+                    scope: 'one',
+                    type: clearOne.getAttribute('data-stuck-type'),
+                    id: stuckIdFromButton(clearOne),
+                }).then(function (body) {
+                    notifyOps((body && body.message) || 'Stuck alert cleared.');
+                    refreshRuntimeMetrics();
+                }).catch(function (error) {
+                    clearOne.disabled = false;
+                    notifyOps(error.message || 'Failed to clear stuck alert', 'error');
+                });
+
+                return;
+            }
+
+            if (clearAll) {
+                event.preventDefault();
+
+                if (!window.confirm('Clear all stuck queue, scheduler, and gateway alerts from this dashboard? This does not stop running jobs.')) {
+                    return;
+                }
+
+                clearAll.disabled = true;
+                clearStuckAlerts({ scope: 'all' }).then(function (body) {
+                    notifyOps((body && body.message) || 'Stuck alerts cleared.');
+                    refreshRuntimeMetrics();
+                }).catch(function (error) {
+                    clearAll.disabled = false;
+                    notifyOps(error.message || 'Failed to clear stuck alerts', 'error');
+                });
+            }
+        });
+    }
+
+    function refreshRuntimeMetrics() {
+        var url = window.opsDashboardRuntimeMetricsUrl;
+
+        if (!url || !document.getElementById('ops-runtime-panel')) {
+            return;
+        }
+
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Runtime metrics request failed');
+                }
+
+                return response.json();
+            })
+            .then(function (payload) {
+                applyRuntimePayload(payload);
+            })
+            .catch(function (error) {
+                console.warn('OPS dashboard runtime metrics refresh failed:', error);
+            });
+    }
+
+    function scheduleRuntimeMetricsRefresh() {
+        if (runtimeMetricsTimer) {
+            clearInterval(runtimeMetricsTimer);
+            runtimeMetricsTimer = null;
+        }
+
+        var autoRefresh = document.getElementById('ops-auto-refresh');
+
+        if (autoRefresh && !autoRefresh.checked) {
+            updateRuntimeLiveIndicator();
+
+            return;
+        }
+
+        runtimeMetricsTimer = setInterval(refreshRuntimeMetrics, RUNTIME_REFRESH_MS);
+        updateRuntimeLiveIndicator();
+    }
+
+    function initRuntimePanel() {
+        if (!document.getElementById('ops-runtime-panel')) {
+            return;
+        }
+
+        applyRuntimePayload(window.opsDashboardRuntime || null);
+        bindStuckClearButtons();
+        scheduleRuntimeMetricsRefresh();
+    }
+
+    function init() {
+        var data = window.opsDashboardData || {};
 
         if (data.overview) {
             overviewSparklines(data.overview);
@@ -295,7 +1101,7 @@
         }
 
         if (data.payments) {
-            paymentSparklines(data.payments);
+            initPaymentSparklines(data.payments);
         }
 
         if (data.history) {
@@ -303,13 +1109,31 @@
         }
 
         bindNavbarControls();
+        schedulePaymentMetricsRefresh();
+        initTrafficPanel();
+        initRuntimePanel();
     }
 
     document.addEventListener('DOMContentLoaded', init);
 
     window.OpsDashboard = {
         init: init,
+        refreshPaymentMetrics: refreshPaymentMetrics,
+        refreshTrafficMetrics: refreshTrafficMetrics,
+        refreshRuntimeMetrics: refreshRuntimeMetrics,
         destroy: function () {
+            if (paymentMetricsTimer) {
+                clearInterval(paymentMetricsTimer);
+                paymentMetricsTimer = null;
+            }
+            if (trafficMetricsTimer) {
+                clearInterval(trafficMetricsTimer);
+                trafficMetricsTimer = null;
+            }
+            if (runtimeMetricsTimer) {
+                clearInterval(runtimeMetricsTimer);
+                runtimeMetricsTimer = null;
+            }
             Object.keys(charts).forEach(destroyChart);
         },
     };

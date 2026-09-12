@@ -10,6 +10,12 @@ class Transaction extends Model
 {
     use HasFactory;
 
+    public const CRON_STATUS_AVAILABLE = 0;
+
+    public const CRON_STATUS_IN_PROGRESS = 1;
+
+    public const CRON_STATUS_DONE = 2;
+
     protected $fillable = [
         'phone',
         'orderId',
@@ -21,9 +27,20 @@ class Transaction extends Model
         'pp_code',
         'pp_message',
         'status',
+        'cron_status',
+        'cron_claim_token',
+        'cron_claimed_at',
         'src',
         'url',
+        'callback_sent',
+        'callback_response',
+        'callback_sent_at',
+        'callback_response_at',
         'reverse_requested_at',
+    ];
+
+    protected $casts = [
+        'cron_claimed_at' => 'datetime',
     ];
 
     /**

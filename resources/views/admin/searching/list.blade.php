@@ -3,20 +3,24 @@
 @push('css')
 <link rel="stylesheet" href="{{ asset('admin/assets/dashboard/css/dataTables.bootstrap4.min.css') }}" />
 <style>
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting_asc:before {
-        opacity: 0 !important;
+    #dataTable .searching-action-btns {
+        gap: 4px;
     }
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting_asc:after {
-        opacity: 0 !important;
+    #dataTable .searching-action-btns .btn-sm {
+        padding: 0.15rem 0.4rem;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        white-space: nowrap;
     }
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting_desc:before {
-        opacity: 0 !important;
-    }
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting_desc:after {
-        opacity: 0 !important;
-    }
-    .dark-layout .dataTables_wrapper .table.dataTable thead .sorting:before, .dark-layout .dataTables_wrapper .table.dataTable thead .sorting:after{
-        opacity: 0 !important;
+    #dataTable .status-dropdown-reverse {
+        min-height: 0;
+        height: auto;
+        padding: 0.15rem 0.4rem;
+        font-size: 0.75rem;
+        line-height: 1.2;
+        width: 100%;
+        max-width: 110px;
+        display: inline-block;
     }
 </style>
 @endpush
@@ -120,23 +124,53 @@
 @push('js')
     @include('admin.components.datatablesScript')
     <script>
-    $(document).on('change', '.status-dropdown-reverse', function() {
-            var status = $(this).val();
+        $(document).on('click', '.reverse-btn', function() {
+
             var id = $(this).data('id');
-    
-            $.ajax({
-                url: '{{ route("admin.transaction.change_status_reverse") }}', // Correct route
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}', // CSRF protection
-                    id: id,
-                    status: status
-                },
-                success: function(response) {
-                    location.reload(); // Reload page to reflect changes
-                },
-                error: function(xhr, status, error) {
-                    alert('Failed to update status: ' + xhr.responseJSON.message);
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you want to reverse this transaction?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Reverse',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    $.ajax({
+                        url: '{{ route("admin.transaction.change_status_reverse") }}',
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            id: id,
+                            status: 'reverse'
+                        },
+
+                        success: function(response) {
+
+                            Swal.fire({
+                                title: 'Success!',
+                                text: response.message || 'Transaction reversed successfully.',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        },
+
+                        error: function(xhr) {
+
+                            Swal.fire({
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message || 'Failed to reverse transaction.',
+                                icon: 'error'
+                            });
+                        }
+                    });
                 }
             });
         });

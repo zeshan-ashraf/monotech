@@ -12,6 +12,8 @@ use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
 use App\Models\{Transaction, Payout, User, BlockedNumber};
+use App\Helpers\GatewayMetricHelper;
+use App\Services\Dashboard\PayinCheckoutMetricsRecorder;
 use DateTime;
 use DateTimeZone;
 
@@ -29,8 +31,10 @@ class PaymentCheckoutController extends Controller
     public $manualCancellationJCAlt = 'A confirmer sends the short message \"N\" to cancel a transaction.';
     public $manualCancellationJCDoubleEscaped = 'A confirmer sends the short message \\"N\\" to cancel a transaction.';
 
-	public function __construct(PaymentServiceV1 $service)
-	{
+	public function __construct(
+        PaymentServiceV1 $service,
+        private readonly PayinCheckoutMetricsRecorder $checkoutMetrics
+    ) {
 		$this->service = $service;
 	}
 	//Log::channel('payin')->info('Payout started for user', ['email' => $email]);
@@ -52,6 +56,13 @@ class PaymentCheckoutController extends Controller
         
         // Validate if API access is enabled for the payment method
         if (!$this->validateApiAccess($request, $user, $requestId)) {
+            $this->checkoutMetrics->recordApplicationCheckoutFailure(
+                $request,
+                (string) $request->payment_method,
+                $startTime,
+                GatewayMetricHelper::APPLICATION_ERROR_MERCHANT_DISABLED
+            );
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Api suspended by administrator.',
@@ -65,7 +76,7 @@ class PaymentCheckoutController extends Controller
             // Process payment based on payment method
             return $this->processPayment($request, $user, $startTime, $requestId);
         } catch (\Exception $e) {
-            return $this->handleProcessingError($e, $requestId, $request);
+            return $this->handleProcessingError($e, $requestId, $request, $startTime);
         }
     }
 
@@ -183,7 +194,7 @@ class PaymentCheckoutController extends Controller
                 // Process successful response
                 if ($responseCode == '0000') {
                     return $this->handleSuccessfulPayment($response, $response['orderId'], 'easypaisa', 
-                                                        $user, $transaction, $startTime, $requestId);
+                                                        $user, $transaction, $startTime, $requestId, $request);
                 }
                 
                 // Log failed number if account doesn't exist
@@ -211,6 +222,13 @@ class PaymentCheckoutController extends Controller
 
                 // Update transaction status
                 $this->service->orderFinalProcess($response, $response['orderId'], 'easypaisa', $user, $transaction);
+                $this->checkoutMetrics->recordGatewayCheckoutFailure(
+                    $request,
+                    'easypaisa',
+                    $startTime,
+                    $responseCode,
+                    $responseDesc
+                );
                 
                 return $this->getErrorResponse();
             }
@@ -222,6 +240,13 @@ class PaymentCheckoutController extends Controller
                 'api_request' => json_encode($post_data)
             ]);
             
+            $this->checkoutMetrics->recordInfrastructureCheckoutFailure(
+                $request,
+                'easypaisa',
+                $startTime,
+                GatewayMetricHelper::INFRASTRUCTURE_ERROR_HTTP_500
+            );
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Invalid response from Easypaisa.',
@@ -237,6 +262,15 @@ class PaymentCheckoutController extends Controller
                 'timestamp' => now()
             ]);
             
+            $classification = GatewayMetricHelper::classifyConnectionExceptionMessage($e->getMessage());
+            $this->checkoutMetrics->recordClassifiedCheckoutFailure(
+                $request,
+                'easypaisa',
+                $startTime,
+                $classification['category'],
+                $classification['error_type']
+            );
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while processing the payment.',
@@ -293,6 +327,13 @@ class PaymentCheckoutController extends Controller
                 'timestamp' => now()
             ]);
             
+            $this->checkoutMetrics->recordInfrastructureCheckoutFailure(
+                $request,
+                (string) $request->payment_method,
+                $startTime,
+                GatewayMetricHelper::INFRASTRUCTURE_ERROR_CONNECTION
+            );
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Connection error while processing payment.',
@@ -313,6 +354,13 @@ class PaymentCheckoutController extends Controller
                 'timestamp' => now()
             ]);
             
+            $this->checkoutMetrics->recordInfrastructureCheckoutFailure(
+                $request,
+                'jazzcash',
+                $startTime,
+                GatewayMetricHelper::INFRASTRUCTURE_ERROR_HTTP_500
+            );
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Invalid response from JazzCash.',
@@ -329,7 +377,7 @@ class PaymentCheckoutController extends Controller
 
         if (isset($result->pp_ResponseCode) && $result->pp_ResponseCode == '000') {
             return $this->handleSuccessfulPayment($result, $result->pp_TxnRefNo, 'jazzcash', 
-                                                $user, $transaction, $startTime, $requestId);
+                                                $user, $transaction, $startTime, $requestId, $request);
         }
         
         // Log failed number if account doesn't exist
@@ -382,6 +430,13 @@ class PaymentCheckoutController extends Controller
 
         // Update transaction status
         $this->service->orderFinalProcess($result, $result->pp_TxnRefNo, 'jazzcash', $user, $transaction);
+        $this->checkoutMetrics->recordGatewayCheckoutFailure(
+            $request,
+            'jazzcash',
+            $startTime,
+            (string) ($result->pp_ResponseCode ?? ''),
+            (string) ($result->pp_ResponseMessage ?? '')
+        );
         
         return $this->getErrorResponse();
     }
@@ -401,7 +456,7 @@ class PaymentCheckoutController extends Controller
      */
     private function handleSuccessfulPayment($response, $txnRefNo, $paymentMethod, 
                                             User $user, ?Transaction $transaction, 
-                                            float $startTime, string $requestId): JsonResponse
+                                            float $startTime, string $requestId, Request $request): JsonResponse
     {
         $updatedTransaction = $this->service->orderFinalProcess($response, $txnRefNo, $paymentMethod, $user, $transaction);
         
@@ -415,6 +470,12 @@ class PaymentCheckoutController extends Controller
                 'original_request' => request()->all()
             ]);
 
+            $this->checkoutMetrics->recordGatewayCheckoutSuccess(
+                $request,
+                $paymentMethod,
+                $startTime
+            );
+
             return response()->json([
                 'status' => $updatedTransaction->status,
                 'transaction_id' => $updatedTransaction->txn_ref_no,
@@ -422,6 +483,14 @@ class PaymentCheckoutController extends Controller
             ], 200);
         }
         
+        $this->checkoutMetrics->recordGatewayCheckoutFailure(
+            $request,
+            $paymentMethod,
+            $startTime,
+            null,
+            null
+        );
+
         return $this->getErrorResponse();
     }
 
@@ -439,7 +508,7 @@ class PaymentCheckoutController extends Controller
     /**
      * Handle general processing errors
      */
-    private function handleProcessingError(\Exception $e, string $requestId, Request $request): JsonResponse
+    private function handleProcessingError(\Exception $e, string $requestId, Request $request, float $startTime): JsonResponse
     {
         // Handle duplicate orderId specifically
         if ($e->getMessage() === 'Order ID already exists. Please use a different order ID.') {
@@ -451,6 +520,13 @@ class PaymentCheckoutController extends Controller
                 'payment_method' => $request->payment_method,
                 'request_params' => $request->all()
             ]);
+
+            $this->checkoutMetrics->recordApplicationCheckoutFailure(
+                $request,
+                (string) $request->payment_method,
+                $startTime,
+                GatewayMetricHelper::APPLICATION_ERROR_DUPLICATE_ORDER
+            );
             
             return response()->json([
                 'status' => 'error',
@@ -468,6 +544,15 @@ class PaymentCheckoutController extends Controller
             'request_params' => $request->all()
         ]);
         
+        $classification = GatewayMetricHelper::classifyConnectionExceptionMessage($e->getMessage());
+        $this->checkoutMetrics->recordClassifiedCheckoutFailure(
+            $request,
+            (string) $request->payment_method,
+            $startTime,
+            $classification['category'],
+            $classification['error_type']
+        );
+
         return response()->json([
             'status' => 'error',
             'message' => 'An error occurred during the transaction. Please try again.',
