@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Helpers\GatewayMetricHelper;
 use App\Services\Dashboard\PayinCheckoutMetricsRecorder;
 use App\Support\PayinRestrictionExclusion;
+use App\Support\RejectedRequestLogger;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -36,7 +37,7 @@ class ThrottlePayinCheckoutGlobalMiddleware
 
             $this->recordRateLimitRejection($request);
 
-            return response()->json([
+            $response = response()->json([
                 'status' => 'error',
                 'message' => 'Too many payin requests. Please try again later.',
             ], 429)->withHeaders([
@@ -44,6 +45,13 @@ class ThrottlePayinCheckoutGlobalMiddleware
                 'X-RateLimit-Limit' => $maxAttempts,
                 'X-RateLimit-Remaining' => 0,
             ]);
+
+            RejectedRequestLogger::log($request, 429, 'payin_global_throttle', $response->getContent(), [
+                'retry_after' => $retryAfter,
+                'rate_limit' => $maxAttempts,
+            ]);
+
+            return $response;
         }
 
         RateLimiter::hit(self::LIMITER_KEY, $decaySeconds);

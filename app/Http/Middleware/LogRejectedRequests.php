@@ -5,9 +5,9 @@ namespace App\Http\Middleware;
 use App\Helpers\GatewayMetricHelper;
 use App\Services\Dashboard\ApiTrafficMetricsRecorder;
 use App\Services\Dashboard\GatewayMetricService;
+use App\Support\RejectedRequestLogger;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class LogRejectedRequests
@@ -29,22 +29,9 @@ class LogRejectedRequests
             $this->recordRejectedGatewayMetrics($request, $response);
             $this->apiTrafficMetrics->recordMiddlewareRejection($request, $response);
 
-            Log::channel('rejected_requests')->warning('Request rejected', [
-                'ip' => $request->ip(),
-                'method' => $request->method(),
-                'path' => $request->path(),
-                'full_url' => $request->fullUrl(),
-                'payment_method' => $request->input('payment_method'),
-                'status_code' => $response->getStatusCode(),
-                'user_agent' => $request->header('User-Agent'),
-                'content_type' => $request->header('Content-Type'),
-                'request_body' => $request->getContent(),
-                'request_parameters' => $request->all(),
-                'request_headers' => $request->headers->all(),
-                'response_body' => $response->getContent(),
-                'timestamp' => now()->toDateTimeString(),
-                'request_id' => uniqid('rejected_'),
-            ]);
+            if (! $request->attributes->get(RejectedRequestLogger::REQUEST_ATTR_LOGGED)) {
+                RejectedRequestLogger::logResponse($request, $response, 'http_error');
+            }
         }
 
         return $response;

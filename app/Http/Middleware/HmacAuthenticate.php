@@ -3,9 +3,9 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Support\RejectedRequestLogger;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class HmacAuthenticate
@@ -25,13 +25,26 @@ class HmacAuthenticate
         
         // Check if required headers exist
         if (!$apiKey || !$signature || !$timestamp || !$nonce) {
-            return response()->json(['error' => 'Missing authentication headers'], 401);
+            $response = response()->json(['error' => 'Missing authentication headers'], 401);
+            RejectedRequestLogger::log($request, 401, 'hmac_missing_headers', $response->getContent(), [
+                'missing_headers' => array_values(array_filter([
+                    $apiKey ? null : 'X-API-Key-ID',
+                    $signature ? null : 'X-HMAC-Signature',
+                    $request->header('X-Timestamp') ? null : 'X-Timestamp',
+                    $request->header('X-Nonce') ? null : 'X-Nonce',
+                ])),
+            ]);
+
+            return $response;
         }
         
         // 2. Find user by API key
         $user = User::where('api_key', $apiKey)->first();
         if (!$user) {
-            return response()->json(['error' => 'Invalid API key'], 401);
+            $response = response()->json(['error' => 'Invalid API key'], 401);
+            RejectedRequestLogger::logResponse($request, $response, 'hmac_invalid_api_key');
+
+            return $response;
         }
         
 
@@ -78,16 +91,12 @@ class HmacAuthenticate
         
         // 6. Verify signature
         if (!hash_equals($expectedSignature, $signature)) {
-            Log::warning('HMAC authentication failed', [
+            $response = response()->json(['error' => 'Invalid signature'], 401);
+            RejectedRequestLogger::log($request, 401, 'hmac_invalid_signature', $response->getContent(), [
                 'user_id' => $user->id,
-                'request_path' => $requestPath,
-                'expectedSignature' => $expectedSignature,
-                'signature' => $signature,
-                '$requestBody' => $requestBody,
-
-
             ]);
-            return response()->json(['error' => 'Invalid signature'], 401);
+
+            return $response;
         }
         
         // Add user to request for use in controller
