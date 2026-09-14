@@ -101,6 +101,9 @@ class SettlementDashboardService
         $clients = User::query()
             ->where('user_role', 'Client')
             ->where('active', 1)
+            ->orderByRaw('db_metrics_order IS NULL')
+            ->orderBy('db_metrics_order')
+            ->orderBy('name')
             ->get();
 
         $clientIds = $clients->pluck('id')->all();
@@ -208,10 +211,7 @@ class SettlementDashboardService
             $totals['total_ibft_amount'] += $item['ibft_amount'] ?? 0;
         }
 
-        $viewRows = collect($data)
-            ->sortBy(fn ($item) => $item['user']->id == 24 ? 1 : 0)
-            ->values()
-            ->all();
+        $viewRows = $data;
 
         $pollRows = collect($viewRows)
             ->filter(function ($item) use ($viewer) {
