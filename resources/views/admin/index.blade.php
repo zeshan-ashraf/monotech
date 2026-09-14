@@ -228,7 +228,7 @@
                 z-index: 4;
                 min-width: 180px;
                 white-space: nowrap;
-                background-color: #808080bf !important;
+                background-color: #a0a0a0 !important;
                 background-clip: padding-box;
                 font-weight: 700 !important;
                 color: #000 !important;
