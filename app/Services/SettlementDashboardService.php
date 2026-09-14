@@ -101,6 +101,7 @@ class SettlementDashboardService
         $clients = User::query()
             ->where('user_role', 'Client')
             ->where('active', 1)
+            ->where('enable_db_metrics', true)
             ->orderByRaw('db_metrics_order IS NULL')
             ->orderBy('db_metrics_order')
             ->orderBy('name')
