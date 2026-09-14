@@ -228,19 +228,13 @@
                 z-index: 4;
                 min-width: 180px;
                 white-space: nowrap;
-                background-color: #fff;
+                background-color: #808080bf !important;
                 background-clip: padding-box;
+                font-weight: 700 !important;
+                color: #000 !important;
             }
             .settlement-poll-table-wrap .table:not(.table-dark):not(.table-light) thead:not(.table-dark) th.sticky-col-left {
                 z-index: 6;
-                background-color: #8d8d8d !important;
-                color: #000 !important;
-            }
-            .settlement-poll-table-wrap tbody tr:nth-child(even) .sticky-col-left {
-                background-color: #f8f9fa;
-            }
-            .settlement-poll-table-wrap tbody tr:hover .sticky-col-left {
-                background-color: #e9ecef;
             }
             .settlement-poll-table-wrap.is-scrolled-x .sticky-col-left {
                 box-shadow: 8px 0 10px -6px rgba(0, 0, 0, 0.28);
