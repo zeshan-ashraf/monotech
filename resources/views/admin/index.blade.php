@@ -218,6 +218,33 @@
                 overflow-x: auto;
                 overflow-y: visible;
             }
+            .settlement-poll-table-wrap > table.settlement-grid {
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+            .settlement-poll-table-wrap .sticky-col-left {
+                position: sticky;
+                left: 0;
+                z-index: 4;
+                min-width: 180px;
+                white-space: nowrap;
+                background-color: #fff;
+                background-clip: padding-box;
+            }
+            .settlement-poll-table-wrap .table:not(.table-dark):not(.table-light) thead:not(.table-dark) th.sticky-col-left {
+                z-index: 6;
+                background-color: #8d8d8d !important;
+                color: #000 !important;
+            }
+            .settlement-poll-table-wrap tbody tr:nth-child(even) .sticky-col-left {
+                background-color: #f8f9fa;
+            }
+            .settlement-poll-table-wrap tbody tr:hover .sticky-col-left {
+                background-color: #e9ecef;
+            }
+            .settlement-poll-table-wrap.is-scrolled-x .sticky-col-left {
+                box-shadow: 8px 0 10px -6px rgba(0, 0, 0, 0.28);
+            }
             #dashboard-ecommerce.settlement-poll-active {
                 overflow-x: clip;
             }
@@ -323,7 +350,7 @@
                                     @endif
                                     <div class="card-body p-0">
                                         <div class="table-responsive settlement-poll-table-wrap">
-                                            <table class="table table-bordered">
+                                            <table class="table table-bordered settlement-grid">
                                                 <thead>
                                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                     <tr class="bg-warning">
@@ -363,7 +390,7 @@
                                                     </tr>
                                                     @endif
                                                     <tr>
-                                                        <th rowspan="2">
+                                                        <th rowspan="2" class="sticky-col-left">
                                                             Client
                                                             @if(auth()->user()->user_role == "Super Admin")
                                                                 <div class="dropdown" style="display:inline-block;">
@@ -437,7 +464,7 @@
                                                     
                                                         @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager" || auth()->user()->id == $user->id)
                                                         <tr data-user-id="{{ $user->id }}">
-                                                            <td class="client">{{ $user->name }}</td>
+                                                            <td class="client sticky-col-left">{{ $user->name }}</td>
                                                     
                                                             @if(auth()->user()->user_role == "Super Admin" || auth()->user()->id == $user->id)
                                                                 <td data-poll-scope="row" data-user-id="{{ $user->id }}" data-poll-metric="prev_balance">{{ number_format($item['prev_balance']) }}</td>
@@ -496,7 +523,7 @@
                                                     
                                                     @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
                                                         <tr>
-                                                            <td class="client font-weight-bold">Total</td>
+                                                            <td class="client font-weight-bold sticky-col-left">Total</td>
                                                         
                                                             @if(auth()->user()->user_role == "Super Admin")
                                                                 <td class="font-weight-bold" data-poll-scope="totals" data-poll-metric="prev_balance">{{ number_format($totals['prev_balance']) }}</td>
@@ -733,6 +760,29 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
     });
+</script>
+<script>
+(function () {
+    function updateSettlementStickyShadow() {
+        var wrap = document.querySelector('.settlement-poll-table-wrap');
+        if (!wrap) return;
+        wrap.classList.toggle('is-scrolled-x', wrap.scrollLeft > 1);
+    }
+
+    function initSettlementStickyColumn() {
+        var wrap = document.querySelector('.settlement-poll-table-wrap');
+        if (!wrap) return;
+
+        updateSettlementStickyShadow();
+        wrap.addEventListener('scroll', updateSettlementStickyShadow, { passive: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSettlementStickyColumn);
+    } else {
+        initSettlementStickyColumn();
+    }
+})();
 </script>
 @if(auth()->user()->user_role == "Super Admin" || auth()->user()->user_role == "Manager")
 <script>
